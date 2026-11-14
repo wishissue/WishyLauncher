@@ -1,0 +1,107 @@
+{
+  "$schema": "../../schema/wishy-theme.schema.v1.json",
+  "schemaVersion": 1,
+  "id": "experimental",
+  "name": "Experimental",
+  "version": "1.0.0",
+  "author": "Wishy Launcher contributors",
+  "description": "A bold split screen. A huge clock and the focused app's name on the left, a vertical stack of wide strips on the right, with cut corners and heavy borders.",
+  "license": "GPL-3.0-only",
+  "defaultColorScheme": "dark",
+  "colorSchemes": {
+    "dark": {
+      "background": "#101010",
+      "surface": "#1C1C1C",
+      "surfaceVariant": "#2B2B2B",
+      "onSurface": "#F5F5F0",
+      "onSurfaceMuted": "#9A9A92",
+      "primary": "#FF5A1F",
+      "onPrimary": "#101010",
+      "accent": "#00D1B2",
+      "outline": "#F5F5F0",
+      "scrim": "#CC000000"
+    },
+    "light": {
+      "background": "#F2EFE6",
+      "surface": "#FFFFFF",
+      "surfaceVariant": "#E4E0D3",
+      "onSurface": "#101010",
+      "onSurfaceMuted": "#5E5E57",
+      "primary": "#E8410A",
+      "onPrimary": "#FFFFFF",
+      "accent": "#008C77",
+      "outline": "#101010",
+      "scrim": "#80000000"
+    }
+  },
+  "textStyles": {
+    "clock": { "size": 200, "color": "@onSurface", "letterSpacing": -4, "maxLines": 1 },
+    "date": { "size": 34, "color": "@primary", "uppercase": true, "letterSpacing": 6 },
+    "tab": { "size": 26, "color": "@onSurfaceMuted", "uppercase": true, "letterSpacing": 5, "maxLines": 1 },
+    "name": { "size": 56, "color": "@onSurface", "maxLines": 2, "lineHeight": 1.1 },
+    "label": { "size": 30, "color": "@onSurface", "uppercase": true, "letterSpacing": 4, "maxLines": 1 }
+  },
+  "background": {
+    "color": "@background",
+    "dim": 0.0,
+    "userWallpaper": "allowed",
+    "effect": "grid",
+    "effectOpacity": 0.06
+  },
+  "cardStyles": {
+    "strip": {
+      "aspect": "5:1",
+      "shape": { "kind": "chamfer", "radius": 22 },
+      "fill": "@surface",
+      "border": { "width": 3, "color": "@outline", "style": "solid" },
+      "artwork": { "source": "banner", "fit": "crop", "iconSize": "60%", "placeholderFill": "@surfaceVariant" },
+      "label": { "position": "overlayCenter", "style": "label", "gap": 0 },
+      "idle": { "scale": 0.94, "alpha": 0.78, "offsetY": 0 },
+      "focused": {
+        "scale": 1.0,
+        "alpha": 1.0,
+        "shadow": { "color": "#FF5A1F", "dx": 14, "dy": 14, "blur": 0 },
+        "indicator": { "kind": "bar", "color": "@primary", "width": 14, "gap": 14 }
+      },
+      "moving": {
+        "scale": 1.04,
+        "alpha": 1.0,
+        "shadow": { "color": "#00D1B2", "dx": 18, "dy": 18, "blur": 0 },
+        "indicator": { "kind": "bar", "color": "@accent", "width": 14, "gap": 14, "blink": true, "blinkMillis": 400 }
+      }
+    }
+  },
+  "motion": { "focusMillis": 140, "scrollMillis": 240, "easing": "accelerate", "screenTransition": "slide" },
+  "screens": {
+    "home": {
+      "root": {
+        "type": "stack",
+        "children": [
+          {
+            "type": "shape", "id": "rule",
+            "shape": { "kind": "rect" },
+            "fill": "@primary",
+            "frame": { "x": "46%", "y": "6%", "w": "0.6%", "h": "88%" }
+          },
+          { "type": "date", "id": "date", "style": "date", "showWhen": "dateEnabled", "frame": { "x": "4%", "y": "7%" } },
+          { "type": "clock", "id": "clock", "style": "clock", "showWhen": "clockEnabled", "frame": { "x": "3%", "y": "11%" } },
+          {
+            "type": "sections", "id": "tabs", "arrangement": "tabs", "style": "tab", "gap": 28,
+            "selectedIndicator": { "kind": "underline", "color": "@primary", "width": 5, "gap": 8 },
+            "frame": { "x": "4%", "y": "50%", "w": "40%" }
+          },
+          { "type": "focusedAppName", "id": "focusName", "style": "name", "showWhen": "hasFocusedApp", "frame": { "x": "4%", "y": "60%", "w": "40%" } },
+          {
+            "type": "apps", "id": "apps", "arrangement": "list", "card": "strip",
+            "itemWidth": 760, "gap": 34, "scroll": "centerFocused", "focusScope": "section",
+            "frame": { "x": "50%", "y": "0%", "w": "48%", "h": "100%" }
+          }
+        ]
+      }
+    }
+  },
+  "overrides": [
+    { "when": { "maxAspect": 1.5 }, "merge": { "textStyles": { "clock": { "size": 140 } } } },
+    { "when": { "reducedMotion": true }, "merge": { "motion": { "focusMillis": 0, "scrollMillis": 0 } } }
+  ]
+}

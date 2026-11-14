@@ -1,0 +1,95 @@
+{
+  "$schema": "../../schema/wishy-theme.schema.v1.json",
+  "schemaVersion": 1,
+  "id": "wishy",
+  "name": "Wishy",
+  "version": "1.0.0",
+  "author": "Wishy Launcher contributors",
+  "description": "Clean and minimal. Blue and white by day, deep navy at night, with a single row of wide banners.",
+  "license": "GPL-3.0-only",
+  "defaultColorScheme": "system",
+  "colorSchemes": {
+    "light": {
+      "background": "#E6F1FF",
+      "surface": "#FFFFFF",
+      "surfaceVariant": "#D6E4FF",
+      "onSurface": "#0B1B33",
+      "onSurfaceMuted": "#4A5D7A",
+      "primary": "#0166FF",
+      "onPrimary": "#FFFFFF",
+      "outline": "#B5C9EA",
+      "scrim": "#660B1B33"
+    },
+    "dark": {
+      "background": "#080B12",
+      "surface": "#111725",
+      "surfaceVariant": "#1A2338",
+      "onSurface": "#F2F6FF",
+      "onSurfaceMuted": "#93A4C3",
+      "primary": "#66A3FF",
+      "onPrimary": "#001B3E",
+      "outline": "#2A3A5C",
+      "scrim": "#99000000"
+    }
+  },
+  "textStyles": {
+    "clock": { "size": 88, "color": "@onSurface" },
+    "date": { "size": 30, "color": "@onSurfaceMuted" },
+    "title": { "size": 46, "color": "@onSurface", "maxLines": 1 },
+    "tab": { "size": 28, "color": "@onSurfaceMuted", "maxLines": 1 }
+  },
+  "background": {
+    "color": "@background",
+    "dim": 0.0,
+    "userWallpaper": "allowed"
+  },
+  "cardStyles": {
+    "banner": {
+      "aspect": "16:9",
+      "shape": { "kind": "rounded", "radius": 22 },
+      "fill": "@surface",
+      "border": { "width": 1, "color": "@outline" },
+      "artwork": { "source": "auto", "fit": "crop", "iconSize": 110, "placeholderFill": "@surfaceVariant" },
+      "label": { "position": "none" },
+      "idle": { "scale": 1.0, "alpha": 0.94 },
+      "focused": {
+        "scale": 1.08,
+        "alpha": 1.0,
+        "shadow": { "color": "#59000000", "dy": 10, "blur": 28 },
+        "indicator": { "kind": "ring", "color": "@primary", "width": 4, "gap": 4 }
+      },
+      "moving": {
+        "scale": 1.12,
+        "shadow": { "color": "#80000000", "dy": 14, "blur": 36 },
+        "indicator": { "kind": "ring", "color": "@primary", "width": 6, "gap": 6, "blink": true, "blinkMillis": 500 }
+      }
+    }
+  },
+  "motion": { "focusMillis": 180, "scrollMillis": 280, "easing": "standard", "screenTransition": "fade" },
+  "screens": {
+    "home": {
+      "root": {
+        "type": "stack",
+        "children": [
+          { "type": "clock", "id": "clock", "style": "clock", "showWhen": "clockEnabled", "frame": { "x": "5%", "y": "7%" } },
+          { "type": "date", "id": "date", "style": "date", "showWhen": "dateEnabled", "frame": { "x": "5%", "y": "19%" } },
+          { "type": "focusedAppName", "id": "focusName", "style": "title", "showWhen": "hasFocusedApp", "frame": { "x": "5%", "y": "47%" } },
+          {
+            "type": "sections", "id": "tabs", "arrangement": "tabs", "style": "tab", "gap": 36,
+            "selectedIndicator": { "kind": "underline", "color": "@primary", "width": 4, "gap": 6 },
+            "frame": { "x": "5%", "y": "57%", "w": "90%", "h": "6%" }
+          },
+          {
+            "type": "apps", "id": "apps", "arrangement": "rail", "card": "banner",
+            "itemWidth": 360, "gap": 30, "scroll": "edge", "focusScope": "section",
+            "frame": { "x": 0, "y": "64%", "w": "100%", "h": "32%" },
+            "padding": { "left": "5%", "right": "5%" }
+          }
+        ]
+      }
+    }
+  },
+  "overrides": [
+    { "when": { "reducedMotion": true }, "merge": { "motion": { "focusMillis": 0, "scrollMillis": 0 } } }
+  ]
+}

@@ -1,0 +1,503 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/wishissue/WishyLauncher-Themes/schema/wishy-theme.schema.v1.json",
+  "title": "Wishy Launcher theme, schema version 1",
+  "description": "Declarative theme description. Contains data only: no scripts, no expressions. Lengths are numbers (design units, scaled from a 1080-unit-high canvas) or strings such as \"12%\" (fraction of the parent's matching dimension).",
+  "type": "object",
+  "required": ["schemaVersion", "id", "name", "version", "author", "license", "colorSchemes", "screens"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "schemaVersion": { "const": 1 },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{1,39}$" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 48 },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "author": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "description": { "type": "string", "maxLength": 400 },
+    "license": { "type": "string", "maxLength": 64, "description": "SPDX identifier for the theme's own files, for example GPL-3.0-only or CC0-1.0." },
+    "minLauncherVersion": { "type": "integer", "minimum": 1, "description": "Launcher versionCode needed to render this theme." },
+    "preview": { "$ref": "#/$defs/assetPath" },
+    "credits": {
+      "type": "array",
+      "maxItems": 200,
+      "items": { "$ref": "#/$defs/credit" }
+    },
+    "designHeight": { "type": "integer", "minimum": 360, "maximum": 4320, "default": 1080 },
+    "colorSchemes": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 4,
+      "propertyNames": { "enum": ["light", "dark"] },
+      "additionalProperties": { "$ref": "#/$defs/colorScheme" }
+    },
+    "defaultColorScheme": { "enum": ["light", "dark", "system"], "default": "system" },
+    "fonts": {
+      "type": "object",
+      "maxProperties": 8,
+      "additionalProperties": { "$ref": "#/$defs/font" }
+    },
+    "textStyles": {
+      "type": "object",
+      "maxProperties": 24,
+      "additionalProperties": { "$ref": "#/$defs/textStyle" }
+    },
+    "background": { "$ref": "#/$defs/background" },
+    "cardStyles": {
+      "type": "object",
+      "maxProperties": 16,
+      "additionalProperties": { "$ref": "#/$defs/cardStyle" }
+    },
+    "motion": { "$ref": "#/$defs/motion" },
+    "screens": {
+      "type": "object",
+      "required": ["home"],
+      "additionalProperties": false,
+      "properties": {
+        "home": { "$ref": "#/$defs/screen" }
+      }
+    },
+    "overrides": {
+      "type": "array",
+      "maxItems": 12,
+      "items": {
+        "type": "object",
+        "required": ["when", "merge"],
+        "additionalProperties": false,
+        "properties": {
+          "when": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "minAspect": { "type": "number", "minimum": 1.0, "maximum": 4.0 },
+              "maxAspect": { "type": "number", "minimum": 1.0, "maximum": 4.0 },
+              "maxHeightPx": { "type": "integer", "minimum": 240 },
+              "minHeightPx": { "type": "integer", "minimum": 240 },
+              "colorScheme": { "enum": ["light", "dark"] },
+              "reducedMotion": { "type": "boolean" }
+            }
+          },
+          "merge": {
+            "type": "object",
+            "description": "RFC 7396 JSON Merge Patch applied to this document before validation of the screen tree. May not change id, version, schemaVersion, credits or license."
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "assetPath": {
+      "type": "string",
+      "maxLength": 160,
+      "pattern": "^(?!/)(?!.*\\.\\.)(?!.*\\\\)[A-Za-z0-9_./-]+\\.(png|jpg|jpeg|webp|ttf|otf)$",
+      "description": "Relative path inside the theme folder. No leading slash, no parent segments, no backslashes. Only png, jpg, jpeg, webp, ttf, otf."
+    },
+    "length": {
+      "oneOf": [
+        { "type": "number", "minimum": -4096, "maximum": 8192 },
+        { "type": "string", "pattern": "^-?[0-9]+(\\.[0-9]+)?%$" }
+      ]
+    },
+    "color": {
+      "type": "string",
+      "pattern": "^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$",
+      "description": "#RRGGBB or #AARRGGBB."
+    },
+    "insets": {
+      "oneOf": [
+        { "$ref": "#/$defs/length" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "left": { "$ref": "#/$defs/length" },
+            "top": { "$ref": "#/$defs/length" },
+            "right": { "$ref": "#/$defs/length" },
+            "bottom": { "$ref": "#/$defs/length" }
+          }
+        }
+      ]
+    },
+    "credit": {
+      "type": "object",
+      "required": ["file", "author", "license"],
+      "additionalProperties": false,
+      "properties": {
+        "file": { "type": "string", "maxLength": 160 },
+        "title": { "type": "string", "maxLength": 160 },
+        "author": { "type": "string", "maxLength": 120 },
+        "license": { "type": "string", "maxLength": 64 },
+        "source": { "type": "string", "format": "uri", "maxLength": 300 },
+        "notes": { "type": "string", "maxLength": 300 }
+      }
+    },
+    "colorScheme": {
+      "type": "object",
+      "required": ["background", "surface", "onSurface", "primary", "onPrimary"],
+      "additionalProperties": false,
+      "properties": {
+        "background": { "$ref": "#/$defs/color" },
+        "surface": { "$ref": "#/$defs/color" },
+        "surfaceVariant": { "$ref": "#/$defs/color" },
+        "onSurface": { "$ref": "#/$defs/color" },
+        "onSurfaceMuted": { "$ref": "#/$defs/color" },
+        "primary": { "$ref": "#/$defs/color" },
+        "onPrimary": { "$ref": "#/$defs/color" },
+        "accent": { "$ref": "#/$defs/color" },
+        "outline": { "$ref": "#/$defs/color" },
+        "scrim": { "$ref": "#/$defs/color" },
+        "custom": {
+          "type": "object",
+          "maxProperties": 16,
+          "propertyNames": { "pattern": "^[a-zA-Z][a-zA-Z0-9]{0,23}$" },
+          "additionalProperties": { "$ref": "#/$defs/color" },
+          "description": "Extra named colours, referenced as \"@custom.name\"."
+        }
+      }
+    },
+    "colorRef": {
+      "description": "A literal colour, or a token such as @primary, @surface, @custom.sky.",
+      "oneOf": [
+        { "$ref": "#/$defs/color" },
+        { "type": "string", "pattern": "^@(background|surface|surfaceVariant|onSurface|onSurfaceMuted|primary|onPrimary|accent|outline|scrim|custom\\.[a-zA-Z][a-zA-Z0-9]{0,23})(/[0-9]{1,3})?$" }
+      ]
+    },
+    "font": {
+      "type": "object",
+      "required": ["file"],
+      "additionalProperties": false,
+      "properties": {
+        "file": { "$ref": "#/$defs/assetPath" },
+        "weight": { "type": "integer", "minimum": 100, "maximum": 900 },
+        "pixel": { "type": "boolean", "description": "Render without anti-aliasing smoothing where the platform allows it." }
+      }
+    },
+    "textStyle": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "font": { "type": "string", "description": "Key in fonts. Omit for the launcher's bundled default (Plus Jakarta Sans)." },
+        "size": { "type": "number", "minimum": 8, "maximum": 400 },
+        "color": { "$ref": "#/$defs/colorRef" },
+        "letterSpacing": { "type": "number", "minimum": -10, "maximum": 40 },
+        "lineHeight": { "type": "number", "minimum": 0.8, "maximum": 3 },
+        "uppercase": { "type": "boolean" },
+        "align": { "enum": ["start", "center", "end"] },
+        "maxLines": { "type": "integer", "minimum": 1, "maximum": 6 },
+        "shadow": { "$ref": "#/$defs/shadow" }
+      }
+    },
+    "shadow": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "color": { "$ref": "#/$defs/colorRef" },
+        "dx": { "type": "number", "minimum": -64, "maximum": 64 },
+        "dy": { "type": "number", "minimum": -64, "maximum": 64 },
+        "blur": { "type": "number", "minimum": 0, "maximum": 128 }
+      }
+    },
+    "border": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "width": { "type": "number", "minimum": 0, "maximum": 64 },
+        "color": { "$ref": "#/$defs/colorRef" },
+        "style": { "enum": ["solid", "dashed", "double"], "default": "solid" }
+      }
+    },
+    "shape": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "enum": ["rect", "rounded", "pixel", "chamfer", "bevel"], "default": "rounded" },
+        "radius": { "type": "number", "minimum": 0, "maximum": 512 },
+        "pixelSize": { "type": "number", "minimum": 1, "maximum": 32, "description": "Step size for pixel corners." }
+      }
+    },
+    "background": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "color": { "$ref": "#/$defs/colorRef" },
+        "image": { "$ref": "#/$defs/assetPath" },
+        "fit": { "enum": ["crop", "fit", "stretch", "tile"], "default": "crop" },
+        "sampling": { "enum": ["smooth", "nearest"], "default": "smooth" },
+        "dim": { "type": "number", "minimum": 0, "maximum": 1 },
+        "userWallpaper": { "enum": ["allowed", "ignored", "required"], "default": "allowed", "description": "Whether the user's own wallpaper from Settings replaces the theme image." },
+        "effect": { "enum": ["none", "scanlines", "grid", "dither"], "default": "none", "description": "Cheap, fixed, built-in overlays. No shader code." },
+        "effectOpacity": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "motion": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "focusMillis": { "type": "integer", "minimum": 0, "maximum": 800 },
+        "scrollMillis": { "type": "integer", "minimum": 0, "maximum": 1200 },
+        "easing": { "$ref": "#/$defs/easing" },
+        "screenTransition": { "enum": ["none", "fade", "slide"], "default": "fade" }
+      }
+    },
+    "easing": {
+      "type": "string",
+      "pattern": "^(linear|standard|decelerate|accelerate|steps:([1-9]|1[0-6]))$",
+      "description": "steps:N gives stepped, retro-style motion."
+    },
+    "focusIndicator": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "enum": ["none", "ring", "corners", "arrow", "underline", "fill", "bar"], "default": "ring" },
+        "color": { "$ref": "#/$defs/colorRef" },
+        "width": { "type": "number", "minimum": 0, "maximum": 32 },
+        "gap": { "type": "number", "minimum": -16, "maximum": 64 },
+        "length": { "type": "number", "minimum": 0, "maximum": 128, "description": "Corner or arrow arm length." },
+        "blink": { "type": "boolean" },
+        "blinkMillis": { "type": "integer", "minimum": 200, "maximum": 3000 }
+      }
+    },
+    "cardState": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "scale": { "type": "number", "minimum": 0.5, "maximum": 1.6 },
+        "alpha": { "type": "number", "minimum": 0, "maximum": 1 },
+        "offsetY": { "type": "number", "minimum": -128, "maximum": 128 },
+        "fill": { "$ref": "#/$defs/colorRef" },
+        "border": { "$ref": "#/$defs/border" },
+        "shadow": { "$ref": "#/$defs/shadow" },
+        "indicator": { "$ref": "#/$defs/focusIndicator" },
+        "animation": { "enum": ["none", "bob", "pulse", "blink"], "default": "none" },
+        "grayscale": { "type": "boolean" }
+      }
+    },
+    "cardStyle": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "aspect": { "type": "string", "pattern": "^[0-9]{1,2}:[0-9]{1,2}$", "default": "16:9" },
+        "shape": { "$ref": "#/$defs/shape" },
+        "fill": { "$ref": "#/$defs/colorRef" },
+        "padding": { "$ref": "#/$defs/insets" },
+        "border": { "$ref": "#/$defs/border" },
+        "shadow": { "$ref": "#/$defs/shadow" },
+        "artwork": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "source": { "enum": ["auto", "banner", "icon"], "default": "auto" },
+            "fit": { "enum": ["crop", "fit", "stretch"], "default": "crop" },
+            "sampling": { "enum": ["smooth", "nearest"], "default": "smooth" },
+            "pixelBlock": { "type": "integer", "minimum": 1, "maximum": 16, "description": "Downscale then upscale with nearest sampling for a pixelated look." },
+            "iconSize": { "$ref": "#/$defs/length", "description": "Icon size when the icon is used (fallback or source=icon)." },
+            "placeholderFill": { "$ref": "#/$defs/colorRef" }
+          }
+        },
+        "label": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "position": { "enum": ["none", "below", "overlayBottom", "overlayCenter", "focusedOnly"], "default": "below" },
+            "style": { "type": "string", "description": "Key in textStyles." },
+            "gap": { "type": "number", "minimum": 0, "maximum": 64 }
+          }
+        },
+        "focused": { "$ref": "#/$defs/cardState" },
+        "idle": { "$ref": "#/$defs/cardState" },
+        "moving": { "$ref": "#/$defs/cardState", "description": "Applied while the user is rearranging apps." }
+      }
+    },
+    "screen": {
+      "type": "object",
+      "required": ["root"],
+      "additionalProperties": false,
+      "properties": {
+        "root": { "$ref": "#/$defs/node" }
+      }
+    },
+    "frame": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "x": { "$ref": "#/$defs/length" },
+        "y": { "$ref": "#/$defs/length" },
+        "w": { "$ref": "#/$defs/length" },
+        "h": { "$ref": "#/$defs/length" },
+        "anchor": { "enum": ["topStart", "top", "topEnd", "start", "center", "end", "bottomStart", "bottom", "bottomEnd"], "default": "topStart" },
+        "zIndex": { "type": "integer", "minimum": -10, "maximum": 100 }
+      }
+    },
+    "nodeCommon": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,31}$" },
+        "frame": { "$ref": "#/$defs/frame" },
+        "weight": { "type": "number", "minimum": 0, "maximum": 100, "description": "Share of leftover space inside row and column." },
+        "padding": { "$ref": "#/$defs/insets" },
+        "visible": { "type": "boolean", "default": true },
+        "showWhen": { "enum": ["always", "clockEnabled", "dateEnabled", "hasFocusedApp"], "default": "always" }
+      }
+    },
+    "node": {
+      "oneOf": [
+        { "$ref": "#/$defs/nodeStack" },
+        { "$ref": "#/$defs/nodeRow" },
+        { "$ref": "#/$defs/nodeColumn" },
+        { "$ref": "#/$defs/nodeShape" },
+        { "$ref": "#/$defs/nodeImage" },
+        { "$ref": "#/$defs/nodeText" },
+        { "$ref": "#/$defs/nodeClock" },
+        { "$ref": "#/$defs/nodeDate" },
+        { "$ref": "#/$defs/nodeFocusedApp" },
+        { "$ref": "#/$defs/nodeSections" },
+        { "$ref": "#/$defs/nodeApps" },
+        { "$ref": "#/$defs/nodeSpacer" }
+      ]
+    },
+    "nodeStack": {
+      "type": "object",
+      "required": ["type", "children"],
+      "properties": {
+        "type": { "const": "stack" },
+        "children": { "type": "array", "maxItems": 48, "items": { "$ref": "#/$defs/node" } }
+      },
+      "allOf": [{ "$ref": "#/$defs/nodeCommon" }],
+      "unevaluatedProperties": false
+    },
+    "nodeRow": {
+      "type": "object",
+      "required": ["type", "children"],
+      "properties": {
+        "type": { "const": "row" },
+        "gap": { "type": "number", "minimum": 0, "maximum": 256 },
+        "align": { "enum": ["start", "center", "end"] },
+        "children": { "type": "array", "maxItems": 48, "items": { "$ref": "#/$defs/node" } }
+      },
+      "allOf": [{ "$ref": "#/$defs/nodeCommon" }],
+      "unevaluatedProperties": false
+    },
+    "nodeColumn": {
+      "type": "object",
+      "required": ["type", "children"],
+      "properties": {
+        "type": { "const": "column" },
+        "gap": { "type": "number", "minimum": 0, "maximum": 256 },
+        "align": { "enum": ["start", "center", "end"] },
+        "children": { "type": "array", "maxItems": 48, "items": { "$ref": "#/$defs/node" } }
+      },
+      "allOf": [{ "$ref": "#/$defs/nodeCommon" }],
+      "unevaluatedProperties": false
+    },
+    "nodeShape": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "shape" },
+        "shape": { "$ref": "#/$defs/shape" },
+        "fill": { "$ref": "#/$defs/colorRef" },
+        "border": { "$ref": "#/$defs/border" },
+        "shadow": { "$ref": "#/$defs/shadow" }
+      },
+      "allOf": [{ "$ref": "#/$defs/nodeCommon" }],
+      "unevaluatedProperties": false
+    },
+    "nodeImage": {
+      "type": "object",
+      "required": ["type", "source"],
+      "properties": {
+        "type": { "const": "image" },
+        "source": { "$ref": "#/$defs/assetPath" },
+        "fit": { "enum": ["crop", "fit", "stretch"], "default": "fit" },
+        "sampling": { "enum": ["smooth", "nearest"], "default": "smooth" },
+        "tint": { "$ref": "#/$defs/colorRef" },
+        "alpha": { "type": "number", "minimum": 0, "maximum": 1 }
+      },
+      "allOf": [{ "$ref": "#/$defs/nodeCommon" }],
+      "unevaluatedProperties": false
+    },
+    "nodeText": {
+      "type": "object",
+      "required": ["type", "text"],
+      "properties": {
+        "type": { "const": "text" },
+        "text": { "type": "string", "maxLength": 80, "description": "Literal text only. No interpolation." },
+        "style": { "type": "string", "description": "Key in textStyles." }
+      },
+      "allOf": [{ "$ref": "#/$defs/nodeCommon" }],
+      "unevaluatedProperties": false
+    },
+    "nodeClock": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "clock" },
+        "style": { "type": "string" },
+        "showSeconds": { "type": "boolean", "default": false }
+      },
+      "allOf": [{ "$ref": "#/$defs/nodeCommon" }],
+      "unevaluatedProperties": false
+    },
+    "nodeDate": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "date" },
+        "style": { "type": "string" }
+      },
+      "allOf": [{ "$ref": "#/$defs/nodeCommon" }],
+      "unevaluatedProperties": false
+    },
+    "nodeFocusedApp": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "focusedAppName" },
+        "style": { "type": "string" }
+      },
+      "allOf": [{ "$ref": "#/$defs/nodeCommon" }],
+      "unevaluatedProperties": false
+    },
+    "nodeSections": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "sections" },
+        "arrangement": { "enum": ["tabs", "dots", "list"], "default": "tabs" },
+        "style": { "type": "string", "description": "Key in textStyles for section names." },
+        "selectedIndicator": { "$ref": "#/$defs/focusIndicator" },
+        "gap": { "type": "number", "minimum": 0, "maximum": 256 }
+      },
+      "allOf": [{ "$ref": "#/$defs/nodeCommon" }],
+      "unevaluatedProperties": false
+    },
+    "nodeApps": {
+      "type": "object",
+      "required": ["type", "arrangement", "card"],
+      "properties": {
+        "type": { "const": "apps" },
+        "arrangement": { "enum": ["rail", "grid", "list", "cross"], "description": "rail: one horizontal row. grid: columns x rows. list: one vertical column. cross: horizontal icon bar with the focused item enlarged." },
+        "card": { "type": "string", "description": "Key in cardStyles." },
+        "columns": { "type": "integer", "minimum": 1, "maximum": 10 },
+        "rows": { "type": "integer", "minimum": 1, "maximum": 8 },
+        "itemWidth": { "$ref": "#/$defs/length" },
+        "itemHeight": { "$ref": "#/$defs/length" },
+        "gap": { "type": "number", "minimum": 0, "maximum": 256 },
+        "scroll": { "enum": ["edge", "centerFocused"], "default": "edge" },
+        "wrap": { "type": "boolean", "default": false },
+        "focusScope": { "enum": ["section", "all"], "default": "section" }
+      },
+      "allOf": [{ "$ref": "#/$defs/nodeCommon" }],
+      "unevaluatedProperties": false
+    },
+    "nodeSpacer": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "spacer" },
+        "size": { "$ref": "#/$defs/length" }
+      },
+      "allOf": [{ "$ref": "#/$defs/nodeCommon" }],
+      "unevaluatedProperties": false
+    }
+  }
+}

@@ -1,0 +1,346 @@
+package org.wishy.launcher.ui
+
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.core.content.pm.PackageInfoCompat
+import androidx.tv.material3.Button
+import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.Surface
+import androidx.tv.material3.SurfaceDefaults
+import androidx.tv.material3.Text
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.wishy.launcher.R
+import org.wishy.launcher.art.BannerManager
+import org.wishy.launcher.data.AppEntry
+import org.wishy.launcher.data.ConfigStore
+import org.wishy.launcher.data.LauncherConfig
+import org.wishy.launcher.net.Repos
+import org.wishy.launcher.theme.RepoListing
+import org.wishy.launcher.theme.ThemeRepoClient
+import org.wishy.launcher.theme.ThemeStorage
+import org.wishy.theme.core.RepoChecker
+import org.wishy.theme.core.RepoTheme
+
+private fun formatBytes(b: Long): String = when {
+    b >= 1024 * 1024 -> "%.1f MB".format(b / 1048576.0)
+    b >= 1024 -> "${b / 1024} KB"
+    else -> "$b B"
+}
+
+private fun hostOf(url: String): String = runCatching { java.net.URI(url).host ?: url }.getOrDefault(url)
+
+/** Why a network action is blocked, or null if allowed. */
+@Composable
+private fun OfflineNotice(config: LauncherConfig, store: ConfigStore) {
+    val scope = rememberCoroutineScope()
+    if (config.offlineMode) {
+        SettingsItem(
+            selected = false,
+            onClick = { scope.launch { store.update { it.copy(offlineMode = false) } } },
+            headlineContent = { Text(stringResource(R.string.online_blocked)) },
+            supportingContent = { Text(stringResource(R.string.online_blocked_sub)) },
+        )
+    }
+}
+
+/** Browse and install themes from the official repository or repositories the user added. */
+@Composable
+internal fun OnlineThemesScreen(config: LauncherConfig, store: ConfigStore, onBack: () -> Unit) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val storage = remember { ThemeStorage.get(context) }
+    val client = remember { ThemeRepoClient(context, storage) }
+    val versionCode = remember {
+        runCatching { PackageInfoCompat.getLongVersionCode(context.packageManager.getPackageInfo(context.packageName, 0)).toInt() }.getOrDefault(1)
+    }
+    var listing by remember { mutableStateOf<RepoListing?>(null) }
+    var status by remember { mutableStateOf("") }
+    var busy by remember { mutableStateOf(false) }
+    var addDialog by remember { mutableStateOf(false) }
+    var confirmUrl by remember { mutableStateOf<String?>(null) }
+    var installedTick by remember { mutableIntStateOf(0) }
+    val installed by produceState<Map<String, String>>(emptyMap(), installedTick) {
+        value = withContext(Dispatchers.IO) { storage.list().associate { it.summary.id to it.summary.version } }
+    }
+
+    fun open(url: String) {
+        if (busy) return
+        busy = true; status = context.getString(R.string.online_loading)
+        scope.launch {
+            val r = withContext(Dispatchers.IO) { runCatching { client.list(url) } }
+            busy = false
+            r.onSuccess { listing = it; status = "" }
+                .onFailure { listing = null; status = context.getString(R.string.online_failed, it.message ?: "") }
+        }
+    }
+
+    fun install(l: RepoListing, t: RepoTheme) {
+        if (busy) return
+        busy = true; status = context.getString(R.string.online_installing, t.name)
+        scope.launch {
+            val r = withContext(Dispatchers.IO) { runCatching { client.install(l, t, versionCode) } }
+            busy = false
+            installedTick++
+            status = r.fold(
+                onSuccess = { context.getString(R.string.online_installed, t.name) },
+                onFailure = { context.getString(R.string.online_failed, it.message ?: "") },
+            )
+        }
+    }
+
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(stringResource(R.string.item_online_themes), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(bottom = 12.dp, start = 8.dp))
+        val f = initialFocus()
+        OfflineNotice(config, store)
+        if (status.isNotEmpty()) {
+            SettingsItem(selected = false, onClick = { status = "" }, headlineContent = { Text(status) })
+        }
+        val l = listing
+        if (l == null) {
+            SectionLabel(stringResource(R.string.online_repos))
+            SettingsItem(
+                selected = false, enabled = !config.offlineMode && !busy,
+                onClick = { open(Repos.OFFICIAL_THEMES_INDEX) },
+                headlineContent = { Text(stringResource(R.string.online_official)) },
+                supportingContent = { Text(hostOf(Repos.OFFICIAL_THEMES_INDEX)) },
+                modifier = Modifier.focusRequester(f),
+            )
+            config.extraRepos.forEach { url ->
+                SettingsItem(
+                    selected = false, enabled = !config.offlineMode && !busy,
+                    onClick = { open(url) },
+                    headlineContent = { Text(hostOf(url)) },
+                    supportingContent = { Text(url + "\n" + stringResource(R.string.online_third_party_hint)) },
+                    trailingContent = {
+                        Button(onClick = { scope.launch { store.update { c -> c.copy(extraRepos = c.extraRepos - url) } } }) { Text(stringResource(R.string.online_remove_repo)) }
+                    },
+                )
+            }
+            SettingsItem(
+                selected = false, onClick = { addDialog = true },
+                headlineContent = { Text(stringResource(R.string.online_add_repo)) },
+                supportingContent = { Text(stringResource(R.string.online_add_repo_sub)) },
+            )
+        } else {
+            SectionLabel(l.index.name + "  ·  " + hostOf(l.indexUrl))
+            if (!Repos.isOfficial(l.indexUrl)) {
+                SettingsItem(selected = false, onClick = {}, headlineContent = { Text(stringResource(R.string.online_unreviewed)) })
+            }
+            l.index.themes.forEach { t ->
+                val have = installed[t.id]
+                val action = when {
+                    have == null -> stringResource(R.string.online_install)
+                    RepoChecker.isNewer(t.version, have) -> stringResource(R.string.online_update)
+                    else -> stringResource(R.string.online_up_to_date)
+                }
+                SettingsItem(
+                    selected = false, enabled = !busy,
+                    onClick = { if (have == null || RepoChecker.isNewer(t.version, have)) install(l, t) },
+                    headlineContent = { Text("${t.name}  ${t.version}") },
+                    supportingContent = { Text(listOf(t.author, t.license, formatBytes(t.sizeBytes), t.description).filter { it.isNotBlank() }.joinToString("  ·  ")) },
+                    trailingContent = { Text(action) },
+                    modifier = if (t === l.index.themes.first()) Modifier.focusRequester(f) else Modifier,
+                )
+            }
+            SettingsItem(selected = false, onClick = { listing = null; status = "" }, headlineContent = { Text(stringResource(R.string.online_back_to_repos)) })
+        }
+    }
+
+    if (addDialog) {
+        TextEntryDialog(
+            title = stringResource(R.string.online_add_repo),
+            hint = stringResource(R.string.online_add_repo_hint),
+            initial = "https://",
+            onSave = { text ->
+                addDialog = false
+                val u = text.trim()
+                if (u.startsWith("https://") && u.endsWith("index.json") && u.length < 300 && runCatching { java.net.URI(u).host }.getOrNull() != null) confirmUrl = u
+                else status = context.getString(R.string.online_bad_url)
+            },
+            onDismiss = { addDialog = false },
+        )
+    }
+    confirmUrl?.let { url ->
+        ConfirmDialog(
+            title = stringResource(R.string.online_confirm_title, hostOf(url)),
+            body = stringResource(R.string.online_confirm_body),
+            confirm = stringResource(R.string.online_confirm_add),
+            onConfirm = { confirmUrl = null; scope.launch { store.update { c -> if (url in c.extraRepos) c else c.copy(extraRepos = c.extraRepos + url) } } },
+            onDismiss = { confirmUrl = null },
+        )
+    }
+}
+
+/** Artwork: online lookup, per-app pictures, cache. */
+@Composable
+internal fun BannersScreen(
+    config: LauncherConfig,
+    store: ConfigStore,
+    apps: List<AppEntry>,
+    onArtChanged: () -> Unit,
+    onBack: () -> Unit,
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val manager = remember { BannerManager.get(context) }
+    var tick by remember { mutableIntStateOf(0) }
+    var status by remember { mutableStateOf("") }
+    var pickFor by remember { mutableStateOf<String?>(null) }
+    val sizes by produceState(BannerManager.Sizes(0, 0, 0, 0), tick) { value = withContext(Dispatchers.IO) { manager.sizes() } }
+
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
+        val pkg = pickFor; pickFor = null
+        if (uri == null || pkg == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            val r = withContext(Dispatchers.IO) { runCatching { manager.setUserArt(pkg, uri) } }
+            status = r.fold({ context.getString(R.string.banners_saved) }, { context.getString(R.string.online_failed, it.message ?: "") })
+            tick++; onArtChanged()
+        }
+    }
+
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(stringResource(R.string.item_banners), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(bottom = 12.dp, start = 8.dp))
+        val f = initialFocus()
+        if (status.isNotEmpty()) SettingsItem(selected = false, onClick = { status = "" }, headlineContent = { Text(status) })
+
+        SectionLabel(stringResource(R.string.banners_online))
+        SettingsItem(
+            selected = false,
+            onClick = { scope.launch { store.update { it.copy(artworkOnline = !it.artworkOnline) } } },
+            headlineContent = { Text(stringResource(R.string.banners_lookup)) },
+            supportingContent = { Text(stringResource(R.string.banners_lookup_sub)) },
+            trailingContent = { CheckMark(checked = config.artworkOnline) },
+            modifier = Modifier.focusRequester(f),
+        )
+        OfflineNotice(config, store)
+        SettingsItem(
+            selected = false, enabled = config.artworkOnline && !config.offlineMode,
+            onClick = {
+                status = context.getString(R.string.online_loading)
+                scope.launch {
+                    val r = withContext(Dispatchers.IO) { runCatching { manager.syncOfficial(apps.map { it.pkg }.toSet()) } }
+                    status = r.fold({ context.getString(R.string.banners_refreshed, it) }, { context.getString(R.string.online_failed, it.message ?: "") })
+                    tick++; onArtChanged()
+                }
+            },
+            headlineContent = { Text(stringResource(R.string.banners_refresh)) },
+        )
+
+        SectionLabel(stringResource(R.string.banners_cache))
+        SettingsItem(
+            selected = false, onClick = {},
+            headlineContent = { Text(stringResource(R.string.banners_downloaded, sizes.repoCount)) },
+            supportingContent = { Text(formatBytes(sizes.repoBytes)) },
+        )
+        SettingsItem(
+            selected = false, enabled = sizes.repoCount > 0,
+            onClick = { scope.launch { withContext(Dispatchers.IO) { manager.clearDownloaded() }; tick++; onArtChanged() } },
+            headlineContent = { Text(stringResource(R.string.banners_clear)) },
+            supportingContent = { Text(stringResource(R.string.banners_clear_sub)) },
+        )
+
+        SectionLabel(stringResource(R.string.banners_yours, sizes.userCount))
+        apps.sortedBy { it.label.lowercase() }.forEach { app ->
+            val has = remember(tick, app.pkg) { manager.hasUserArt(app.pkg) }
+            SettingsItem(
+                selected = false,
+                onClick = { pickFor = app.pkg; picker.launch(arrayOf("image/png", "image/jpeg", "image/webp")) },
+                headlineContent = { Text(app.label) },
+                supportingContent = { Text(if (has) stringResource(R.string.banners_own_set) else stringResource(R.string.banners_choose)) },
+                leadingContent = { AppThumb(app) },
+                trailingContent = {
+                    if (has) Button(onClick = { manager.clearUserArt(app.pkg); tick++; onArtChanged() }) { Text(stringResource(R.string.banners_reset)) }
+                },
+            )
+        }
+    }
+}
+
+@Composable
+internal fun TextEntryDialog(title: String, hint: String, initial: String, onSave: (String) -> Unit, onDismiss: () -> Unit) {
+    var text by remember { mutableStateOf(initial) }
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(shape = RoundedCornerShape(16.dp), colors = SurfaceDefaults.colors(containerColor = MaterialTheme.colorScheme.surface)) {
+            Column(Modifier.width(520.dp).padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Text(title, style = MaterialTheme.typography.titleMedium)
+                Text(hint, style = MaterialTheme.typography.bodySmall)
+                val f = initialFocus()
+                Box(Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.08f), RoundedCornerShape(8.dp)).padding(12.dp)) {
+                    BasicTextField(
+                        value = text, onValueChange = { text = it }, singleLine = true,
+                        textStyle = TextStyle(color = Color.White, fontSize = 15.sp),
+                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { onSave(text) }),
+                        modifier = Modifier.fillMaxWidth().focusRequester(f),
+                    )
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Button(onClick = { onSave(text) }) { Text(stringResource(R.string.save)) }
+                    Button(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+internal fun ConfirmDialog(title: String, body: String, confirm: String, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(shape = RoundedCornerShape(16.dp), colors = SurfaceDefaults.colors(containerColor = MaterialTheme.colorScheme.surface)) {
+            Column(Modifier.width(520.dp).padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Text(title, style = MaterialTheme.typography.titleMedium)
+                Text(body, style = MaterialTheme.typography.bodyMedium)
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    // Cancel is first so it holds the initial focus: the safe choice is the default.
+                    val f = initialFocus()
+                    Button(onClick = onDismiss, modifier = Modifier.focusRequester(f)) { Text(stringResource(R.string.cancel)) }
+                    Button(onClick = onConfirm) { Text(confirm) }
+                }
+            }
+        }
+    }
+}

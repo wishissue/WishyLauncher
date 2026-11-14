@@ -1,0 +1,36 @@
+# Build & Outputs
+*.iml
+.gradle/
+.kotlin/
+build/
+**/build/
+local.properties
+/captures
+.externalNativeBuild
+.cxx
+*.apk
+*.aab
+*.dex
+*.class
+
+# IDE & Editor files
+.idea/
+.vscode/
+*.hprof
+.claude/
+
+# OS Generated
+.DS_Store
+Thumbs.db
+
+# Keystores & Secrets
+*.jks
+*.keystore
+!debug.keystore
+
+# Misc
+/tmp/
+pi-session-*.html
+*.session.html
+.env
+.dsx/

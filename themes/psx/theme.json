@@ -1,0 +1,105 @@
+{
+  "$schema": "../../schema/wishy-theme.schema.v1.json",
+  "schemaVersion": 1,
+  "id": "psx",
+  "name": "PSX",
+  "version": "1.0.0",
+  "author": "Wishy Launcher contributors",
+  "description": "A console-style cross menu: one bar of icons through the middle, sections along the top, the focused app's name beneath it.",
+  "license": "GPL-3.0-only",
+  "defaultColorScheme": "dark",
+  "colorSchemes": {
+    "dark": {
+      "background": "#0B0E2E",
+      "surface": "#1B2160",
+      "surfaceVariant": "#2A3290",
+      "onSurface": "#E8EBFF",
+      "onSurfaceMuted": "#8D95D6",
+      "primary": "#FFFFFF",
+      "onPrimary": "#0B0E2E",
+      "accent": "#7C9CFF",
+      "outline": "#4B56B8",
+      "scrim": "#B3000010"
+    },
+    "light": {
+      "background": "#9EA6C9",
+      "surface": "#D9DCEE",
+      "surfaceVariant": "#BCC2E3",
+      "onSurface": "#141A4D",
+      "onSurfaceMuted": "#454D8A",
+      "primary": "#141A4D",
+      "onPrimary": "#FFFFFF",
+      "accent": "#2A3290",
+      "outline": "#6C75B5",
+      "scrim": "#80000010"
+    }
+  },
+  "textStyles": {
+    "clock": { "size": 44, "color": "@onSurface", "letterSpacing": 2 },
+    "date": { "size": 24, "color": "@onSurfaceMuted", "letterSpacing": 2 },
+    "tab": { "size": 26, "color": "@onSurfaceMuted", "letterSpacing": 3, "uppercase": true, "maxLines": 1 },
+    "name": { "size": 42, "color": "@primary", "letterSpacing": 2, "maxLines": 1, "align": "center", "shadow": { "color": "#99000000", "dx": 2, "dy": 2, "blur": 0 } }
+  },
+  "background": {
+    "color": "@background",
+    "dim": 0.0,
+    "userWallpaper": "allowed",
+    "effect": "scanlines",
+    "effectOpacity": 0.10
+  },
+  "cardStyles": {
+    "icon": {
+      "aspect": "1:1",
+      "shape": { "kind": "bevel", "radius": 18 },
+      "fill": "@surface",
+      "border": { "width": 2, "color": "@outline" },
+      "artwork": { "source": "icon", "fit": "fit", "iconSize": "70%", "placeholderFill": "@surfaceVariant" },
+      "label": { "position": "none" },
+      "idle": { "scale": 0.8, "alpha": 0.62 },
+      "focused": {
+        "scale": 1.35,
+        "alpha": 1.0,
+        "shadow": { "color": "#807C9CFF", "dy": 0, "blur": 40 },
+        "indicator": { "kind": "ring", "color": "@primary", "width": 3, "gap": 5 },
+        "animation": "pulse"
+      },
+      "moving": {
+        "scale": 1.5,
+        "alpha": 1.0,
+        "indicator": { "kind": "ring", "color": "@accent", "width": 5, "gap": 6, "blink": true, "blinkMillis": 500 }
+      }
+    }
+  },
+  "motion": { "focusMillis": 220, "scrollMillis": 320, "easing": "decelerate", "screenTransition": "fade" },
+  "screens": {
+    "home": {
+      "root": {
+        "type": "stack",
+        "children": [
+          {
+            "type": "shape", "id": "band",
+            "shape": { "kind": "rect" },
+            "fill": "@surface/35",
+            "frame": { "x": 0, "y": "37%", "w": "100%", "h": "26%" }
+          },
+          {
+            "type": "sections", "id": "tabs", "arrangement": "tabs", "style": "tab", "gap": 60,
+            "selectedIndicator": { "kind": "underline", "color": "@primary", "width": 3, "gap": 8 },
+            "frame": { "x": "50%", "y": "8%", "w": "70%", "anchor": "top" }
+          },
+          { "type": "clock", "id": "clock", "style": "clock", "showWhen": "clockEnabled", "frame": { "x": "95%", "y": "5%", "anchor": "topEnd" } },
+          { "type": "date", "id": "date", "style": "date", "showWhen": "dateEnabled", "frame": { "x": "95%", "y": "13%", "anchor": "topEnd" } },
+          {
+            "type": "apps", "id": "apps", "arrangement": "cross", "card": "icon",
+            "itemWidth": 170, "gap": 54, "scroll": "centerFocused", "focusScope": "section",
+            "frame": { "x": 0, "y": "34%", "w": "100%", "h": "32%" }
+          },
+          { "type": "focusedAppName", "id": "focusName", "style": "name", "showWhen": "hasFocusedApp", "frame": { "x": "50%", "y": "74%", "w": "80%", "anchor": "top" } }
+        ]
+      }
+    }
+  },
+  "overrides": [
+    { "when": { "reducedMotion": true }, "merge": { "motion": { "focusMillis": 0, "scrollMillis": 0 } } }
+  ]
+}

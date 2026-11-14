@@ -1,0 +1,113 @@
+{
+  "$schema": "../../schema/wishy-theme.schema.v1.json",
+  "schemaVersion": 1,
+  "id": "8bit",
+  "name": "8-bit",
+  "version": "1.0.0",
+  "author": "Wishy Launcher contributors",
+  "description": "Chunky pixels, a limited palette and stepped movement. A title panel on the left, a grid of square cartridges on the right.",
+  "license": "GPL-3.0-only",
+  "defaultColorScheme": "dark",
+  "colorSchemes": {
+    "dark": {
+      "background": "#0F0F1B",
+      "surface": "#1D2B53",
+      "surfaceVariant": "#2E3F7A",
+      "onSurface": "#FFF1E8",
+      "onSurfaceMuted": "#83769C",
+      "primary": "#FFEC27",
+      "onPrimary": "#0F0F1B",
+      "accent": "#FF004D",
+      "outline": "#5F574F",
+      "scrim": "#B3000000",
+      "custom": { "grass": "#00E436", "sky": "#29ADFF" }
+    },
+    "light": {
+      "background": "#C2C3C7",
+      "surface": "#FFF1E8",
+      "surfaceVariant": "#FFCCAA",
+      "onSurface": "#1D2B53",
+      "onSurfaceMuted": "#5F574F",
+      "primary": "#FF004D",
+      "onPrimary": "#FFF1E8",
+      "accent": "#008751",
+      "outline": "#1D2B53",
+      "scrim": "#80000000",
+      "custom": { "grass": "#008751", "sky": "#29ADFF" }
+    }
+  },
+  "textStyles": {
+    "logo": { "size": 64, "color": "@primary", "uppercase": true, "letterSpacing": 6, "maxLines": 1 },
+    "clock": { "size": 72, "color": "@onSurface", "letterSpacing": 4 },
+    "date": { "size": 26, "color": "@onSurfaceMuted", "uppercase": true, "letterSpacing": 3 },
+    "tab": { "size": 30, "color": "@onSurfaceMuted", "uppercase": true, "letterSpacing": 3, "maxLines": 1 },
+    "label": { "size": 22, "color": "@onSurface", "uppercase": true, "letterSpacing": 2, "maxLines": 1, "align": "center" },
+    "name": { "size": 34, "color": "@accent", "uppercase": true, "letterSpacing": 3, "maxLines": 2 }
+  },
+  "background": {
+    "color": "@background",
+    "dim": 0.0,
+    "userWallpaper": "ignored",
+    "effect": "dither",
+    "effectOpacity": 0.07
+  },
+  "cardStyles": {
+    "cartridge": {
+      "aspect": "1:1",
+      "shape": { "kind": "pixel", "radius": 16, "pixelSize": 4 },
+      "fill": "@surface",
+      "border": { "width": 4, "color": "@outline", "style": "solid" },
+      "artwork": { "source": "icon", "fit": "fit", "sampling": "nearest", "pixelBlock": 3, "iconSize": "62%", "placeholderFill": "@surfaceVariant" },
+      "label": { "position": "below", "style": "label", "gap": 10 },
+      "idle": { "scale": 1.0, "alpha": 0.88 },
+      "focused": {
+        "scale": 1.0,
+        "alpha": 1.0,
+        "offsetY": -8,
+        "fill": "@surfaceVariant",
+        "animation": "bob",
+        "indicator": { "kind": "corners", "color": "@primary", "width": 6, "gap": 6, "length": 22, "blink": true, "blinkMillis": 400 }
+      },
+      "moving": {
+        "scale": 1.0,
+        "offsetY": -16,
+        "animation": "blink",
+        "indicator": { "kind": "ring", "color": "@accent", "width": 6, "gap": 6, "blink": true, "blinkMillis": 250 }
+      }
+    }
+  },
+  "motion": { "focusMillis": 120, "scrollMillis": 200, "easing": "steps:4", "screenTransition": "none" },
+  "screens": {
+    "home": {
+      "root": {
+        "type": "stack",
+        "children": [
+          {
+            "type": "shape", "id": "panel",
+            "shape": { "kind": "pixel", "radius": 16, "pixelSize": 4 },
+            "fill": "@surface",
+            "border": { "width": 4, "color": "@outline", "style": "double" },
+            "frame": { "x": "3%", "y": "6%", "w": "27%", "h": "88%" }
+          },
+          { "type": "text", "id": "logo", "text": "WISHY", "style": "logo", "frame": { "x": "5.5%", "y": "10%" } },
+          { "type": "clock", "id": "clock", "style": "clock", "showWhen": "clockEnabled", "frame": { "x": "5.5%", "y": "22%" } },
+          { "type": "date", "id": "date", "style": "date", "showWhen": "dateEnabled", "frame": { "x": "5.5%", "y": "32%" } },
+          {
+            "type": "sections", "id": "tabs", "arrangement": "list", "style": "tab", "gap": 18,
+            "selectedIndicator": { "kind": "arrow", "color": "@primary", "width": 6, "gap": 10, "length": 18, "blink": true, "blinkMillis": 450 },
+            "frame": { "x": "7.5%", "y": "44%", "w": "20%", "h": "30%" }
+          },
+          { "type": "focusedAppName", "id": "focusName", "style": "name", "showWhen": "hasFocusedApp", "frame": { "x": "5.5%", "y": "80%", "w": "22%" } },
+          {
+            "type": "apps", "id": "apps", "arrangement": "grid", "card": "cartridge",
+            "columns": 4, "itemWidth": 190, "gap": 30, "focusScope": "section",
+            "frame": { "x": "33%", "y": "6%", "w": "65%", "h": "88%" }
+          }
+        ]
+      }
+    }
+  },
+  "overrides": [
+    { "when": { "reducedMotion": true }, "merge": { "motion": { "focusMillis": 0, "scrollMillis": 0 } } }
+  ]
+}
