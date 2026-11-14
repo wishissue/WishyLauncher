@@ -65,7 +65,7 @@ After it builds, in this order:
 
 1. Install the APK on an Android TV or Google TV device (see `INSTALL.md`). Open it from the app list.
 2. Home screen shows the Wishy theme with your apps, a clock and section tabs. Move with the D-pad. OK launches an app. Long-press OK opens the app menu. Menu opens Settings.
-3. Settings, Themes: switch to 8-bit, PSX and Experimental. Each should look clearly different. Switch colour mode between Light and Dark.
+3. Settings, Themes: switch colour mode between Light and Dark.
 4. Settings, Themes: set Animations to Off, then Reduced. Set theme size to 70% and 130%.
 5. Move an app (long-press, Move) in each theme. Check that the focus stays on the moved app and that Back or OK ends the move.
 6. Switch to Classic layout and back. Use "Reset to the Wishy theme".

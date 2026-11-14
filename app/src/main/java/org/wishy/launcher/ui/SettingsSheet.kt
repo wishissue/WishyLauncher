@@ -134,7 +134,7 @@ fun SettingsSheet(
 
     Dialog(
         onDismissRequest = {
-            if (screen == SettingsScreen.ThemeCredits) screen = SettingsScreen.Themes else if (screen != SettingsScreen.Main) screen = SettingsScreen.Main else onDismiss()
+            if (screen == SettingsScreen.ThemeCredits || screen == SettingsScreen.OnlineThemes) screen = SettingsScreen.Themes else if (screen != SettingsScreen.Main) screen = SettingsScreen.Main else onDismiss()
         },
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
@@ -168,17 +168,16 @@ fun SettingsSheet(
                     transitionSpec = {
                         val forward = targetState != SettingsScreen.Main
                         val dir = if (forward) 1 else -1
-                        (androidx.compose.animation.slideInHorizontally(tween(260)) { w -> dir * w } +
-                            androidx.compose.animation.fadeIn(tween(260))) togetherWith
-                            (androidx.compose.animation.slideOutHorizontally(tween(260)) { w -> -dir * w } +
-                                androidx.compose.animation.fadeOut(tween(260)))
+                        (androidx.compose.animation.slideInHorizontally(tween(110)) { w -> dir * w / 3 } +
+                            androidx.compose.animation.fadeIn(tween(110))) togetherWith
+                            (androidx.compose.animation.slideOutHorizontally(tween(90)) { w -> -dir * w / 3 } +
+                                androidx.compose.animation.fadeOut(tween(90)))
                     },
                     label = "settingsScreen",
                 ) { target ->
                 when (target) {
                     SettingsScreen.Main -> MainScreen(
                         onThemes = { screen = SettingsScreen.Themes },
-                        onOnlineThemes = { screen = SettingsScreen.OnlineThemes },
                         onBanners = { screen = SettingsScreen.Banners },
                         onWallpaper = { screen = SettingsScreen.Wallpaper },
                         onDisplay = { screen = SettingsScreen.Display },
@@ -193,11 +192,12 @@ fun SettingsSheet(
                         config = config,
                         store = store,
                         onCredits = { screen = SettingsScreen.ThemeCredits },
+                        onGetMore = { screen = SettingsScreen.OnlineThemes },
                         onBack = { screen = SettingsScreen.Main },
                     )
                     SettingsScreen.OnlineThemes -> OnlineThemesScreen(
                         config = config, store = store,
-                        onBack = { screen = SettingsScreen.Main },
+                        onBack = { screen = SettingsScreen.Themes },
                     )
                     SettingsScreen.Banners -> BannersScreen(
                         config = config, store = store, apps = apps,
@@ -261,6 +261,8 @@ fun SettingsSheet(
                         onBack = { screen = SettingsScreen.Main },
                     )
                     SettingsScreen.About -> AboutScreen(
+                        config = config,
+                        store = store,
                         onBack = { screen = SettingsScreen.Main },
                     )
                     SettingsScreen.Launcher -> LauncherSettingsSubscreen(
@@ -282,7 +284,6 @@ fun SettingsSheet(
 @Composable
 private fun MainScreen(
     onThemes: () -> Unit,
-    onOnlineThemes: () -> Unit,
     onBanners: () -> Unit,
     onWallpaper: () -> Unit,
     onDisplay: () -> Unit,
@@ -329,12 +330,6 @@ private fun MainScreen(
             leadingContent = { Icon(AppIcons.Image, contentDescription = null) },
         )
         SettingsItem(
-            selected = false, onClick = onOnlineThemes,
-            headlineContent = { Text(stringResource(R.string.item_online_themes)) },
-            supportingContent = { Text(stringResource(R.string.item_online_themes_sub)) },
-            leadingContent = { Icon(AppIcons.Apps, contentDescription = null) },
-        )
-        SettingsItem(
             selected = false, onClick = onBanners,
             headlineContent = { Text(stringResource(R.string.item_banners)) },
             supportingContent = { Text(stringResource(R.string.item_banners_sub)) },
@@ -375,7 +370,8 @@ private fun MainScreen(
         )
         SettingsItem(
             selected = false, onClick = onAbout,
-            headlineContent = { Text(stringResource(R.string.item_about)) },
+            headlineContent = { Text(stringResource(R.string.item_about_updates)) },
+            supportingContent = { Text(stringResource(R.string.item_about_updates_sub)) },
             leadingContent = { Icon(AppIcons.Info, contentDescription = null) },
         )
     }
@@ -385,18 +381,61 @@ private fun MainScreen(
 
 @Composable
 private fun AboutScreen(
+    config: LauncherConfig,
+    store: ConfigStore,
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val installed = remember {
+        runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull() ?: "0"
+    }
+    var checking by remember { mutableStateOf(false) }
+    var result by remember { mutableStateOf<org.wishy.launcher.net.UpdateResult?>(null) }
+    var linkHint by remember { mutableStateOf("") }
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Text(
-            stringResource(R.string.item_about),
+            stringResource(R.string.item_about_updates),
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(bottom = 12.dp, start = 8.dp),
         )
+        val updateFocus = initialFocus()
+        OfflineNotice(config, store)
+        val statusText = when (val r = result) {
+            null -> if (checking) stringResource(R.string.update_checking) else stringResource(R.string.update_check_sub, installed)
+            is org.wishy.launcher.net.UpdateResult.Available -> stringResource(R.string.update_available, r.info.version)
+            org.wishy.launcher.net.UpdateResult.UpToDate -> stringResource(R.string.update_uptodate)
+            is org.wishy.launcher.net.UpdateResult.Failed -> stringResource(R.string.update_failed, r.reason)
+        }
+        SettingsItem(
+            selected = false,
+            enabled = !config.offlineMode && !checking,
+            onClick = {
+                checking = true; result = null; linkHint = ""
+                scope.launch {
+                    result = withContext(Dispatchers.IO) { org.wishy.launcher.net.UpdateChecker.check(installed) }
+                    checking = false
+                }
+            },
+            headlineContent = { Text(stringResource(R.string.update_check)) },
+            supportingContent = { Text(statusText) },
+            modifier = Modifier.focusRequester(updateFocus),
+        )
+        (result as? org.wishy.launcher.net.UpdateResult.Available)?.let { found ->
+            SettingsItem(
+                selected = false,
+                onClick = {
+                    if (!org.wishy.launcher.net.UpdateChecker.openPage(context, found.info.pageUrl)) {
+                        linkHint = context.getString(R.string.update_open_failed, found.info.pageUrl)
+                    }
+                },
+                headlineContent = { Text(stringResource(R.string.update_open)) },
+                supportingContent = { Text(if (linkHint.isNotEmpty()) linkHint else found.info.name) },
+            )
+        }
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),

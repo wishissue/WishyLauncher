@@ -5,7 +5,7 @@
 | Item | Author | Licence |
 |---|---|---|
 | `app_icon.xml`, `app_banner.xml`, `ic_wishy_mark.xml` (placeholder launcher icon, banner and mark) | Wishy Launcher contributors | GPL-3.0-only |
-| Built-in themes `wishy`, `8bit`, `psx`, `experimental` (colours, shapes, text styles; no images) | Wishy Launcher contributors | GPL-3.0-only |
+| Built-in theme `wishy` (colours, shapes, text styles; no images) | Wishy Launcher contributors | GPL-3.0-only |
 
 No photographs, wallpapers, fonts or per-app banners are bundled with the launcher.
 

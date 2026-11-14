@@ -284,11 +284,20 @@ private fun CardArtwork(app: AppEntry, style: CardStyle, env: ThemeEnv, state: C
         Fit.FIT -> ContentScale.Fit
         Fit.STRETCH -> ContentScale.FillBounds
     }
-    val filter = if (state.grayscale) ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) }) else null
-    val banner = if (art.source != ArtSource.ICON) app.banner else null
+    val filter = when {
+        art.mono -> MonoFilter
+        state.grayscale -> ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
+        else -> null
+    }
+    // The theme's own covers: a picture for this exact app wins; the generic default is the last resort.
+    val themeCover = rememberThemeImage(env, if (art.themeArt) "assets/art/${app.pkg}.png" else null, 768)
+    val themeDefault = rememberThemeImage(env, if (art.themeArt) "assets/art/default.png" else null, 768)
+    val ownBanner = if (art.source != ArtSource.ICON) app.banner else null
+    val banner = themeCover ?: ownBanner ?: themeDefault
+    val bannerKey = app.pkg + app.stamp + (if (banner === themeCover) "c" else if (banner === themeDefault) "d" else "")
 
     if (banner != null) {
-        val shown = pixelated(banner, art.pixelBlock, key = app.pkg + app.stamp)
+        val shown = pixelated(banner, art.pixelBlock, key = bannerKey)
         Image(
             bitmap = shown ?: banner,
             contentDescription = app.label,
@@ -311,8 +320,9 @@ private fun CardArtwork(app: AppEntry, style: CardStyle, env: ThemeEnv, state: C
                 size.isPercent -> Modifier.fillMaxSize(size.value / 100f)
                 else -> Modifier.size(env.dims.dp(size.value))
             }
+            val shownIcon = pixelated(icon, art.pixelBlock, key = app.pkg + app.stamp + "i") ?: icon
             Image(
-                bitmap = icon,
+                bitmap = shownIcon,
                 contentDescription = null,
                 contentScale = ContentScale.Fit,
                 filterQuality = quality,
@@ -327,6 +337,22 @@ private fun CardArtwork(app: AppEntry, style: CardStyle, env: ThemeEnv, state: C
             )
         }
     }
+}
+
+/** Brightness above half becomes white, below becomes black; transparency is kept. */
+private val MonoFilter: ColorFilter = run {
+    val k = 40f
+    val e = 128f * (1f - k)
+    ColorFilter.colorMatrix(
+        ColorMatrix(
+            floatArrayOf(
+                0.299f * k, 0.587f * k, 0.114f * k, 0f, e,
+                0.299f * k, 0.587f * k, 0.114f * k, 0f, e,
+                0.299f * k, 0.587f * k, 0.114f * k, 0f, e,
+                0f, 0f, 0f, 1f, 0f,
+            ),
+        ),
+    )
 }
 
 /** For a pixel-art look: shrink the banner by [block] and let it be drawn back up without smoothing. */

@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Wishy brand blue (#0166FF) with the Wishy mark -->
+<!-- Wishy Launcher App Icon: Brand Blue background with new Wishy house mark -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <shape android:shape="rectangle">
             <size android:width="108dp" android:height="108dp" />
-            <solid android:color="#0166FF" />
+            <solid android:color="#0055FF" />
         </shape>
     </item>
     <item
-        android:width="72dp"
-        android:height="72dp"
+        android:width="78dp"
+        android:height="78dp"
         android:gravity="center"
         android:drawable="@drawable/ic_wishy_mark" />
 </layer-list>

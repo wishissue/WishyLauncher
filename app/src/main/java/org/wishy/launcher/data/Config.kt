@@ -78,9 +78,9 @@ data class LauncherConfig(
     /** Manual theme scale in percent (50..150) on top of the automatic screen scaling. */
     val themeScalePct: Int = 100,
     /** No network use at all. Default on: the launcher works fully offline. */
-    val offlineMode: Boolean = true,
+    val offlineMode: Boolean = false,
     /** Look up banner artwork in the official repository for installed apps. Needs offlineMode = false. */
-    val artworkOnline: Boolean = false,
+    val artworkOnline: Boolean = true,
     /** Extra THEME repositories (index.json addresses). Never used for artwork. */
     val extraRepos: List<String> = emptyList(),
 )

@@ -69,6 +69,8 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import org.wishy.launcher.R
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -247,6 +249,11 @@ fun LauncherApp(rescanTick: Int) {
         ScaledUi(uiScale) {
             LiteTvTheme(accent = ACCENTS[0]) {
                 SetupWizard(
+                    currentThemeId = config.themeId,
+                    onThemeChosen = { id -> scope.launch { store.update { it.copy(themeId = id) } } },
+                    onOnlineChosen = { on ->
+                        scope.launch { store.update { it.copy(offlineMode = !on, artworkOnline = on) } }
+                    },
                     onDone = {
                         scope.launch { store.update { it.copy(setupDone = true) } }
                     },
@@ -286,6 +293,34 @@ fun LauncherApp(rescanTick: Int) {
             runCatching { bannerManager.syncOfficial(scannedApps.map { it.pkg }.toSet()) }.getOrDefault(0)
         }
         if (changed > 0) artTick++
+    }
+    // On every launch: ask GitHub whether a newer release exists and, if so, tell the person once per version.
+    var updateInfo by remember { mutableStateOf<org.wishy.launcher.net.UpdateInfo?>(null) }
+    LaunchedEffect(config.offlineMode) {
+        if (config.offlineMode) return@LaunchedEffect
+        delay(8_000) // never compete with start-up
+        val installed = runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull()
+            ?: return@LaunchedEffect
+        val r = withContext(Dispatchers.IO) { org.wishy.launcher.net.UpdateChecker.check(installed) }
+        if (r is org.wishy.launcher.net.UpdateResult.Available &&
+            r.info.version != org.wishy.launcher.net.UpdateChecker.dismissedVersion(context)
+        ) updateInfo = r.info
+    }
+    updateInfo?.let { info ->
+        ConfirmDialog(
+            title = stringResource(R.string.update_dialog_title),
+            body = stringResource(R.string.update_dialog_body, info.version),
+            confirm = stringResource(R.string.update_open),
+            onConfirm = {
+                org.wishy.launcher.net.UpdateChecker.dismiss(context, info.version)
+                org.wishy.launcher.net.UpdateChecker.openPage(context, info.pageUrl)
+                updateInfo = null
+            },
+            onDismiss = {
+                org.wishy.launcher.net.UpdateChecker.dismiss(context, info.version)
+                updateInfo = null
+            },
+        )
     }
     // flowOn(IO): the callbackFlow's initial compute() does ConnectivityManager
     // binder calls — keep them off the main thread on the first real frame.

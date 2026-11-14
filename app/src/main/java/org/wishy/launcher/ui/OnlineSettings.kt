@@ -19,6 +19,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -68,7 +69,7 @@ private fun hostOf(url: String): String = runCatching { java.net.URI(url).host ?
 
 /** Why a network action is blocked, or null if allowed. */
 @Composable
-private fun OfflineNotice(config: LauncherConfig, store: ConfigStore) {
+internal fun OfflineNotice(config: LauncherConfig, store: ConfigStore) {
     val scope = rememberCoroutineScope()
     if (config.offlineMode) {
         SettingsItem(
@@ -125,11 +126,17 @@ internal fun OnlineThemesScreen(config: LauncherConfig, store: ConfigStore, onBa
         }
     }
 
+    var showAdvanced by remember { mutableStateOf(false) }
+    // Open the official list straight away; nobody should have to find and press a repository button.
+    LaunchedEffect(config.offlineMode) {
+        if (!config.offlineMode && listing == null) open(Repos.OFFICIAL_THEMES_INDEX)
+    }
+
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Text(stringResource(R.string.item_online_themes), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(bottom = 12.dp, start = 8.dp))
+        Text(stringResource(R.string.themes_get_more), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(bottom = 12.dp, start = 8.dp))
         val f = initialFocus()
         OfflineNotice(config, store)
         if (status.isNotEmpty()) {
@@ -137,30 +144,37 @@ internal fun OnlineThemesScreen(config: LauncherConfig, store: ConfigStore, onBa
         }
         val l = listing
         if (l == null) {
-            SectionLabel(stringResource(R.string.online_repos))
             SettingsItem(
                 selected = false, enabled = !config.offlineMode && !busy,
                 onClick = { open(Repos.OFFICIAL_THEMES_INDEX) },
-                headlineContent = { Text(stringResource(R.string.online_official)) },
-                supportingContent = { Text(hostOf(Repos.OFFICIAL_THEMES_INDEX)) },
+                headlineContent = { Text(stringResource(R.string.online_try_again)) },
+                supportingContent = { Text(stringResource(R.string.online_official)) },
                 modifier = Modifier.focusRequester(f),
             )
-            config.extraRepos.forEach { url ->
+            SettingsItem(
+                selected = false, onClick = { showAdvanced = !showAdvanced },
+                headlineContent = { Text(stringResource(R.string.online_advanced)) },
+                supportingContent = { Text(stringResource(R.string.online_advanced_sub)) },
+                trailingContent = { CheckMark(checked = showAdvanced) },
+            )
+            if (showAdvanced) {
+                config.extraRepos.forEach { url ->
+                    SettingsItem(
+                        selected = false, enabled = !config.offlineMode && !busy,
+                        onClick = { open(url) },
+                        headlineContent = { Text(hostOf(url)) },
+                        supportingContent = { Text(url + "\n" + stringResource(R.string.online_third_party_hint)) },
+                        trailingContent = {
+                            Button(onClick = { scope.launch { store.update { c -> c.copy(extraRepos = c.extraRepos - url) } } }) { Text(stringResource(R.string.online_remove_repo)) }
+                        },
+                    )
+                }
                 SettingsItem(
-                    selected = false, enabled = !config.offlineMode && !busy,
-                    onClick = { open(url) },
-                    headlineContent = { Text(hostOf(url)) },
-                    supportingContent = { Text(url + "\n" + stringResource(R.string.online_third_party_hint)) },
-                    trailingContent = {
-                        Button(onClick = { scope.launch { store.update { c -> c.copy(extraRepos = c.extraRepos - url) } } }) { Text(stringResource(R.string.online_remove_repo)) }
-                    },
+                    selected = false, onClick = { addDialog = true },
+                    headlineContent = { Text(stringResource(R.string.online_add_repo)) },
+                    supportingContent = { Text(stringResource(R.string.online_add_repo_sub)) },
                 )
             }
-            SettingsItem(
-                selected = false, onClick = { addDialog = true },
-                headlineContent = { Text(stringResource(R.string.online_add_repo)) },
-                supportingContent = { Text(stringResource(R.string.online_add_repo_sub)) },
-            )
         } else {
             SectionLabel(l.index.name + "  ·  " + hostOf(l.indexUrl))
             if (!Repos.isOfficial(l.indexUrl)) {
@@ -182,7 +196,17 @@ internal fun OnlineThemesScreen(config: LauncherConfig, store: ConfigStore, onBa
                     modifier = if (t === l.index.themes.first()) Modifier.focusRequester(f) else Modifier,
                 )
             }
-            SettingsItem(selected = false, onClick = { listing = null; status = "" }, headlineContent = { Text(stringResource(R.string.online_back_to_repos)) })
+            if (!Repos.isOfficial(l.indexUrl)) {
+                SettingsItem(selected = false, onClick = { listing = null; status = "" }, headlineContent = { Text(stringResource(R.string.online_back_to_repos)) })
+            } else {
+                // Reach "add a repository" without having to fail to load the official list first.
+                SettingsItem(
+                    selected = false,
+                    onClick = { listing = null; status = ""; showAdvanced = true },
+                    headlineContent = { Text(stringResource(R.string.online_advanced)) },
+                    supportingContent = { Text(stringResource(R.string.online_advanced_sub)) },
+                )
+            }
         }
     }
 
@@ -226,6 +250,7 @@ internal fun BannersScreen(
     var tick by remember { mutableIntStateOf(0) }
     var status by remember { mutableStateOf("") }
     var pickFor by remember { mutableStateOf<String?>(null) }
+    var showOwn by remember { mutableStateOf(false) }
     val sizes by produceState(BannerManager.Sizes(0, 0, 0, 0), tick) { value = withContext(Dispatchers.IO) { manager.sizes() } }
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
@@ -246,44 +271,55 @@ internal fun BannersScreen(
         val f = initialFocus()
         if (status.isNotEmpty()) SettingsItem(selected = false, onClick = { status = "" }, headlineContent = { Text(status) })
 
-        SectionLabel(stringResource(R.string.banners_online))
+        // One switch turns the whole thing on (including the internet permission), one button refreshes.
         SettingsItem(
             selected = false,
-            onClick = { scope.launch { store.update { it.copy(artworkOnline = !it.artworkOnline) } } },
-            headlineContent = { Text(stringResource(R.string.banners_lookup)) },
-            supportingContent = { Text(stringResource(R.string.banners_lookup_sub)) },
-            trailingContent = { CheckMark(checked = config.artworkOnline) },
-            modifier = Modifier.focusRequester(f),
-        )
-        OfflineNotice(config, store)
-        SettingsItem(
-            selected = false, enabled = config.artworkOnline && !config.offlineMode,
             onClick = {
-                status = context.getString(R.string.online_loading)
                 scope.launch {
-                    val r = withContext(Dispatchers.IO) { runCatching { manager.syncOfficial(apps.map { it.pkg }.toSet()) } }
-                    status = r.fold({ context.getString(R.string.banners_refreshed, it) }, { context.getString(R.string.online_failed, it.message ?: "") })
-                    tick++; onArtChanged()
+                    store.update {
+                        val on = !it.artworkOnline
+                        it.copy(artworkOnline = on, offlineMode = if (on) false else it.offlineMode)
+                    }
                 }
             },
-            headlineContent = { Text(stringResource(R.string.banners_refresh)) },
+            headlineContent = { Text(stringResource(R.string.banners_auto)) },
+            supportingContent = { Text(stringResource(R.string.banners_auto_sub)) },
+            trailingContent = { CheckMark(checked = config.artworkOnline && !config.offlineMode) },
+            modifier = Modifier.focusRequester(f),
         )
+        if (config.artworkOnline && !config.offlineMode) {
+            SettingsItem(
+                selected = false, enabled = status != context.getString(R.string.online_loading),
+                onClick = {
+                    status = context.getString(R.string.online_loading)
+                    scope.launch {
+                        val r = withContext(Dispatchers.IO) { runCatching { manager.syncOfficial(apps.map { it.pkg }.toSet()) } }
+                        status = r.fold({ context.getString(R.string.banners_refreshed, it) }, { context.getString(R.string.online_failed, it.message ?: "") })
+                        tick++; onArtChanged()
+                    }
+                },
+                headlineContent = { Text(stringResource(R.string.banners_update_now)) },
+                supportingContent = { Text(stringResource(R.string.banners_downloaded, sizes.repoCount) + "  ·  " + formatBytes(sizes.repoBytes)) },
+            )
+            if (sizes.repoCount > 0) {
+                SettingsItem(
+                    selected = false,
+                    onClick = { scope.launch { withContext(Dispatchers.IO) { manager.clearDownloaded() }; tick++; onArtChanged() } },
+                    headlineContent = { Text(stringResource(R.string.banners_clear)) },
+                    supportingContent = { Text(stringResource(R.string.banners_clear_sub)) },
+                )
+            }
+        } else if (config.offlineMode && config.artworkOnline) {
+            OfflineNotice(config, store)
+        }
 
-        SectionLabel(stringResource(R.string.banners_cache))
         SettingsItem(
-            selected = false, onClick = {},
-            headlineContent = { Text(stringResource(R.string.banners_downloaded, sizes.repoCount)) },
-            supportingContent = { Text(formatBytes(sizes.repoBytes)) },
+            selected = false, onClick = { showOwn = !showOwn },
+            headlineContent = { Text(stringResource(R.string.banners_own_toggle)) },
+            supportingContent = { Text(stringResource(R.string.banners_yours, sizes.userCount)) },
+            trailingContent = { CheckMark(checked = showOwn) },
         )
-        SettingsItem(
-            selected = false, enabled = sizes.repoCount > 0,
-            onClick = { scope.launch { withContext(Dispatchers.IO) { manager.clearDownloaded() }; tick++; onArtChanged() } },
-            headlineContent = { Text(stringResource(R.string.banners_clear)) },
-            supportingContent = { Text(stringResource(R.string.banners_clear_sub)) },
-        )
-
-        SectionLabel(stringResource(R.string.banners_yours, sizes.userCount))
-        apps.sortedBy { it.label.lowercase() }.forEach { app ->
+        if (showOwn) apps.sortedBy { it.label.lowercase() }.forEach { app ->
             val has = remember(tick, app.pkg) { manager.hasUserArt(app.pkg) }
             SettingsItem(
                 selected = false,

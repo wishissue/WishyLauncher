@@ -510,15 +510,26 @@ private fun SectionItem(index: Int, name: String, n: SectionsNode, env: ThemeEnv
 // Apps
 // ----------------------------------------------------------------------------------------------
 
+/** Two focus moves closer together than this count as a held or repeated key. */
+private const val REPEAT_WINDOW_MS = 160L
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun rememberScrollSpec(env: ThemeEnv, mode: ScrollMode): BringIntoViewSpec =
     remember(env.scrollMs, env.easing, mode) {
         object : BringIntoViewSpec {
-            override val scrollAnimationSpec: AnimationSpec<Float> =
-                if (env.scrollMs <= 0) snap() else tween(env.scrollMs, easing = env.easing)
+            // Adaptive: the first move after a pause animates briefly; while keys are repeating (a new request
+            // arrives before the last one could finish) the list jumps, so it never lags behind the cursor.
+            private var lastRequestAt = 0L
+            private var jumpNext = false
+
+            override val scrollAnimationSpec: AnimationSpec<Float>
+                get() = if (env.scrollMs <= 0 || jumpNext) snap() else tween(env.scrollMs, easing = env.easing)
 
             override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float {
+                val now = android.os.SystemClock.uptimeMillis()
+                jumpNext = now - lastRequestAt < REPEAT_WINDOW_MS
+                lastRequestAt = now
                 if (mode == ScrollMode.CENTER_FOCUSED) return offset + size / 2f - containerSize / 2f
                 // Same as the default: scroll the least that brings the item fully into view.
                 val trailing = offset + size

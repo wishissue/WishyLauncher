@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "name": "Wishy Launcher official themes",
+  "themes": [
+    {
+      "id": "wishy",
+      "name": "Wishy",
+      "version": "2.0.0",
+      "author": "Wishy Launcher contributors",
+      "description": "Clean and modern. Blue and white by day, deep navy at night, soft glow, Poppins type and one row of wide banners that responds instantly.",
+      "license": "GPL-3.0-only",
+      "schemaVersion": 1,
+      "minLauncherVersion": 1,
+      "downloadUrl": "themes/wishy.zip",
+      "sha256": "d38d101de56f68ab8a3942a7ff5dd7d28dc53308b641b00033d978a553627883",
+      "sizeBytes": 417492
+    }
+  ]
+}

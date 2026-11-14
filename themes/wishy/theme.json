@@ -3,11 +3,46 @@
   "schemaVersion": 1,
   "id": "wishy",
   "name": "Wishy",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "author": "Wishy Launcher contributors",
-  "description": "Clean and minimal. Blue and white by day, deep navy at night, with a single row of wide banners.",
+  "description": "Clean and modern. Blue and white by day, deep navy at night, soft glow, Poppins type and one row of wide banners that responds instantly.",
   "license": "GPL-3.0-only",
   "defaultColorScheme": "system",
+  "credits": [
+    {
+      "file": "assets/fonts/Poppins-Regular.ttf",
+      "title": "Poppins Regular",
+      "author": "Indian Type Foundry",
+      "license": "OFL-1.1",
+      "source": "https://github.com/google/fonts/tree/main/ofl/poppins"
+    },
+    {
+      "file": "assets/fonts/Poppins-Medium.ttf",
+      "title": "Poppins Medium",
+      "author": "Indian Type Foundry",
+      "license": "OFL-1.1",
+      "source": "https://github.com/google/fonts/tree/main/ofl/poppins"
+    },
+    {
+      "file": "assets/fonts/Poppins-SemiBold.ttf",
+      "title": "Poppins SemiBold",
+      "author": "Indian Type Foundry",
+      "license": "OFL-1.1",
+      "source": "https://github.com/google/fonts/tree/main/ofl/poppins"
+    },
+    {
+      "file": "assets/ui/glow.png",
+      "title": "Soft glow overlay",
+      "author": "Wishy Launcher contributors",
+      "license": "GPL-3.0-only"
+    },
+    {
+      "file": "assets/art/default.png",
+      "title": "Placeholder cover",
+      "author": "Wishy Launcher contributors",
+      "license": "GPL-3.0-only"
+    }
+  ],
   "colorSchemes": {
     "light": {
       "background": "#E6F1FF",
@@ -32,11 +67,41 @@
       "scrim": "#99000000"
     }
   },
+  "fonts": {
+    "regular": {
+      "file": "assets/fonts/Poppins-Regular.ttf"
+    },
+    "medium": {
+      "file": "assets/fonts/Poppins-Medium.ttf"
+    },
+    "semibold": {
+      "file": "assets/fonts/Poppins-SemiBold.ttf"
+    }
+  },
   "textStyles": {
-    "clock": { "size": 88, "color": "@onSurface" },
-    "date": { "size": 30, "color": "@onSurfaceMuted" },
-    "title": { "size": 46, "color": "@onSurface", "maxLines": 1 },
-    "tab": { "size": 28, "color": "@onSurfaceMuted", "maxLines": 1 }
+    "clock": {
+      "font": "semibold",
+      "size": 92,
+      "color": "@onSurface",
+      "letterSpacing": -2
+    },
+    "date": {
+      "font": "regular",
+      "size": 30,
+      "color": "@onSurfaceMuted"
+    },
+    "title": {
+      "font": "medium",
+      "size": 46,
+      "color": "@onSurface",
+      "maxLines": 1
+    },
+    "tab": {
+      "font": "medium",
+      "size": 28,
+      "color": "@onSurfaceMuted",
+      "maxLines": 1
+    }
   },
   "background": {
     "color": "@background",
@@ -46,50 +111,170 @@
   "cardStyles": {
     "banner": {
       "aspect": "16:9",
-      "shape": { "kind": "rounded", "radius": 22 },
+      "shape": {
+        "kind": "rounded",
+        "radius": 22
+      },
       "fill": "@surface",
-      "border": { "width": 1, "color": "@outline" },
-      "artwork": { "source": "auto", "fit": "crop", "iconSize": 110, "placeholderFill": "@surfaceVariant" },
-      "label": { "position": "none" },
-      "idle": { "scale": 1.0, "alpha": 0.94 },
+      "border": {
+        "width": 1,
+        "color": "@outline"
+      },
+      "artwork": {
+        "source": "auto",
+        "fit": "crop",
+        "iconSize": 110,
+        "placeholderFill": "@surfaceVariant",
+        "themeArt": true
+      },
+      "label": {
+        "position": "none"
+      },
+      "idle": {
+        "scale": 1.0,
+        "alpha": 0.94
+      },
       "focused": {
         "scale": 1.08,
         "alpha": 1.0,
-        "shadow": { "color": "#59000000", "dy": 10, "blur": 28 },
-        "indicator": { "kind": "ring", "color": "@primary", "width": 4, "gap": 4 }
+        "shadow": {
+          "color": "#59000000",
+          "dy": 10,
+          "blur": 28
+        },
+        "indicator": {
+          "kind": "ring",
+          "color": "@primary",
+          "width": 4,
+          "gap": 4
+        }
       },
       "moving": {
         "scale": 1.12,
-        "shadow": { "color": "#80000000", "dy": 14, "blur": 36 },
-        "indicator": { "kind": "ring", "color": "@primary", "width": 6, "gap": 6, "blink": true, "blinkMillis": 500 }
+        "shadow": {
+          "color": "#80000000",
+          "dy": 14,
+          "blur": 36
+        },
+        "indicator": {
+          "kind": "ring",
+          "color": "@primary",
+          "width": 6,
+          "gap": 6,
+          "blink": true,
+          "blinkMillis": 500
+        }
       }
     }
   },
-  "motion": { "focusMillis": 180, "scrollMillis": 280, "easing": "standard", "screenTransition": "fade" },
+  "motion": {
+    "focusMillis": 60,
+    "scrollMillis": 100,
+    "easing": "decelerate",
+    "screenTransition": "none"
+  },
   "screens": {
     "home": {
       "root": {
         "type": "stack",
         "children": [
-          { "type": "clock", "id": "clock", "style": "clock", "showWhen": "clockEnabled", "frame": { "x": "5%", "y": "7%" } },
-          { "type": "date", "id": "date", "style": "date", "showWhen": "dateEnabled", "frame": { "x": "5%", "y": "19%" } },
-          { "type": "focusedAppName", "id": "focusName", "style": "title", "showWhen": "hasFocusedApp", "frame": { "x": "5%", "y": "47%" } },
           {
-            "type": "sections", "id": "tabs", "arrangement": "tabs", "style": "tab", "gap": 36,
-            "selectedIndicator": { "kind": "underline", "color": "@primary", "width": 4, "gap": 6 },
-            "frame": { "x": "5%", "y": "57%", "w": "90%", "h": "6%" }
+            "type": "image",
+            "id": "glow",
+            "source": "assets/ui/glow.png",
+            "fit": "stretch",
+            "alpha": 1.0,
+            "frame": {
+              "x": 0,
+              "y": 0,
+              "w": "100%",
+              "h": "100%"
+            }
           },
           {
-            "type": "apps", "id": "apps", "arrangement": "rail", "card": "banner",
-            "itemWidth": 360, "gap": 30, "scroll": "edge", "focusScope": "section",
-            "frame": { "x": 0, "y": "64%", "w": "100%", "h": "32%" },
-            "padding": { "left": "5%", "right": "5%" }
+            "type": "clock",
+            "id": "clock",
+            "style": "clock",
+            "showWhen": "clockEnabled",
+            "frame": {
+              "x": "5%",
+              "y": "7%"
+            }
+          },
+          {
+            "type": "date",
+            "id": "date",
+            "style": "date",
+            "showWhen": "dateEnabled",
+            "frame": {
+              "x": "5%",
+              "y": "20%"
+            }
+          },
+          {
+            "type": "focusedAppName",
+            "id": "focusName",
+            "style": "title",
+            "showWhen": "hasFocusedApp",
+            "frame": {
+              "x": "5%",
+              "y": "47%"
+            }
+          },
+          {
+            "type": "sections",
+            "id": "tabs",
+            "arrangement": "tabs",
+            "style": "tab",
+            "gap": 36,
+            "selectedIndicator": {
+              "kind": "underline",
+              "color": "@primary",
+              "width": 4,
+              "gap": 6
+            },
+            "frame": {
+              "x": "5%",
+              "y": "57%",
+              "w": "90%",
+              "h": "6%"
+            }
+          },
+          {
+            "type": "apps",
+            "id": "apps",
+            "arrangement": "rail",
+            "card": "banner",
+            "itemWidth": 360,
+            "gap": 30,
+            "scroll": "edge",
+            "focusScope": "section",
+            "frame": {
+              "x": 0,
+              "y": "64%",
+              "w": "100%",
+              "h": "32%"
+            },
+            "padding": {
+              "left": "5%",
+              "right": "5%"
+            }
           }
         ]
       }
     }
   },
   "overrides": [
-    { "when": { "reducedMotion": true }, "merge": { "motion": { "focusMillis": 0, "scrollMillis": 0 } } }
+    {
+      "when": {
+        "reducedMotion": true
+      },
+      "merge": {
+        "motion": {
+          "focusMillis": 0,
+          "scrollMillis": 0
+        }
+      }
+    }
   ]
 }

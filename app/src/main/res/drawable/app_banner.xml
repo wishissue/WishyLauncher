@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Wishy brand blue (#0166FF) with the Wishy mark -->
+<!-- Wishy Launcher TV Banner: Brand Blue background with new Wishy house mark -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <shape android:shape="rectangle">
             <size android:width="320dp" android:height="180dp" />
-            <solid android:color="#0166FF" />
+            <solid android:color="#0055FF" />
         </shape>
     </item>
     <item
-        android:width="104dp"
-        android:height="104dp"
+        android:width="120dp"
+        android:height="120dp"
         android:gravity="center"
         android:drawable="@drawable/ic_wishy_mark" />
 </layer-list>

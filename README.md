@@ -7,7 +7,7 @@ A fast, private, open-source home launcher for Android TV and Google TV, with a 
 ## What it does
 
 - Remote-friendly home screen: D-pad focus, app launch, long-press menu, move/hide/organise apps, sections, clock and date, wallpaper, status bar.
-- **Four built-in themes**, each a different layout and feel: **Wishy** (blue and white, navy in dark mode), **8-bit** (pixels, grid of cartridges), **PSX** (cross menu), **Experimental** (split screen with wide strips). The original Couchy layouts stay available as **Classic**.
+- **Built-in theme engine**: **Wishy** (blue and white, navy in dark mode) default theme, plus the original Couchy layouts available as **Classic**.
 - **Themes are data**: versioned JSON plus images, strictly validated, no scripts. New themes install without an APK update, and a broken theme falls back to Wishy, then to Classic.
 - **App banners**: your own picture per app, or optional artwork from the official repository for installed apps only. Falls back to the app's own banner, then its icon.
 - Offline by default, no accounts, ads or analytics, and no system settings changed.
@@ -39,3 +39,7 @@ The theme and artwork repository is a separate project, `WishyLauncher-Themes`.
 ## Licence
 
 GPL-3.0-only. See `LICENSE`. This project is a modified version of Couchy Launcher; see `THIRD_PARTY_LICENSES.md`.
+
+## Make your own theme
+
+See [`docs/MAKING_THEMES.md`](docs/MAKING_THEMES.md): where to put a theme, how to build it, and how to make a different clock for every theme.

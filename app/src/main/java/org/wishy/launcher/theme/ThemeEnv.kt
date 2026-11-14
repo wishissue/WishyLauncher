@@ -164,6 +164,11 @@ class ThemeEnv(
     }
 }
 
+/** Longest focus animation (scale, fade, lift) a theme may use, in milliseconds. */
+const val MAX_FOCUS_MS = 80
+/** Longest scroll animation a theme may use, in milliseconds. */
+const val MAX_SCROLL_MS = 120
+
 val LocalThemeEnv = compositionLocalOf<ThemeEnv?> { null }
 
 fun themeEasing(name: String): Easing = when {
@@ -205,6 +210,10 @@ fun rememberThemeEnv(theme: LoadedTheme, dark: Boolean, userScale: Float, animat
             1 -> { focus /= 2; scroll /= 2 }
             2 -> { focus = 0; scroll = 0 }
         }
+        // Navigation must never trail the remote. Whatever a theme asks for, focus feedback and scrolling
+        // are capped, so a third-party theme cannot make the launcher feel slow.
+        focus = focus.coerceIn(0, MAX_FOCUS_MS)
+        scroll = scroll.coerceIn(0, MAX_SCROLL_MS)
         ThemeEnv(
             doc = doc,
             dir = theme.dir,

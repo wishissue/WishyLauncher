@@ -1,0 +1,33 @@
+name: Build theme and artwork repository
+
+# Regenerates repo/ (theme zips, artwork, indexes with SHA-256) whenever a theme or artwork source changes,
+# so the launcher always downloads files whose hashes match the index.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'themes/**'
+      - 'artwork/**'
+      - 'schema/**'
+      - 'tools/build_repo.py'
+
+permissions:
+  contents: write
+
+jobs:
+  build-repo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: pip install jsonschema pillow
+      - run: python3 tools/build_repo.py
+      - name: Commit regenerated repo/
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add repo
+          git diff --cached --quiet || git commit -m "Regenerate repo/ [skip ci]"
+          git push

@@ -192,10 +192,4 @@ Every file you did not create yourself needs a line in `credits` and a matching 
 
 ## 12. Making your own theme
 
-1. Copy one of the four built-in themes from `themes/` and rename the folder and `id`.
-2. Edit `theme.json`. Start with colours and `cardStyles`, then rearrange the tree.
-3. Validate with any JSON Schema 2020-12 validator against `schema/wishy-theme.schema.v1.json`. For example, in Python: `pip install jsonschema` and run `jsonschema -i theme.json schema/wishy-theme.schema.v1.json`.
-4. Zip the folder contents so `theme.json` is at the top of the zip, then host it in a theme repository (see `WishyLauncher-Themes/CONTRIBUTING.md`) and add that repository under Settings, Get more themes. Installing from a local folder or file is not implemented.
-5. If it is rejected, Settings shows the reason. The launcher keeps working with the previous theme.
-
-Built-in themes: `wishy` (the default), `8bit`, `psx`, `experimental`. See [`themes/README.md`](themes/README.md).
+See the step-by-step guide: [`docs/MAKING_THEMES.md`](docs/MAKING_THEMES.md). In short: copy a folder from `themes/`, change `id` and the content, run `python3 tools/build_repo.py` to validate and build, then publish through a pull request or your own repository. Installing from a local folder or file on the device is not implemented. If a theme is rejected, Settings shows the reason and the launcher keeps working with the previous theme.

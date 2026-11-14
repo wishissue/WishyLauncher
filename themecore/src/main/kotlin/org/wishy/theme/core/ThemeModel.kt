@@ -212,6 +212,10 @@ data class Artwork(
     val pixelBlock: Int = 1,
     val iconSize: Length? = null,
     val placeholderFill: String? = null,
+    /** Hard black-and-white (1-bit) picture: every colour becomes black or white by brightness. */
+    val mono: Boolean = false,
+    /** Use the theme's own covers: assets/art/<package>.png for an app, else the app's banner, else assets/art/default.png. */
+    val themeArt: Boolean = false,
 )
 
 @Serializable

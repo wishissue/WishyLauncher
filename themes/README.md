@@ -1,14 +1,20 @@
 # Built-in themes
 
-These four folders are packed into the launcher as assets and copied to the app's storage on first run (and again whenever the app version changes). They load through exactly the same loader as downloaded themes, so they are also the reference examples for [`THEME_SCHEMA.md`](../THEME_SCHEMA.md).
+This folder is packed into the launcher as assets and copied to the app's storage on first run (and again whenever the app version changes). It loads through exactly the same loader as downloaded themes, so it is also the reference example for [`THEME_SCHEMA.md`](../THEME_SCHEMA.md).
 
 | Folder | Idea | Layout | Navigation feel |
 |---|---|---|---|
-| `wishy` | Clean, blue and white by day, dark navy at night. | Clock and date top left, section tabs, one row of wide 16:9 banners. | Smooth: scale and ring on focus, eased scrolling. |
-| `8bit` | Limited palette, hard pixel edges, dither overlay. | A framed title panel on the left with a vertical section list; a 4-column grid of square cartridges on the right. | Stepped (`steps:4`): cards hop up and blink, corner brackets flash, an arrow marks the section. |
-| `psx` | Console-style cross menu with a scanline overlay. | Sections along the top, one centred bar of icons with the focused one enlarged, its name below. | Slow, soft: the bar slides to keep the focus centred, the focused icon pulses and glows. |
-| `experimental` | Bold and graphic. Split screen with heavy borders and cut corners. | A very large clock and the focused name on the left, a vertical stack of wide banner strips on the right. | Quick and blunt: hard offset shadows, a thick bar marks the focus. |
+| `wishy` | Clean and modern. Poppins type, soft glow, blue and white by day, navy at night. | Clock and date top left, section tabs, one row of wide 16:9 banners. | Instant focus, 100 ms eased scroll. |
 
-None of them contains third-party artwork, fonts or logos; see each folder's `CREDITS.md`. Previews are not included yet: they must be real screenshots of the running launcher, so they will be added after you have built and run it.
+It contains no third-party artwork or logos. Fonts are open-licensed (SIL OFL 1.1); see `CREDITS.md`. No theme may animate focus or scrolling for more than 80 ms and 120 ms respectively; the launcher caps longer values.
 
-All four use only features the v1 renderer draws. They check against `schema/wishy-theme.schema.v1.json` and are also loaded by `themecore`'s `everyBundledThemeLoadsInBothSchemesAndSizes` test in both colour schemes at 720p, 1080p and 2160p.
+It checks against `schema/wishy-theme.schema.v1.json` and is also loaded by `themecore`'s tests in both colour schemes at 720p, 1080p and 2160p.
+
+## Cover art per theme
+
+The built-in theme sets `artwork.themeArt` and ships its own covers in `assets/art/`:
+
+- `assets/art/<package>.png` is the cover for one app (for example `com.netflix.ninja.png`).
+- `assets/art/default.png` is the placeholder used when an app has neither its own banner nor a cover of its own.
+
+Order of choice: the theme's cover for that app, then the app's own banner, then `default.png`, then the app icon on a plain tile.

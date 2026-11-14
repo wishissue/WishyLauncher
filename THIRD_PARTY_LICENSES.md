@@ -36,9 +36,15 @@ Apache-2.0 requires that the licence text accompanies binary distributions. When
 ## Colour palettes and brand references
 
 - The Wishy theme uses the Wishy Browser brand colours (blue `#0166FF`, navy `#080B12`). The brand is the project owner's own.
-- The 8-bit theme's palette is inspired by the PICO-8 palette. Colour values are not copyrightable and no PICO-8 files are used.
-- The PSX theme is an original layout. It contains no Sony artwork, logos, fonts or sounds, and "PSX" names a style, not an endorsement.
 
 ## Ideas, not code
 
 The theme engine's design borrows concepts from ES-DE (MIT, Northwestern Software AB and contributors): normalised layout, declared variants, aspect-ratio overrides. No ES-DE code or theme assets are included. The CC-BY-NC-SA ES-DE themes (`modern-es-de`, `slate-es-de`) are not used in any form.
+
+## Fonts bundled in the built-in themes
+
+All are licensed under the SIL Open Font License 1.1. The full licence text is in the `licenses/` folder.
+
+| Font | Used by | Authors | Licence text |
+|---|---|---|---|
+| Poppins | Wishy theme | Indian Type Foundry | `licenses/OFL-Poppins.txt` |

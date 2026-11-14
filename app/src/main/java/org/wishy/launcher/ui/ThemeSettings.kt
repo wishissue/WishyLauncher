@@ -42,6 +42,7 @@ internal fun ThemesScreen(
     config: LauncherConfig,
     store: ConfigStore,
     onCredits: () -> Unit,
+    onGetMore: () -> Unit,
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -65,8 +66,13 @@ internal fun ThemesScreen(
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(bottom = 12.dp, start = 8.dp),
         )
-        SectionLabel(stringResource(R.string.themes_installed))
         val f = initialFocus()
+        SettingsItem(
+            selected = false, onClick = onGetMore,
+            headlineContent = { Text(stringResource(R.string.themes_get_more)) },
+            supportingContent = { Text(stringResource(R.string.themes_get_more_sub)) },
+        )
+        SectionLabel(stringResource(R.string.themes_installed))
         entries.forEachIndexed { i, e ->
             SettingsItem(
                 selected = false,
