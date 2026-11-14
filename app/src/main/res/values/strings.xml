@@ -161,7 +161,7 @@
     <string name="about_source">Source code</string>
     <string name="about_coffee" translatable="false">Buy me a coffee</string>
     <string name="github_url" translatable="false">https://github.com/wishissue/WishyLauncher</string>
-    <string name="about_thirdparty">Wishy Launcher is free software (GPL-3.0), forked from Couchy Launcher. See THIRD_PARTY_LICENSES.md for credits.</string>
+    <string name="about_thirdparty" translatable="false">Wishy Launcher is free software (GPL-3.0), forked from Couchy Launcher. See THIRD_PARTY_LICENSES.md for credits.</string>
     <string name="rerun_wizard">Run setup wizard again</string>
     <string name="rerun_wizard_sub">Default-launcher setup and first-run tips</string>
 

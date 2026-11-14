@@ -90,13 +90,25 @@ class SafeUnzipTest {
 
     @Test fun rejectsDuplicateNames() {
         val f = File(tmp.root, "d.zip")
-        java.util.zip.ZipOutputStream(f.outputStream()).use { z ->
-            repeat(2) {
-                z.putNextEntry(java.util.zip.ZipEntry("theme.json"))
-                z.write(TestZips.themeJson("mini", "1.0.0"))
-                z.closeEntry()
+        val baos = java.io.ByteArrayOutputStream()
+        java.util.zip.ZipOutputStream(baos).use { z ->
+            z.putNextEntry(java.util.zip.ZipEntry("theme.json"))
+            z.write(TestZips.themeJson("mini", "1.0.0"))
+            z.closeEntry()
+
+            z.putNextEntry(java.util.zip.ZipEntry("theme.jso2"))
+            z.write(TestZips.themeJson("mini", "1.0.0"))
+            z.closeEntry()
+        }
+        val bytes = baos.toByteArray()
+        val targetBytes = "theme.jso2".toByteArray(Charsets.US_ASCII)
+        val replacementBytes = "theme.json".toByteArray(Charsets.US_ASCII)
+        for (i in 0..bytes.size - targetBytes.size) {
+            if (bytes.copyOfRange(i, i + targetBytes.size).contentEquals(targetBytes)) {
+                System.arraycopy(replacementBytes, 0, bytes, i, replacementBytes.size)
             }
         }
+        f.writeBytes(bytes)
         assertRejected(f)
     }
 }

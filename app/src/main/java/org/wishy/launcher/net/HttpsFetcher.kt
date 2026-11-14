@@ -66,7 +66,8 @@ object HttpsFetcher {
                     continue
                 }
                 if (code != 200) throw FetchException("Server answered $code.")
-                c.inputStream.use { read(it, c.contentLengthLong) }
+                val contentLength = c.getHeaderField("Content-Length")?.toLongOrNull() ?: -1L
+                c.inputStream.use { read(it, contentLength) }
                 return
             } finally {
                 c.disconnect()
