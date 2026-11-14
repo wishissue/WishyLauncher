@@ -36,6 +36,13 @@ data class LauncherConfig(
     val knownApps: Set<String> = emptySet(),
     val wallpaper: Int = 1, // Aurora
     val useCustomWallpaper: Boolean = false,
+    /**
+     * A wallpaper that ships with the launcher (see art/Wallpapers.kt). Empty = none chosen: a theme then shows its
+     * own wallpaper and the classic layouts show the colour gradient above. A custom photo wins over this.
+     */
+    val wallpaperId: String = "",
+    /** Extra darkening of the wallpaper under a theme, in steps of 10 percent (0 = none, 5 = 50 percent). */
+    val wallpaperDim: Int = 0,
     val accent: Int = 0,
     val h24: Boolean = true,
     val showHidden: Boolean = false,

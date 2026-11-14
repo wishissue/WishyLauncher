@@ -6,7 +6,7 @@ A fast, private, open-source home launcher for Android TV and Google TV, with a 
 
 ## What it does
 
-- Remote-friendly home screen: D-pad focus, app launch, long-press menu, move/hide/organise apps, sections, clock and date, wallpaper, status bar.
+- Remote-friendly home screen: D-pad focus, app launch, long-press menu, move/hide/organise apps, sections, clock and date, status bar, and wallpapers (eight bundled ones in a light and a dark tone, or your own photo).
 - **Built-in theme engine**: **Wishy** (blue and white, navy in dark mode) default theme, plus the original Couchy layouts available as **Classic**.
 - **Themes are data**: versioned JSON plus images, strictly validated, no scripts. New themes install without an APK update, and a broken theme falls back to Wishy, then to Classic.
 - **App banners**: your own picture per app, or optional artwork from the official repository for installed apps only. Falls back to the app's own banner, then its icon.

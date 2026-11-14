@@ -114,4 +114,18 @@
     <string name="wizard_tip_2_sub">VPN, network, clock and settings</string>
     <string name="wizard_tip_3">Open the gear</string>
     <string name="wizard_tip_3_sub">Wallpaper, sections, themes and more</string>
+
+    <!-- Wallpaper picker -->
+    <string name="wp_section_wallpapers">Wallpapers</string>
+    <string name="wp_theme_default">Theme default</string>
+    <string name="wp_dim_theme">Dim wallpaper</string>
+    <string name="wp_dim_none">Off</string>
+    <string name="wpx_wishy">Wishy Blue</string>
+    <string name="wpx_aurora">Aurora</string>
+    <string name="wpx_dusk">Dusk</string>
+    <string name="wpx_ember">Ember</string>
+    <string name="wpx_orchid">Orchid</string>
+    <string name="wpx_ocean">Ocean</string>
+    <string name="wpx_forest">Forest</string>
+    <string name="wpx_mono">Mono</string>
 </resources>

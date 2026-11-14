@@ -3,108 +3,163 @@
   "schemaVersion": 1,
   "id": "wishy",
   "name": "Wishy",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "author": "Wishy Launcher contributors",
-  "description": "Clean and modern. Blue and white by day, deep navy at night, soft glow, Poppins type and one row of wide banners that responds instantly.",
+  "description": "The Wishy Browser look on your TV. Brand blue, Plus Jakarta Sans, soft rounded shapes, a glass shelf for your apps and a blue glow on the focused banner. Light and dark wallpapers included, and you can swap them for your own.",
   "license": "GPL-3.0-only",
   "defaultColorScheme": "system",
   "credits": [
     {
-      "file": "assets/fonts/Poppins-Regular.ttf",
-      "title": "Poppins Regular",
-      "author": "Indian Type Foundry",
+      "file": "assets/fonts/PlusJakartaSans-Regular.ttf",
+      "title": "Plus Jakarta Sans Regular",
+      "author": "The Plus Jakarta Sans Project Authors",
       "license": "OFL-1.1",
-      "source": "https://github.com/google/fonts/tree/main/ofl/poppins"
+      "source": "https://github.com/tokotype/PlusJakartaSans"
     },
     {
-      "file": "assets/fonts/Poppins-Medium.ttf",
-      "title": "Poppins Medium",
-      "author": "Indian Type Foundry",
+      "file": "assets/fonts/PlusJakartaSans-Medium.ttf",
+      "title": "Plus Jakarta Sans Medium",
+      "author": "The Plus Jakarta Sans Project Authors",
       "license": "OFL-1.1",
-      "source": "https://github.com/google/fonts/tree/main/ofl/poppins"
+      "source": "https://github.com/tokotype/PlusJakartaSans"
     },
     {
-      "file": "assets/fonts/Poppins-SemiBold.ttf",
-      "title": "Poppins SemiBold",
-      "author": "Indian Type Foundry",
+      "file": "assets/fonts/PlusJakartaSans-SemiBold.ttf",
+      "title": "Plus Jakarta Sans SemiBold",
+      "author": "The Plus Jakarta Sans Project Authors",
       "license": "OFL-1.1",
-      "source": "https://github.com/google/fonts/tree/main/ofl/poppins"
+      "source": "https://github.com/tokotype/PlusJakartaSans"
     },
     {
-      "file": "assets/ui/glow.png",
-      "title": "Soft glow overlay",
+      "file": "assets/fonts/PlusJakartaSans-Bold.ttf",
+      "title": "Plus Jakarta Sans Bold",
+      "author": "The Plus Jakarta Sans Project Authors",
+      "license": "OFL-1.1",
+      "source": "https://github.com/tokotype/PlusJakartaSans"
+    },
+    {
+      "file": "assets/ui/wallpaper-dark.webp",
+      "title": "Wishy wallpaper, dark",
       "author": "Wishy Launcher contributors",
-      "license": "GPL-3.0-only"
+      "license": "GPL-3.0-only",
+      "notes": "Drawn from scratch by tools/gen-wallpapers.py in the launcher repository."
+    },
+    {
+      "file": "assets/ui/wallpaper-light.webp",
+      "title": "Wishy wallpaper, light",
+      "author": "Wishy Launcher contributors",
+      "license": "GPL-3.0-only",
+      "notes": "Drawn from scratch by tools/gen-wallpapers.py in the launcher repository."
     },
     {
       "file": "assets/art/default.png",
       "title": "Placeholder cover",
       "author": "Wishy Launcher contributors",
-      "license": "GPL-3.0-only"
+      "license": "GPL-3.0-only",
+      "notes": "Drawn from scratch by tools/gen-wallpapers.py in the launcher repository."
     }
   ],
   "colorSchemes": {
     "light": {
       "background": "#E6F1FF",
       "surface": "#FFFFFF",
-      "surfaceVariant": "#D6E4FF",
-      "onSurface": "#0B1B33",
-      "onSurfaceMuted": "#4A5D7A",
+      "surfaceVariant": "#DAE5F6",
+      "onSurface": "#101828",
+      "onSurfaceMuted": "#46556C",
       "primary": "#0166FF",
       "onPrimary": "#FFFFFF",
-      "outline": "#B5C9EA",
-      "scrim": "#660B1B33"
+      "accent": "#946200",
+      "outline": "#C3D4EE",
+      "scrim": "#660B1B33",
+      "custom": {
+        "glass": "#B8FFFFFF",
+        "glassEdge": "#99FFFFFF"
+      }
     },
     "dark": {
       "background": "#080B12",
       "surface": "#111725",
-      "surfaceVariant": "#1A2338",
-      "onSurface": "#F2F6FF",
-      "onSurfaceMuted": "#93A4C3",
+      "surfaceVariant": "#182235",
+      "onSurface": "#F1F4FB",
+      "onSurfaceMuted": "#B0BCD0",
       "primary": "#66A3FF",
-      "onPrimary": "#001B3E",
-      "outline": "#2A3A5C",
-      "scrim": "#99000000"
+      "onPrimary": "#002266",
+      "accent": "#F4C66A",
+      "outline": "#303B4F",
+      "scrim": "#99000000",
+      "custom": {
+        "glass": "#80111725",
+        "glassEdge": "#26FFFFFF"
+      }
     }
   },
   "fonts": {
     "regular": {
-      "file": "assets/fonts/Poppins-Regular.ttf"
+      "file": "assets/fonts/PlusJakartaSans-Regular.ttf"
     },
     "medium": {
-      "file": "assets/fonts/Poppins-Medium.ttf"
+      "file": "assets/fonts/PlusJakartaSans-Medium.ttf"
     },
     "semibold": {
-      "file": "assets/fonts/Poppins-SemiBold.ttf"
+      "file": "assets/fonts/PlusJakartaSans-SemiBold.ttf"
+    },
+    "bold": {
+      "file": "assets/fonts/PlusJakartaSans-Bold.ttf"
     }
   },
   "textStyles": {
     "clock": {
       "font": "semibold",
-      "size": 92,
+      "size": 96,
       "color": "@onSurface",
-      "letterSpacing": -2
+      "letterSpacing": -3,
+      "shadow": {
+        "color": "@background/55",
+        "dy": 2,
+        "blur": 16
+      }
     },
     "date": {
-      "font": "regular",
+      "font": "medium",
       "size": 30,
-      "color": "@onSurfaceMuted"
+      "color": "@onSurfaceMuted",
+      "shadow": {
+        "color": "@background/55",
+        "dy": 1,
+        "blur": 10
+      }
     },
     "title": {
-      "font": "medium",
-      "size": 46,
+      "font": "bold",
+      "size": 50,
       "color": "@onSurface",
-      "maxLines": 1
+      "letterSpacing": -1,
+      "maxLines": 1,
+      "shadow": {
+        "color": "@background/55",
+        "dy": 2,
+        "blur": 14
+      }
     },
     "tab": {
-      "font": "medium",
+      "font": "semibold",
       "size": 28,
       "color": "@onSurfaceMuted",
+      "maxLines": 1
+    },
+    "brand": {
+      "font": "bold",
+      "size": 34,
+      "color": "@primary",
+      "letterSpacing": -0.5,
+      "align": "end",
       "maxLines": 1
     }
   },
   "background": {
     "color": "@background",
+    "image": "assets/ui/wallpaper-dark.webp",
+    "fit": "crop",
     "dim": 0.0,
     "userWallpaper": "allowed"
   },
@@ -113,7 +168,7 @@
       "aspect": "16:9",
       "shape": {
         "kind": "rounded",
-        "radius": 22
+        "radius": 28
       },
       "fill": "@surface",
       "border": {
@@ -132,33 +187,33 @@
       },
       "idle": {
         "scale": 1.0,
-        "alpha": 0.94
+        "alpha": 0.96
       },
       "focused": {
-        "scale": 1.08,
+        "scale": 1.09,
         "alpha": 1.0,
         "shadow": {
-          "color": "#59000000",
-          "dy": 10,
-          "blur": 28
+          "color": "@primary/55",
+          "dy": 14,
+          "blur": 44
         },
         "indicator": {
           "kind": "ring",
           "color": "@primary",
           "width": 4,
-          "gap": 4
+          "gap": 5
         }
       },
       "moving": {
-        "scale": 1.12,
+        "scale": 1.13,
         "shadow": {
-          "color": "#80000000",
-          "dy": 14,
-          "blur": 36
+          "color": "#99000000",
+          "dy": 18,
+          "blur": 40
         },
         "indicator": {
           "kind": "ring",
-          "color": "@primary",
+          "color": "@accent",
           "width": 6,
           "gap": 6,
           "blink": true,
@@ -179,16 +234,22 @@
         "type": "stack",
         "children": [
           {
-            "type": "image",
-            "id": "glow",
-            "source": "assets/ui/glow.png",
-            "fit": "stretch",
-            "alpha": 1.0,
+            "type": "shape",
+            "id": "shelf",
+            "shape": {
+              "kind": "rounded",
+              "radius": 44
+            },
+            "fill": "@custom.glass",
+            "border": {
+              "width": 1,
+              "color": "@custom.glassEdge"
+            },
             "frame": {
-              "x": 0,
-              "y": 0,
-              "w": "100%",
-              "h": "100%"
+              "x": "2.5%",
+              "y": "61.5%",
+              "w": "95%",
+              "h": "36.5%"
             }
           },
           {
@@ -198,7 +259,7 @@
             "showWhen": "clockEnabled",
             "frame": {
               "x": "5%",
-              "y": "7%"
+              "y": "6%"
             }
           },
           {
@@ -208,7 +269,18 @@
             "showWhen": "dateEnabled",
             "frame": {
               "x": "5%",
-              "y": "20%"
+              "y": "19.5%"
+            }
+          },
+          {
+            "type": "text",
+            "id": "wordmark",
+            "text": "Wishy",
+            "style": "brand",
+            "frame": {
+              "x": "70%",
+              "y": "7%",
+              "w": "25%"
             }
           },
           {
@@ -218,7 +290,7 @@
             "showWhen": "hasFocusedApp",
             "frame": {
               "x": "5%",
-              "y": "47%"
+              "y": "42.5%"
             }
           },
           {
@@ -226,16 +298,16 @@
             "id": "tabs",
             "arrangement": "tabs",
             "style": "tab",
-            "gap": 36,
+            "gap": 40,
             "selectedIndicator": {
               "kind": "underline",
               "color": "@primary",
-              "width": 4,
-              "gap": 6
+              "width": 5,
+              "gap": 8
             },
             "frame": {
               "x": "5%",
-              "y": "57%",
+              "y": "53%",
               "w": "90%",
               "h": "6%"
             }
@@ -265,6 +337,16 @@
     }
   },
   "overrides": [
+    {
+      "when": {
+        "colorScheme": "light"
+      },
+      "merge": {
+        "background": {
+          "image": "assets/ui/wallpaper-light.webp"
+        }
+      }
+    },
     {
       "when": {
         "reducedMotion": true

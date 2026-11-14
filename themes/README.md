@@ -4,9 +4,9 @@ This folder is packed into the launcher as assets and copied to the app's storag
 
 | Folder | Idea | Layout | Navigation feel |
 |---|---|---|---|
-| `wishy` | Clean and modern. Poppins type, soft glow, blue and white by day, navy at night. | Clock and date top left, section tabs, one row of wide 16:9 banners. | Instant focus, 100 ms eased scroll. |
+| `wishy` | The Wishy Browser look. Plus Jakarta Sans, brand blue, a glass shelf under the banners, a blue glow on the focused one, light and dark wallpapers. | Clock and date top left, section tabs, one row of wide 16:9 banners on a shelf. | Instant focus, 100 ms eased scroll. |
 
-It contains no third-party artwork or logos. Fonts are open-licensed (SIL OFL 1.1); see `CREDITS.md`. No theme may animate focus or scrolling for more than 80 ms and 120 ms respectively; the launcher caps longer values.
+It contains no third-party artwork or logos. Its wallpapers are drawn by `tools/gen-wallpapers.py`. Fonts are open-licensed (SIL OFL 1.1); see `CREDITS.md`. No theme may animate focus or scrolling for more than 80 ms and 120 ms respectively; the launcher caps longer values.
 
 It checks against `schema/wishy-theme.schema.v1.json` and is also loaded by `themecore`'s tests in both colour schemes at 720p, 1080p and 2160p.
 

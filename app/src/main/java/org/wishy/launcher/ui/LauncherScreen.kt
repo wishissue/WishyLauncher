@@ -578,10 +578,25 @@ fun LauncherApp(rescanTick: Int) {
     // A ~100px copy is decoded alongside: upscaled by the GPU it looks
     // blurred, and crossfading it in costs one texture blend per frame
     // instead of a full-screen RenderEffect blur (heavy on TV GPUs). -----
+    // A wallpaper that ships with the launcher comes in a dark and a light tone. The classic layouts are always dark.
+    val bundledWallpaper = org.wishy.launcher.art.Wallpapers.byId(config.wallpaperId)
+    val wallpaperDark = config.themeId == org.wishy.launcher.theme.ThemeStorage.CLASSIC_ID || themeDark
     val wallpaperPair by produceState<Pair<ImageBitmap?, ImageBitmap?>>(
-        initialValue = null to null, config.useCustomWallpaper, wallpaperVersion
+        initialValue = null to null, config.useCustomWallpaper, bundledWallpaper?.id, wallpaperDark, wallpaperVersion
     ) {
-        value = if (!config.useCustomWallpaper) null to null
+        value = if (!config.useCustomWallpaper) {
+            // No photo of the user's own: the chosen bundled wallpaper, or nothing (theme default / colour gradient).
+            if (bundledWallpaper == null) null to null
+            else withContext(Dispatchers.IO) {
+                runCatching {
+                    val sharp = org.wishy.launcher.art.Wallpapers.decode(context, bundledWallpaper, wallpaperDark, maxWidth = 1280)
+                        ?.also { it.prepareToDraw() }?.asImageBitmap()
+                    val blurred = org.wishy.launcher.art.Wallpapers.decode(context, bundledWallpaper, wallpaperDark, maxWidth = 96)
+                        ?.also { it.prepareToDraw() }?.asImageBitmap()
+                    sharp to blurred
+                }.getOrDefault(null to null)
+            }
+        }
         else withContext(Dispatchers.IO) {
             val f = File(context.filesDir, "wallpaper.jpg")
             if (!f.exists()) null to null
@@ -647,7 +662,12 @@ fun LauncherApp(rescanTick: Int) {
             ) else null
             // Wallpaper + readability scrim.
             if (themed) {
-                org.wishy.launcher.theme.ThemedBackground(tEnv!!, if (config.useCustomWallpaper) wallpaperSharp else null)
+                // wallpaperSharp is only set when the user picked a photo or a bundled wallpaper; otherwise the theme's own shows.
+                org.wishy.launcher.theme.ThemedBackground(tEnv!!, wallpaperSharp)
+                val themedDim = config.wallpaperDim.coerceIn(0, 5)
+                if (themedDim > 0) {
+                    Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = themedDim * 0.1f)))
+                }
             } else if (wallpaperSharp != null) {
                 Image(
                     bitmap = wallpaperSharp,

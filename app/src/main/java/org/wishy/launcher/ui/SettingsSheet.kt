@@ -32,6 +32,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -44,6 +45,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -210,17 +213,38 @@ fun SettingsSheet(
                     )
                     SettingsScreen.Wallpaper -> WallpaperScreen(
                         config = config,
+                        // Bundled wallpapers have a dark and a light tone; the classic layouts are always dark.
+                        dark = config.themeId == org.wishy.launcher.theme.ThemeStorage.CLASSIC_ID ||
+                            when (config.themeMode) {
+                                1 -> false
+                                2 -> true
+                                else -> androidx.compose.foundation.isSystemInDarkTheme()
+                            },
                         onSetScrim = { v ->
                             scope.launch { store.update { it.copy(scrimMode = v) } }
+                        },
+                        onSetDim = { v ->
+                            scope.launch { store.update { it.copy(wallpaperDim = v) } }
                         },
                         onPreset = { i ->
                             scope.launch {
                                 store.update {
                                     it.copy(
                                         wallpaper = i,
+                                        wallpaperId = "",
                                         useCustomWallpaper = false,
                                     )
                                 }
+                            }
+                        },
+                        onBundled = { id ->
+                            scope.launch {
+                                store.update { it.copy(wallpaperId = id, useCustomWallpaper = false) }
+                            }
+                        },
+                        onNoWallpaperChoice = {
+                            scope.launch {
+                                store.update { it.copy(wallpaperId = "", useCustomWallpaper = false) }
                             }
                         },
                         onPickPhoto = {
@@ -1247,17 +1271,99 @@ private fun RenameDialog(
 
 /* ------------------------------ wallpaper ------------------------------ */
 
+/** One tile of the wallpaper grid: a thumbnail (or an icon), a label, and a check when it is the active choice. */
+private class WallpaperTileSpec(
+    val label: String,
+    val preview: ImageBitmap?,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector?,
+    val selected: Boolean,
+    val onClick: () -> Unit,
+)
+
+@Composable
+private fun WallpaperTile(spec: WallpaperTileSpec, modifier: Modifier = Modifier) {
+    var focused by remember { mutableStateOf(false) }
+    val shape = RoundedCornerShape(14.dp)
+    val preview = spec.preview
+    val icon = spec.icon
+    // No focus scale (it would blur the label, like SettingsItem); a white border marks the focused tile.
+    Surface(
+        onClick = spec.onClick,
+        modifier = modifier.onFocusChanged { focused = it.isFocused || it.hasFocus },
+        shape = ClickableSurfaceDefaults.shape(shape),
+        colors = ClickableSurfaceDefaults.colors(
+            containerColor = Color.White.copy(alpha = 0.08f),
+            focusedContainerColor = Color.White.copy(alpha = 0.08f),
+        ),
+        scale = ClickableSurfaceDefaults.scale(focusedScale = 1f),
+    ) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .aspectRatio(16f / 9f)
+                .clip(shape)
+                .then(if (focused) Modifier.border(3.dp, Color.White, shape) else Modifier),
+        ) {
+            if (preview != null) {
+                Image(
+                    bitmap = preview,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            } else if (icon != null) {
+                Icon(
+                    icon, contentDescription = null, tint = Color.White,
+                    modifier = Modifier.align(Alignment.Center).size(30.dp),
+                )
+            }
+            Box(
+                Modifier
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth()
+                    .background(Color.Black.copy(alpha = 0.45f))
+                    .padding(horizontal = 10.dp, vertical = 5.dp),
+            ) {
+                Text(spec.label, style = MaterialTheme.typography.labelMedium, color = Color.White, maxLines = 1)
+            }
+            if (spec.selected) {
+                Box(Modifier.align(Alignment.TopEnd).padding(6.dp)) { CheckMark(checked = true) }
+            }
+        }
+    }
+}
+
 /**
- * ONE row per background mode, checkmark = active. Selecting any mode turns
- * the others off. Static modes only: colour gradient or your own photo.
+ * Wallpaper picker: dimming, then a grid of thumbnails — the wallpapers that ship with the launcher and your own
+ * photo. Everything works with the D-pad alone. Under a theme the first tile is "Theme default" (the theme's own
+ * wallpaper); in the classic layouts it is the colour gradient, which keeps its own preset selector.
  */
 @Composable
 private fun WallpaperScreen(
     config: LauncherConfig,
+    dark: Boolean,
     onSetScrim: (Int) -> Unit,
+    onSetDim: (Int) -> Unit,
     onPreset: (Int) -> Unit,
+    onBundled: (String) -> Unit,
+    onNoWallpaperChoice: () -> Unit,
     onPickPhoto: () -> Unit,
 ) {
+    val context = LocalContext.current
+    val themed = config.themeId != org.wishy.launcher.theme.ThemeStorage.CLASSIC_ID
+
+    // Small decodes of the bundled pictures, off the main thread; redone when the colour tone changes.
+    val thumbs by produceState<Map<String, ImageBitmap>>(emptyMap(), dark) {
+        value = withContext(Dispatchers.IO) {
+            org.wishy.launcher.art.Wallpapers.all.mapNotNull { wp ->
+                val bmp = runCatching {
+                    org.wishy.launcher.art.Wallpapers.decode(context, wp, dark, maxWidth = 400)?.asImageBitmap()
+                }.getOrNull()
+                if (bmp == null) null else wp.id to bmp
+            }.toMap()
+        }
+    }
+
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -1268,11 +1374,24 @@ private fun WallpaperScreen(
             modifier = Modifier.padding(bottom = 12.dp, start = 8.dp),
         )
         val f = initialFocus()
-        val staticActive = !config.useCustomWallpaper
+        // An id this version does not know (say, saved by a newer one) counts as "none chosen".
+        val chosen = if (config.useCustomWallpaper) null else org.wishy.launcher.art.Wallpapers.byId(config.wallpaperId)?.id
+        val usingNone = !config.useCustomWallpaper && chosen == null
 
-        // Dimming — how much the wallpaper is darkened for icon readability.
-        // Applies to any background; "Top & bottom" keeps the centre clear.
-        run {
+        // Dimming — how much the wallpaper is darkened for readability. The classic layouts use the gradient
+        // scrims ("Top & bottom" keeps the centre clear); under a theme it is a plain even darkening.
+        if (themed) {
+            val steps = 6
+            val idx = config.wallpaperDim.coerceIn(0, steps - 1)
+            SelectorRow(
+                modifier = Modifier.focusRequester(f),
+                label = stringResource(R.string.wp_dim_theme),
+                value = if (idx == 0) stringResource(R.string.wp_dim_none) else "${idx * 10}%",
+                steps = steps,
+                current = idx,
+                onSelect = { v -> onSetDim(v) },
+            )
+        } else {
             val names = listOf(
                 stringResource(R.string.dim_top_bottom),
                 stringResource(R.string.dim_top),
@@ -1291,19 +1410,30 @@ private fun WallpaperScreen(
             )
         }
 
-        /* ---------------- STATIC: color gradient + your own photo ---------------- */
-        SectionLabel(stringResource(R.string.wp_section_static))
+        SectionLabel(stringResource(R.string.wp_section_wallpapers))
 
-        // Color gradient mode — checkmark like every other mode; the picker
-        // below appears once it's active .
-        val presetIdx = config.wallpaper.coerceIn(0, WALLPAPERS.size - 1)
-        SettingsItem(
-            selected = false, onClick = { onPreset(presetIdx) },
-            headlineContent = { Text(stringResource(R.string.color_gradient)) },
-            leadingContent = { Icon(AppIcons.Palette, contentDescription = null) },
-            trailingContent = { CheckMark(checked = staticActive) },
-        )
-        if (staticActive) {
+        val noneLabel = stringResource(if (themed) R.string.wp_theme_default else R.string.color_gradient)
+        val photoLabel = stringResource(R.string.pick_photo)
+        val tiles = mutableListOf<WallpaperTileSpec>()
+        tiles += WallpaperTileSpec(noneLabel, null, AppIcons.Palette, usingNone, onNoWallpaperChoice)
+        org.wishy.launcher.art.Wallpapers.all.forEach { wp ->
+            tiles += WallpaperTileSpec(stringResource(wp.label), thumbs[wp.id], null, chosen == wp.id) { onBundled(wp.id) }
+        }
+        tiles += WallpaperTileSpec(photoLabel, null, AppIcons.Image, config.useCustomWallpaper, onPickPhoto)
+
+        tiles.chunked(2).forEach { pair ->
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                pair.forEach { t -> WallpaperTile(t, Modifier.weight(1f)) }
+                if (pair.size == 1) Box(Modifier.weight(1f))
+            }
+        }
+
+        // Classic layouts only: the colour-gradient presets, while the gradient is the active background.
+        if (!themed && usingNone) {
+            val presetIdx = config.wallpaper.coerceIn(0, WALLPAPERS.size - 1)
             val presetNames = listOf(
                 stringResource(R.string.wp_midnight),
                 stringResource(R.string.wp_aurora),
@@ -1319,16 +1449,6 @@ private fun WallpaperScreen(
                 onSelect = { v -> onPreset(v) },
             )
         }
-
-        // A photo of your own
-        SettingsItem(
-            selected = false, onClick = onPickPhoto,
-            headlineContent = { Text(stringResource(R.string.pick_photo)) },
-            supportingContent = { Text(stringResource(R.string.pick_photo_sub)) },
-            leadingContent = { Icon(AppIcons.Image, contentDescription = null) },
-            trailingContent = { CheckMark(checked = config.useCustomWallpaper) },
-        )
-
     }
 }
 

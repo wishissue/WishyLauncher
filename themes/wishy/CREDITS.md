@@ -1,18 +1,18 @@
 # wishy theme credits
 
-This theme contains no third-party artwork, logos or trademarks. The look is original; it only borrows general ideas (a grid, a shelf, a cursor).
+This theme contains no third-party artwork, logos or trademarks. The look is original and follows the Wishy Browser's design language (brand blue, rounded shapes, Plus Jakarta Sans).
 
 ## Fonts
 
-- **Poppins (Regular, Medium, SemiBold)** (assets/fonts/Poppins-*.ttf) by Indian Type Foundry. Licence: SIL Open Font License 1.1. Source: https://github.com/google/fonts/tree/main/ofl/poppins. Full text: `licenses/` folder of the Wishy Launcher repository.
+- **Plus Jakarta Sans (Regular, Medium, SemiBold, Bold)** (`assets/fonts/PlusJakartaSans-*.ttf`) by The Plus Jakarta Sans Project Authors. Licence: SIL Open Font License 1.1. Source: https://github.com/tokotype/PlusJakartaSans. Full text: `licenses/OFL-PlusJakartaSans.txt` in the Wishy Launcher repository. These are the same static Latin files the Wishy Browser ships.
 
 ## Images
 
-- Soft glow overlay (`assets/ui/glow.png`): made for this project with a script. Licence: GPL-3.0-only.
+- Wallpapers (`assets/ui/wallpaper-dark.webp`, `assets/ui/wallpaper-light.webp`): drawn from scratch with `tools/gen-wallpapers.py` in the Wishy Launcher repository (soft colour blooms, a light sweep and film grain). Not based on any photograph or other artwork. Licence: GPL-3.0-only.
 
 ## Cover art
 
-- `assets/art/default.png`: placeholder cover made for this project with a script. Licence: GPL-3.0-only. Replace it, or add `assets/art/<package>.png` files, to give individual apps their own cover.
+- `assets/art/default.png`: placeholder cover drawn from scratch with the same script. Licence: GPL-3.0-only. Replace it, or add `assets/art/<package>.png` files, to give individual apps their own cover.
 
 ## Theme files
 

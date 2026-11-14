@@ -5,9 +5,10 @@
 | Item | Author | Licence |
 |---|---|---|
 | `app_icon.xml`, `app_banner.xml`, `ic_wishy_mark.xml` (placeholder launcher icon, banner and mark) | Wishy Launcher contributors | GPL-3.0-only |
-| Built-in theme `wishy` (colours, shapes, text styles; no images) | Wishy Launcher contributors | GPL-3.0-only |
+| Built-in theme `wishy` (colours, shapes, text styles, its wallpapers and placeholder cover) | Wishy Launcher contributors | GPL-3.0-only |
+| Bundled wallpapers `wp_*_dark.webp` and `wp_*_light.webp` in `app/src/main/res/drawable-nodpi/` (eight wallpapers, each in a dark and a light tone) | Wishy Launcher contributors | GPL-3.0-only |
 
-No photographs, wallpapers, fonts or per-app banners are bundled with the launcher.
+All the wallpapers and the Wishy theme's placeholder cover are drawn from scratch by `tools/gen-wallpapers.py` (colour gradients, soft blooms and film grain). None is based on a photograph or on anyone else's artwork, and the script reproduces them exactly. The only third-party files bundled are the Plus Jakarta Sans fonts, see `THIRD_PARTY_LICENSES.md`. No photographs or per-app banners are bundled with the launcher.
 
 ## App banners
 

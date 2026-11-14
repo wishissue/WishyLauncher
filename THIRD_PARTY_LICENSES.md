@@ -30,7 +30,7 @@ Apache-2.0 requires that the licence text accompanies binary distributions. When
 ## Artwork and fonts
 
 - `ic_wishy_mark.xml`, `app_icon.xml`, `app_banner.xml`: original placeholder artwork for this project, GPL-3.0. Final branding is not done.
-- **No third-party fonts, images, wallpapers or sounds are bundled.** All four built-in themes use the launcher's default font and drawn shapes only. A pixel font and the Plus Jakarta Sans font (SIL OFL 1.1, as used by Wishy Browser) were considered but not added, because they could not be downloaded and checked here. Each one added later must be listed here with its licence text.
+- **The only third-party files bundled are the Plus Jakarta Sans fonts** (SIL OFL 1.1, the same files Wishy Browser ships), listed in the table below with their licence text. No third-party images, wallpapers or sounds are bundled: the wallpapers and the placeholder cover are drawn from scratch by `tools/gen-wallpapers.py` and are GPL-3.0 like the rest of the project. Every font or file added later must be listed here with its licence text.
 - Artwork attribution is covered separately in `ARTWORK_ATTRIBUTION.md`.
 
 ## Colour palettes and brand references
@@ -47,4 +47,4 @@ All are licensed under the SIL Open Font License 1.1. The full licence text is i
 
 | Font | Used by | Authors | Licence text |
 |---|---|---|---|
-| Poppins | Wishy theme | Indian Type Foundry | `licenses/OFL-Poppins.txt` |
+| Plus Jakarta Sans (Regular, Medium, SemiBold, Bold) | Wishy theme | The Plus Jakarta Sans Project Authors | `licenses/OFL-PlusJakartaSans.txt` |
