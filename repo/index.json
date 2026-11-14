@@ -5,15 +5,15 @@
     {
       "id": "wishy",
       "name": "Wishy",
-      "version": "2.0.0",
+      "version": "3.0.0",
       "author": "Wishy Launcher contributors",
-      "description": "Clean and modern. Blue and white by day, deep navy at night, soft glow, Poppins type and one row of wide banners that responds instantly.",
+      "description": "The Wishy Browser look on your TV. Brand blue, Plus Jakarta Sans, soft rounded shapes, a glass shelf for your apps and a blue glow on the focused banner. Light and dark wallpapers included, and you can swap them for your own.",
       "license": "GPL-3.0-only",
       "schemaVersion": 1,
       "minLauncherVersion": 1,
       "downloadUrl": "themes/wishy.zip",
-      "sha256": "8ee2850a4405357264ea99a6833245a100f7869c17bac09c5f519355695a2972",
-      "sizeBytes": 416473
+      "sha256": "ed7014b9f8f3dfb8311369c56162f7255998df78afea13744a47f3be4bb16186",
+      "sizeBytes": 475409
     }
   ]
 }
