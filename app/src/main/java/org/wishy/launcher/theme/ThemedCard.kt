@@ -47,6 +47,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -94,8 +95,13 @@ fun ThemedAppCard(
     onFocusChange: (Boolean) -> Unit,
     onLaunch: () -> Unit,
     onLongPress: () -> Unit,
+    /** A passive card only draws: it takes no focus, keys or touch. The wheel layout owns those for its cards. */
+    passive: Boolean = false,
+    /** For a passive card: draw it as the focused one. */
+    passiveFocused: Boolean = false,
 ) {
-    var focused by remember { mutableStateOf(false) }
+    var ownFocus by remember { mutableStateOf(false) }
+    val focused = if (passive) passiveFocused else ownFocus
     val defaultState = remember { CardState() }
     val state: CardState = when {
         // A theme that styles no "moving" state still gets a clear lifted look while rearranging.
@@ -106,9 +112,10 @@ fun ThemedAppCard(
 
     val spec = env.focusSpec<Float>()
     val active = focused || isMoving
-    // Ensure focused app selection is crystal clear: at least 1.12 scale & -6dp lift when active
-    val targetScale = if (active) maxOf(state.scale, 1.12f) else state.scale
-    val targetLift = if (active) minOf(state.offsetY, -6f) else state.offsetY
+    // A text-only row (art "none") keeps its size: growing a menu row would look wrong.
+    val textOnly = style.artwork.source == ArtSource.NONE
+    val targetScale = if (active && !textOnly) state.scale else state.scale
+    val targetLift = if (active && !textOnly) state.offsetY else state.offsetY
     // Kept as State objects and read inside graphicsLayer, so animating costs a redraw, not a recomposition.
     val scaleS = animateFloatAsState(targetScale, spec, label = "cardScale")
     val alphaS = animateFloatAsState(state.alpha, spec, label = "cardAlpha")
@@ -155,7 +162,7 @@ fun ThemedAppCard(
         else -> true
     }
 
-    val outer = if (width != null) Modifier.width(width) else Modifier.fillMaxWidth()
+    val outer = (if (width != null) Modifier.width(width) else Modifier.fillMaxWidth()).zIndex(if (active) 1f else 0f)
     Column(outer) {
         Box(
             modifier
@@ -175,7 +182,7 @@ fun ThemedAppCard(
                     clip = false
                 }
                 .themeIndicator(effectiveIndicator, env, cardShape, visible = active && blinkOn)
-                .onPreviewKeyEvent { e ->
+                .then(if (passive) Modifier else Modifier.onPreviewKeyEvent { e ->
                     val select = e.key == Key.DirectionCenter || e.key == Key.Enter || e.key == Key.NumPadEnter
                     if (!select) return@onPreviewKeyEvent false
                     val now = SystemClock.uptimeMillis()
@@ -200,28 +207,32 @@ fun ThemedAppCard(
                         else -> false
                     }
                 }
-                .onFocusChanged {
-                    if (focused != it.isFocused) {
-                        focused = it.isFocused
-                        onFocusChange(it.isFocused)
+                    .onFocusChanged {
+                        if (ownFocus != it.isFocused) {
+                            ownFocus = it.isFocused
+                            onFocusChange(it.isFocused)
+                        }
                     }
-                }
-                .focusable()
-                .pointerInput(Unit) {
-                    detectTapGestures(onTap = { onLaunch() }, onLongPress = { onLongPress() })
-                }
+                    .focusable()
+                    .pointerInput(Unit) {
+                        detectTapGestures(onTap = { onLaunch() }, onLongPress = { onLongPress() })
+                    })
                 .clip(shape)
                 .background(fill)
                 .themeBorder(border, env, shape),
         ) {
             CardArtwork(app, style, env, state)
             if (showLabel && label.position != LabelPosition.BELOW) {
-                val overlay = label.position == LabelPosition.OVERLAY_CENTER
+                val overlay = label.position == LabelPosition.OVERLAY_CENTER || label.position == LabelPosition.OVERLAY_START
                 val text = env.resolveText(label.style)
                 Box(
                     Modifier
                         .fillMaxSize(),
-                    contentAlignment = if (overlay) Alignment.Center else Alignment.BottomCenter,
+                    contentAlignment = when (label.position) {
+                        LabelPosition.OVERLAY_CENTER -> Alignment.Center
+                        LabelPosition.OVERLAY_START -> Alignment.CenterStart
+                        else -> Alignment.BottomCenter
+                    },
                 ) {
                     if (!overlay) {
                         Box(
@@ -236,7 +247,10 @@ fun ThemedAppCard(
                         style = text.style,
                         maxLines = minOf(text.maxLines, 2),
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(horizontal = env.dims.dp(12f), vertical = env.dims.dp(10f)),
+                        modifier = Modifier.padding(
+                            horizontal = env.dims.dp(if (label.position == LabelPosition.OVERLAY_START) 28f else 12f),
+                            vertical = env.dims.dp(10f),
+                        ),
                     )
                 }
             }
@@ -286,6 +300,8 @@ private fun loopValue(kind: CardAnimation, phase: Float): Float = when (kind) {
 @Composable
 private fun CardArtwork(app: AppEntry, style: CardStyle, env: ThemeEnv, state: CardState) {
     val art = style.artwork
+    // A text-only card: just the fill, the label is drawn over it by the card.
+    if (art.source == ArtSource.NONE) return
     val quality = if (art.sampling == Sampling.NEAREST) FilterQuality.None else FilterQuality.Medium
     val scale = when (art.fit) {
         Fit.CROP -> ContentScale.Crop

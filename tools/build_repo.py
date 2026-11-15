@@ -8,6 +8,8 @@ Inputs
     themes/<id>/                 theme source folders (theme.json + assets/)
     artwork/<package>.png        16:9 banners for apps (320x180 up to 1920x1080, max 2 MB)
     artwork/credits.json         {"<package>": {"author": "...", "license": "...", "source": "...", "title": "..."}}
+    artwork/<package>/<id>.png   extra versions of an app's banner the person can choose between (up to 12 per app)
+                                 credits: "<package>/<id>": {"name": "...", "author": "...", "license": "..."}
 
 Outputs (all deterministic, so unchanged inputs produce byte-identical files and no git churn)
     repo/index.json              theme list with SHA-256 of every zip
@@ -15,6 +17,8 @@ Outputs (all deterministic, so unchanged inputs produce byte-identical files and
     repo/previews/<id>.png       copied from themes/<id>/preview.png when present
     repo/artwork/index.json      app banner list with SHA-256 of every picture
     repo/artwork/<package>.png
+    repo/artwork/variants.json   the extra versions, with SHA-256 of every picture
+    repo/artwork/variants/<package>/<id>.png
 
 The rules mirrored here come from themecore (ThemeLimits, RepoChecker). The launcher checks them again on the
 device, so this script is a convenience for authors, not the security boundary.
@@ -219,6 +223,68 @@ def build_artwork():
     write_json(OUT / "artwork" / "index.json", {"schemaVersion": 1, "apps": apps})
 
 
+def build_variants():
+    """artwork/<package>/<version-id>.png: several banners per app the person can choose between.
+
+    Credits go in artwork/credits.json under "<package>/<version-id>" with author, license and name (what the
+    picker shows, at most 40 characters); source is optional. Written to repo/artwork/variants.json."""
+    import re
+    pkg_re = re.compile(r"^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$")
+    id_re = re.compile(r"^[a-z0-9_]{1,32}$")
+    credits = {}
+    cpath = ART_SRC / "credits.json"
+    if cpath.is_file():
+        credits = json.loads(cpath.read_text(encoding="utf-8"))
+    apps = {}
+    if ART_SRC.is_dir():
+        for folder in sorted(p for p in ART_SRC.iterdir() if p.is_dir()):
+            pkg = folder.name
+            if not pkg_re.match(pkg):
+                fail(f"artwork/{pkg}/: folder name must be an Android package name")
+            files = sorted(folder.glob("*.png"))
+            if len(files) > 12:
+                fail(f"artwork/{pkg}/: at most 12 versions per app")
+            entries = []
+            for p in files:
+                vid = p.stem
+                key = f"{pkg}/{vid}"
+                if not id_re.match(vid):
+                    fail(f"artwork/{key}.png: version id must be 1-32 characters of a-z, 0-9 and _")
+                c = credits.get(key)
+                if not c or not c.get("author") or not c.get("license") or not c.get("name"):
+                    fail(f"artwork/{key}.png: add name, author and license for '{key}' to artwork/credits.json")
+                if len(c["name"]) > 40:
+                    fail(f"artwork/credits.json: name for '{key}' is over 40 characters")
+                w, h = image_size(p)
+                if not (ART_MIN[0] <= w <= ART_MAX[0] and ART_MIN[1] <= h <= ART_MAX[1]):
+                    fail(f"artwork/{key}.png: {w}x{h} is outside 320x180 .. 1920x1080")
+                if abs(w / h - 16 / 9) > 16 / 9 * 0.03:
+                    fail(f"artwork/{key}.png: {w}x{h} is not 16:9")
+                if p.stat().st_size > MAX_ART_BYTES:
+                    fail(f"artwork/{key}.png: over 2 MB")
+                dest = OUT / "artwork" / "variants" / pkg / p.name
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                dest.write_bytes(p.read_bytes())
+                e = {
+                    "id": vid,
+                    "name": c["name"],
+                    "url": f"variants/{pkg}/{p.name}",
+                    "sha256": sha256(dest),
+                    "sizeBytes": dest.stat().st_size,
+                    "width": w,
+                    "height": h,
+                    "author": c["author"],
+                    "license": c["license"],
+                }
+                if c.get("source"):
+                    e["source"] = c["source"]
+                entries.append(e)
+            if entries:
+                apps[pkg] = entries
+    print(f"artwork versions: {sum(len(v) for v in apps.values())} pictures for {len(apps)} apps")
+    write_json(OUT / "artwork" / "variants.json", {"schemaVersion": 1, "apps": apps})
+
+
 def build_wallpapers():
     """wallpapers/<id>.webp (one picture) or <id>-dark.webp + <id>-light.webp, plus <id>-thumb.webp and credits.json."""
     import shutil
@@ -265,6 +331,7 @@ def main():
         shutil.rmtree(OUT)
     build_themes()
     build_artwork()
+    build_variants()
     build_wallpapers()
     if "--check" in sys.argv:
         import subprocess

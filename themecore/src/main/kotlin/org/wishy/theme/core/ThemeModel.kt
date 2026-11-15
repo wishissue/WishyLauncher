@@ -88,7 +88,7 @@ object InsetsSerializer : KSerializer<Insets> {
     @SerialName("underline") UNDERLINE, @SerialName("fill") FILL, @SerialName("bar") BAR
 }
 @Serializable enum class CardAnimation { @SerialName("none") NONE, @SerialName("bob") BOB, @SerialName("pulse") PULSE, @SerialName("blink") BLINK }
-@Serializable enum class ArtSource { @SerialName("auto") AUTO, @SerialName("banner") BANNER, @SerialName("icon") ICON }
+@Serializable enum class ArtSource { @SerialName("auto") AUTO, @SerialName("banner") BANNER, @SerialName("icon") ICON, @SerialName("none") NONE }
 @Serializable enum class Fit { @SerialName("crop") CROP, @SerialName("fit") FIT, @SerialName("stretch") STRETCH }
 @Serializable enum class BgFit { @SerialName("crop") CROP, @SerialName("fit") FIT, @SerialName("stretch") STRETCH, @SerialName("tile") TILE }
 @Serializable enum class Sampling { @SerialName("smooth") SMOOTH, @SerialName("nearest") NEAREST }
@@ -96,7 +96,7 @@ object InsetsSerializer : KSerializer<Insets> {
 @Serializable enum class UserWallpaper { @SerialName("allowed") ALLOWED, @SerialName("ignored") IGNORED, @SerialName("required") REQUIRED }
 @Serializable enum class LabelPosition {
     @SerialName("none") NONE, @SerialName("below") BELOW, @SerialName("overlayBottom") OVERLAY_BOTTOM,
-    @SerialName("overlayCenter") OVERLAY_CENTER, @SerialName("focusedOnly") FOCUSED_ONLY
+    @SerialName("overlayCenter") OVERLAY_CENTER, @SerialName("overlayStart") OVERLAY_START, @SerialName("focusedOnly") FOCUSED_ONLY
 }
 @Serializable enum class TextAlign { @SerialName("start") START, @SerialName("center") CENTER, @SerialName("end") END }
 @Serializable enum class Anchor {
@@ -121,7 +121,8 @@ object InsetsSerializer : KSerializer<Insets> {
 @Serializable enum class StatusBarMode { @SerialName("launcher") LAUNCHER, @SerialName("theme") THEME }
 @Serializable data class Chrome(val statusBar: StatusBarMode = StatusBarMode.LAUNCHER)
 @Serializable enum class SectionsArrangement { @SerialName("tabs") TABS, @SerialName("dots") DOTS, @SerialName("list") LIST }
-@Serializable enum class AppsArrangement { @SerialName("rail") RAIL, @SerialName("grid") GRID, @SerialName("list") LIST, @SerialName("cross") CROSS }
+@Serializable enum class AppsArrangement { @SerialName("rail") RAIL, @SerialName("grid") GRID, @SerialName("list") LIST, @SerialName("cross") CROSS,
+    @SerialName("wheel") WHEEL, @SerialName("bento") BENTO }
 @Serializable enum class ScrollMode { @SerialName("edge") EDGE, @SerialName("centerFocused") CENTER_FOCUSED }
 @Serializable enum class FocusScope { @SerialName("section") SECTION, @SerialName("all") ALL }
 @Serializable enum class ScreenTransition { @SerialName("none") NONE, @SerialName("fade") FADE, @SerialName("slide") SLIDE }
@@ -368,6 +369,10 @@ data class AppsNode(
     override val id: String? = null, override val frame: Frame? = null, override val weight: Float? = null,
     override val padding: Insets? = null, override val visible: Boolean = true, override val showWhen: ShowWhen = ShowWhen.ALWAYS,
     val arrangement: AppsArrangement, val card: String,
+    /** Bento only: the card style for the wide tiles. Falls back to [card]. */
+    val bigCard: String? = null,
+    /** Wheel only: the ring the cards ride on. [ringWidth] is its thickness in design units (0 draws no ring). */
+    val ringColor: String? = null, val ringEdgeColor: String? = null, val ringWidth: Float = 0f,
     val columns: Int? = null, val rows: Int? = null, val itemWidth: Length? = null, val itemHeight: Length? = null,
     val gap: Float = 16f, val scroll: ScrollMode = ScrollMode.EDGE, val wrap: Boolean = false,
     val focusScope: FocusScope = FocusScope.SECTION,

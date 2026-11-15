@@ -1,0 +1,274 @@
+{
+  "$schema": "../../schema/wishy-theme.schema.v1.json",
+  "schemaVersion": 1,
+  "id": "wishy-wheel",
+  "name": "Wishy Wheel",
+  "version": "1.0.0",
+  "author": "Wishy Launcher contributors",
+  "description": "A ring of round app icons on the left where only the middle one is selected. Press up or down and the next app spins into the middle, fast, and the ring never ends. The name of the selected app sits big on the right.",
+  "license": "GPL-3.0-only",
+  "defaultColorScheme": "dark",
+  "credits": [
+    {
+      "file": "assets/fonts/PlusJakartaSans-Regular.ttf",
+      "title": "Plus Jakarta Sans Regular",
+      "author": "The Plus Jakarta Sans Project Authors",
+      "license": "OFL-1.1",
+      "source": "https://github.com/tokotype/PlusJakartaSans"
+    },
+    {
+      "file": "assets/fonts/PlusJakartaSans-SemiBold.ttf",
+      "title": "Plus Jakarta Sans SemiBold",
+      "author": "The Plus Jakarta Sans Project Authors",
+      "license": "OFL-1.1",
+      "source": "https://github.com/tokotype/PlusJakartaSans"
+    },
+    {
+      "file": "assets/fonts/PlusJakartaSans-Bold.ttf",
+      "title": "Plus Jakarta Sans Bold",
+      "author": "The Plus Jakarta Sans Project Authors",
+      "license": "OFL-1.1",
+      "source": "https://github.com/tokotype/PlusJakartaSans"
+    }
+  ],
+  "colorSchemes": {
+    "dark": {
+      "background": "#080B12",
+      "surface": "#151B28",
+      "surfaceVariant": "#1E2636",
+      "onSurface": "#F2F5FB",
+      "onSurfaceMuted": "#9AA6BD",
+      "primary": "#3EA8FF",
+      "onPrimary": "#00213D",
+      "accent": "#FFC857",
+      "outline": "#2A3347",
+      "scrim": "#99000000",
+      "custom": {
+        "band": "#12FFFFFF",
+        "edge": "#2A66A3FF"
+      }
+    },
+    "light": {
+      "background": "#E9EEF7",
+      "surface": "#FFFFFF",
+      "surfaceVariant": "#DCE5F3",
+      "onSurface": "#101828",
+      "onSurfaceMuted": "#46556C",
+      "primary": "#0A6CE0",
+      "onPrimary": "#FFFFFF",
+      "accent": "#946200",
+      "outline": "#C3D4EE",
+      "scrim": "#660B1B33",
+      "custom": {
+        "band": "#14101828",
+        "edge": "#330A6CE0"
+      }
+    }
+  },
+  "fonts": {
+    "regular": {
+      "file": "assets/fonts/PlusJakartaSans-Regular.ttf"
+    },
+    "semibold": {
+      "file": "assets/fonts/PlusJakartaSans-SemiBold.ttf"
+    },
+    "bold": {
+      "file": "assets/fonts/PlusJakartaSans-Bold.ttf"
+    }
+  },
+  "textStyles": {
+    "clock": {
+      "font": "bold",
+      "size": 84,
+      "color": "@onSurface",
+      "letterSpacing": -2,
+      "maxLines": 1
+    },
+    "date": {
+      "font": "semibold",
+      "size": 28,
+      "color": "@onSurfaceMuted",
+      "maxLines": 1
+    },
+    "name": {
+      "font": "bold",
+      "size": 84,
+      "color": "@onSurface",
+      "letterSpacing": -2,
+      "maxLines": 2
+    },
+    "meta": {
+      "font": "semibold",
+      "size": 30,
+      "color": "@primary",
+      "letterSpacing": 4,
+      "maxLines": 1
+    }
+  },
+  "background": {
+    "color": "@background",
+    "userWallpaper": "allowed"
+  },
+  "cardStyles": {
+    "orb": {
+      "aspect": "1:1",
+      "shape": {
+        "kind": "rounded",
+        "radius": 110
+      },
+      "fill": "@surface",
+      "artwork": {
+        "source": "icon",
+        "fit": "fit",
+        "iconSize": "60%",
+        "placeholderFill": "@surfaceVariant"
+      },
+      "label": {
+        "position": "none"
+      },
+      "idle": {
+        "scale": 1.0,
+        "alpha": 1.0
+      },
+      "focused": {
+        "scale": 1.0,
+        "alpha": 1.0,
+        "shadow": {
+          "color": "@primary/55",
+          "dy": 8,
+          "blur": 48
+        },
+        "indicator": {
+          "kind": "ring",
+          "color": "@primary",
+          "width": 6,
+          "gap": 6
+        }
+      }
+    }
+  },
+  "motion": {
+    "focusMillis": 50,
+    "scrollMillis": 100,
+    "easing": "decelerate",
+    "screenTransition": "none"
+  },
+  "chrome": {
+    "statusBar": "theme"
+  },
+  "screens": {
+    "home": {
+      "root": {
+        "type": "stack",
+        "children": [
+          {
+            "type": "apps",
+            "id": "apps",
+            "arrangement": "wheel",
+            "card": "orb",
+            "itemWidth": 220,
+            "ringColor": "@custom.band",
+            "ringEdgeColor": "@custom.edge",
+            "ringWidth": 300,
+            "frame": {
+              "x": 0,
+              "y": 0,
+              "w": "40%",
+              "h": "100%"
+            }
+          },
+          {
+            "type": "shape",
+            "id": "guide",
+            "shape": {
+              "kind": "rect",
+              "radius": 0
+            },
+            "fill": "@primary/70",
+            "showWhen": "hasFocusedApp",
+            "frame": {
+              "x": 330,
+              "y": "50%",
+              "w": "18%",
+              "h": 3,
+              "anchor": "start"
+            }
+          },
+          {
+            "type": "focusedAppName",
+            "id": "focusName",
+            "style": "name",
+            "showWhen": "hasFocusedApp",
+            "frame": {
+              "x": "43%",
+              "y": "46%",
+              "w": "52%",
+              "anchor": "start"
+            }
+          },
+          {
+            "type": "text",
+            "id": "count",
+            "bind": "focusedPosition",
+            "style": "meta",
+            "showWhen": "hasFocusedApp",
+            "frame": {
+              "x": "43%",
+              "y": "61%",
+              "w": "30%"
+            }
+          },
+          {
+            "type": "clock",
+            "id": "clock",
+            "style": "clock",
+            "showWhen": "clockEnabled",
+            "frame": {
+              "x": "96%",
+              "y": "6%",
+              "anchor": "topEnd"
+            }
+          },
+          {
+            "type": "date",
+            "id": "date",
+            "style": "date",
+            "showWhen": "dateEnabled",
+            "frame": {
+              "x": "96%",
+              "y": "19%",
+              "anchor": "topEnd"
+            }
+          },
+          {
+            "type": "statusIcons",
+            "id": "status",
+            "showWhen": "statusBarEnabled",
+            "iconSize": 30,
+            "gap": 6,
+            "color": "@onSurface",
+            "focusFill": "@onSurface/20",
+            "frame": {
+              "x": "96%",
+              "y": "94%",
+              "anchor": "bottomEnd"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "overrides": [
+    {
+      "when": {
+        "reducedMotion": true
+      },
+      "merge": {
+        "motion": {
+          "focusMillis": 0,
+          "scrollMillis": 0
+        }
+      }
+    }
+  ]
+}

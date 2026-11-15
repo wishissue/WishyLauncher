@@ -178,6 +178,13 @@ object ThemeChecker {
             is AppsNode -> {
                 counts.apps++
                 if (n.card !in t.cardStyles) c.add("$where.card '${n.card}' is not defined in cardStyles")
+                n.ringColor?.let { refs.color(it, "$where.ringColor") }
+                n.ringEdgeColor?.let { refs.color(it, "$where.ringEdgeColor") }
+                if (n.ringWidth !in 0f..600f) c.add("$where.ringWidth out of range")
+                if ((n.ringColor != null || n.ringEdgeColor != null || n.ringWidth != 0f) && n.arrangement != AppsArrangement.WHEEL) c.add("$where: ring settings only apply to the wheel arrangement")
+                n.bigCard?.let { if (it !in t.cardStyles) c.add("$where.bigCard '$it' is not defined in cardStyles") }
+                if (n.bigCard != null && n.arrangement != AppsArrangement.BENTO) c.add("$where.bigCard only applies to the bento arrangement")
+                if (n.arrangement == AppsArrangement.BENTO && n.columns != null && n.columns !in 3..8) c.add("$where.columns for a bento must be 3 to 8")
                 n.columns?.let { if (it !in 1..10) c.add("$where.columns out of range") }
                 n.rows?.let { if (it !in 1..8) c.add("$where.rows out of range") }
                 n.itemWidth?.let { length(it, "$where.itemWidth", c) }

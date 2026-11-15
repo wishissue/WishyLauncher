@@ -99,7 +99,7 @@ Planned change: the scan will also look up the banner manager (section 6) for ea
 
 ### Rendering
 
-The theme tree is interpreted by one generic composable that switches on node type. There is no per-theme Kotlin code. `row` and `column` use Compose `Row` and `Column`. `stack` uses a custom `Layout` that places children from `frame` values. `apps` maps to `LazyRow`, `LazyVerticalGrid` or `LazyColumn`, and `cross` to a custom row where the focused item is enlarged.
+The theme tree is interpreted by one generic composable that switches on node type. There is no per-theme Kotlin code. `row` and `column` use Compose `Row` and `Column`. `stack` uses a custom `Layout` that places children from `frame` values. `apps` maps to `LazyRow`, `LazyVerticalGrid` or `LazyColumn`, and `cross` to a custom row where the focused item is enlarged. `bento` is a `LazyVerticalGrid` with two-column spans for the wide tiles. `wheel` is a custom layout: one focus target for the whole ring handles the keys, and the cards are drawn passively on a circle that an `Animatable` turns.
 
 Focus and keys are owned by the launcher, not the theme: D-pad movement, long-press OK for the app menu, Menu key for Settings and Back behaviour are fixed. A theme chooses only how focus *looks* (card state, indicator, motion).
 

@@ -93,6 +93,10 @@ data class LauncherConfig(
     val artworkOnline: Boolean = true,
     /** Extra THEME repositories (index.json addresses). Never used for artwork. */
     val extraRepos: List<String> = emptyList(),
+    /** Extra BANNER sources: https addresses of `variants.json` files (several banner versions per app). */
+    val bannerRepos: List<String> = emptyList(),
+    /** Extra WALLPAPER sources: GitHub repositories as "owner/repo", plain folders of pictures like CozyPixels. */
+    val wallpaperRepos: List<String> = emptyList(),
 )
 
 const val LAYOUT_CAROUSEL = 0

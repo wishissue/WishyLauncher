@@ -44,6 +44,35 @@ class ThemeLoaderTest {
         assertEquals(false, loaded.doc.hasSections)
     }
 
+    @Test fun acceptsWheelBentoAndTextOnlyCards() {
+        ThemeLoader.load(
+            theme(screens = """{"home":{"root":{"type":"apps","arrangement":"wheel","card":"c","itemWidth":220,
+                "ringColor":"@primary/20","ringEdgeColor":"@primary/40","ringWidth":300}}}"""), ctx,
+        )
+        ThemeLoader.load(
+            theme(screens = """{"home":{"root":{"type":"apps","arrangement":"bento","card":"c","bigCard":"c","columns":5}}}"""), ctx,
+        )
+        ThemeLoader.load(
+            theme(
+                cardStyles = """{"c":{"artwork":{"source":"none"},"label":{"position":"overlayStart"}}}""",
+                screens = """{"home":{"root":{"type":"apps","arrangement":"list","card":"c","gap":8}}}""",
+            ),
+            ctx,
+        )
+    }
+
+    @Test fun rejectsBadBentoAndRingSettings() {
+        fun apps(extra: String, arrangement: String = "bento") =
+            theme(screens = """{"home":{"root":{"type":"apps","arrangement":"$arrangement","card":"c",$extra "itemWidth":200}}}""")
+        assertRejected(apps(""" "columns":2,"""), "bento must be 3 to 8")
+        assertRejected(apps(""" "columns":9,"""), "bento must be 3 to 8")
+        assertRejected(apps(""" "bigCard":"nope","""), "nope")
+        assertRejected(apps(""" "bigCard":"c",""", arrangement = "rail"), "only applies to the bento")
+        assertRejected(apps(""" "ringWidth":900,""", arrangement = "wheel"), "ringWidth")
+        assertRejected(apps(""" "ringWidth":100,""", arrangement = "rail"), "only apply to the wheel")
+        assertRejected(apps(""" "ringColor":"@custom.missing",""", arrangement = "wheel"), "not defined")
+    }
+
     @Test fun rejectsUnknownTopLevelKey() = assertRejected(theme(extra = ""","script":"alert(1)""""))
 
     @Test fun rejectsUnknownNodeType() =

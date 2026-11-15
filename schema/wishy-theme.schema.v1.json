@@ -292,7 +292,7 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "source": { "enum": ["auto", "banner", "icon"], "default": "auto" },
+            "source": { "enum": ["auto", "banner", "icon", "none"], "default": "auto" },
             "fit": { "enum": ["crop", "fit", "stretch"], "default": "crop" },
             "sampling": { "enum": ["smooth", "nearest"], "default": "smooth" },
             "pixelBlock": { "type": "integer", "minimum": 1, "maximum": 16, "description": "Downscale then upscale with nearest sampling for a pixelated look." },
@@ -306,7 +306,7 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "position": { "enum": ["none", "below", "overlayBottom", "overlayCenter", "focusedOnly"], "default": "below" },
+            "position": { "enum": ["none", "below", "overlayBottom", "overlayCenter", "overlayStart", "focusedOnly"], "default": "below" },
             "style": { "type": "string", "description": "Key in textStyles." },
             "gap": { "type": "number", "minimum": 0, "maximum": 64 }
           }
@@ -487,8 +487,12 @@
       "required": ["type", "arrangement", "card"],
       "properties": {
         "type": { "const": "apps" },
-        "arrangement": { "enum": ["rail", "grid", "list", "cross"], "description": "rail: one horizontal row. grid: columns x rows. list: one vertical column. cross: horizontal icon bar with the focused item enlarged." },
+        "arrangement": { "enum": ["rail", "grid", "list", "cross", "wheel", "bento"], "description": "rail: one horizontal row. grid: columns x rows. list: one vertical column. cross: horizontal icon bar with the focused item enlarged. wheel: a vertical ring where only the middle app is selected and up/down spins the next app into the middle. bento: a grid mixing wide and small tiles (small tiles use card, wide tiles use bigCard)." },
         "card": { "type": "string", "description": "Key in cardStyles." },
+        "bigCard": { "type": "string", "description": "Bento only: key in cardStyles for the wide tiles. Defaults to card." },
+        "ringColor": { "$ref": "#/$defs/colorRef", "description": "Wheel only: colour of the band the cards ride on." },
+        "ringEdgeColor": { "$ref": "#/$defs/colorRef", "description": "Wheel only: colour of a thin line along both edges of the band." },
+        "ringWidth": { "type": "number", "minimum": 0, "maximum": 600, "description": "Wheel only: thickness of the band in design units. 0 draws no ring." },
         "columns": { "type": "integer", "minimum": 1, "maximum": 10 },
         "rows": { "type": "integer", "minimum": 1, "maximum": 8 },
         "itemWidth": { "$ref": "#/$defs/length" },

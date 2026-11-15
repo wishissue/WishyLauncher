@@ -9,6 +9,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import org.wishy.launcher.data.AppEntry
 import org.wishy.launcher.net.HttpsFetcher
 import org.wishy.launcher.net.Repos
+import org.wishy.theme.core.ArtVariant
+import org.wishy.theme.core.ArtVariantIndex
 import org.wishy.theme.core.FileHash
 import org.wishy.theme.core.RepoChecker
 import org.wishy.theme.core.RepoJson
@@ -20,8 +22,12 @@ import java.io.File
 /**
  * Chooses and stores artwork for installed apps. Lookup order (first hit wins):
  *   1. a picture the user chose for the app        filesDir/art/user/<pkg>.img
- *   2. artwork from the official repository         filesDir/art/repo/<pkg>.img  (+ <pkg>.sha256)
+ *   2. the banner version the user picked           filesDir/art/variants/<pkg>/<key>.img  (+ <key>.sha256)
+ *      or, when nothing is picked, artwork from the official repository
+ *                                                   filesDir/art/repo/<pkg>.img  (+ <pkg>.sha256)
  *   3. the app's own banner, then its icon          (done by AppRepository, unchanged)
+ * Picking "the app's own" skips step 2 for that app. Versions come from `variants.json` files: the official one and any
+ * the user added. They are only downloaded when the person opens that app's picker, and checked like every other banner.
  *
  * Nothing here runs on the main thread. A file is only ever replaced after the new one has been fully
  * downloaded, hash-checked and decoded as an image, so a failure leaves the old artwork in place.
@@ -30,6 +36,7 @@ class BannerManager private constructor(context: Context) {
     private val app = context.applicationContext
     private val userDir = File(app.filesDir, "art/user")
     private val repoDir = File(app.filesDir, "art/repo")
+    private val variantDir = File(app.filesDir, "art/variants")
     private val tmpDir = File(app.cacheDir, "art-staging")
     private val prefs = app.getSharedPreferences("art_status", Context.MODE_PRIVATE)
 
@@ -49,10 +56,17 @@ class BannerManager private constructor(context: Context) {
     /** Returns [apps] with the banner replaced where the user or the repository supplied artwork. */
     fun withArtwork(apps: List<AppEntry>, maxWidth: Int = 720): List<AppEntry> =
         apps.map { a ->
-            val f = userFile(a.pkg) ?: repoFile(a.pkg)
+            val f = userFile(a.pkg) ?: chosenRepoFile(a.pkg)
             val bmp = f?.let { decode(it, maxWidth) }
             if (bmp != null && f != null) a.copy(banner = bmp, stamp = a.stamp xor f.lastModified()) else a
         }
+
+    /** The downloaded banner that applies to [pkg] given the person's pick. Null means "use the app's own". */
+    private fun chosenRepoFile(pkg: String): File? = when (val p = pick(pkg)) {
+        PICK_DEFAULT -> repoFile(pkg)
+        PICK_APP -> null
+        else -> versionFile(pkg, p) ?: repoFile(pkg)
+    }
 
     private fun decode(f: File, maxWidth: Int): ImageBitmap? = runCatching {
         val b = BitmapFactory.Options().apply { inJustDecodeBounds = true }
@@ -138,6 +152,105 @@ class BannerManager private constructor(context: Context) {
 
     fun syncDue(minIntervalMs: Long = 24L * 60 * 60 * 1000) = System.currentTimeMillis() - lastSync() > minIntervalMs
 
+    // ----- banner versions -----
+
+    /** One selectable version of an app's banner. [key] is unique across sources and safe to use as a file name. */
+    class Version(val key: String, val sourceUrl: String, val info: ArtVariant)
+
+    /** What the person picked for [pkg]: [PICK_DEFAULT], [PICK_APP], or a version key. A picture of their own wins over all of these. */
+    fun pick(pkg: String): String = prefs.getString("pick_$pkg", PICK_DEFAULT) ?: PICK_DEFAULT
+
+    /** Automatic again: the official banner when there is one, otherwise the app's own. Also drops the person's own picture. */
+    fun pickDefault(pkg: String) { requirePkg(pkg); prefs.edit().remove("pick_$pkg").apply(); clearUserArt(pkg) }
+
+    /** Use the banner the app ships, even if the repository has one. Also drops the person's own picture. */
+    fun pickAppOwn(pkg: String) { requirePkg(pkg); prefs.edit().putString("pick_$pkg", PICK_APP).apply(); clearUserArt(pkg) }
+
+    /** Use a downloaded version. Throws if it has not been downloaded (and checked) yet. */
+    fun pickVersion(pkg: String, key: String) {
+        requirePkg(pkg)
+        if (versionFile(pkg, key) == null) throw ArtException("That banner is not downloaded yet.")
+        prefs.edit().putString("pick_$pkg", key).apply(); clearUserArt(pkg)
+    }
+
+    fun versionFile(pkg: String, key: String): File? {
+        if (!RepoUrls.isPackageName(pkg) || !VERSION_KEY.matches(key)) return null
+        return File(File(variantDir, pkg), "$key.img").takeIf { it.isFile }
+    }
+
+    /** A small decoded picture of a downloaded version, for the picker. Call off the main thread. */
+    fun versionPreview(pkg: String, key: String, maxWidth: Int = 480): ImageBitmap? = versionFile(pkg, key)?.let { decode(it, maxWidth) }
+    fun userPreview(pkg: String, maxWidth: Int = 480): ImageBitmap? = userFile(pkg)?.let { decode(it, maxWidth) }
+    fun defaultPreview(pkg: String, maxWidth: Int = 480): ImageBitmap? = repoFile(pkg)?.let { decode(it, maxWidth) }
+
+    /** The banner the app itself ships, if any (not the icon). Call off the main thread. */
+    fun appOwnPreview(pkg: String, maxWidth: Int = 480): ImageBitmap? = runCatching {
+        if (!RepoUrls.isPackageName(pkg)) return null
+        val pm = app.packageManager
+        val d = pm.getApplicationBanner(pkg)
+            ?: pm.getLeanbackLaunchIntentForPackage(pkg)?.let { pm.getActivityBanner(it) }
+            ?: return null
+        val w = d.intrinsicWidth.takeIf { it > 0 } ?: 320
+        val h = d.intrinsicHeight.takeIf { it > 0 } ?: 180
+        val k = (maxWidth.toFloat() / w).coerceAtMost(1f)
+        val bmp = Bitmap.createBitmap((w * k).toInt().coerceAtLeast(1), (h * k).toInt().coerceAtLeast(1), Bitmap.Config.ARGB_8888)
+        d.setBounds(0, 0, bmp.width, bmp.height)
+        d.draw(android.graphics.Canvas(bmp))
+        bmp.asImageBitmap()
+    }.getOrNull()
+
+    /**
+     * Lists the versions offered for [pkg] by the official `variants.json` and by [extraSources] (https addresses the
+     * person added). Only the one package's entries are looked at, and each entry is judged on its own so a bad one can't
+     * hide the good ones. Throws only if no source answered and nothing was found. Call off the main thread.
+     */
+    fun fetchVersions(pkg: String, extraSources: List<String>): List<Version> {
+        requirePkg(pkg)
+        val out = ArrayList<Version>()
+        var firstError: Throwable? = null
+        for (src in listOf(Repos.OFFICIAL_VARIANTS_INDEX) + extraSources) {
+            runCatching {
+                val idx = RepoJson.parseVariants(HttpsFetcher.getText(src, RepoLimits.MAX_INDEX_BYTES))
+                if (idx.schemaVersion != 1) return@runCatching
+                val list = idx.apps[pkg] ?: return@runCatching
+                val tag = sourceTag(src)
+                for (v in list.take(RepoLimits.MAX_ART_VARIANTS)) {
+                    if (RepoChecker.problems(ArtVariantIndex(1, mapOf(pkg to listOf(v))), src).isNotEmpty()) continue
+                    out += Version("${tag}_${v.id}", src, v)
+                }
+            }.onFailure { if (firstError == null) firstError = it }
+        }
+        val err = firstError
+        if (out.isEmpty() && err != null) throw err
+        return out
+    }
+
+    /** Downloads and checks one version. Does nothing if the same picture is already stored. Throws on any failure. */
+    fun downloadVersion(pkg: String, v: Version) {
+        requirePkg(pkg)
+        require(VERSION_KEY.matches(v.key)) { "bad key" }
+        val dir = File(variantDir, pkg)
+        val dest = File(dir, "${v.key}.img")
+        val sidecar = File(dir, "${v.key}.sha256")
+        if (dest.isFile && sidecar.isFile && sidecar.readText().trim() == v.info.sha256) return
+        tmpDir.mkdirs()
+        val tmp = File(tmpDir, "$pkg.${v.key}.part")
+        try {
+            HttpsFetcher.download(RepoUrls.resolve(v.sourceUrl, v.info.url), tmp, RepoLimits.MAX_ART_BYTES, v.info.sizeBytes)
+            FileHash.verifySha256(tmp, v.info.sha256)
+            val (w, h) = checkImage(tmp, requireBannerShape = true)
+            if (w != v.info.width || h != v.info.height) throw ArtException("Size does not match the index.")
+            replace(tmp, dest)
+            sidecar.writeText(v.info.sha256)
+        } finally {
+            tmp.delete()
+        }
+    }
+
+    /** First 8 hex digits of the source address, so two sources can both offer a version called "dark". */
+    private fun sourceTag(src: String): String =
+        java.security.MessageDigest.getInstance("SHA-1").digest(src.toByteArray()).joinToString("") { "%02x".format(it) }.take(8)
+
     // ----- cache management -----
 
     fun sizes(): Sizes {
@@ -152,6 +265,7 @@ class BannerManager private constructor(context: Context) {
     /** Removes downloaded artwork only. The user's own choices are not touched. */
     fun clearDownloaded() {
         repoDir.deleteRecursively()
+        variantDir.deleteRecursively()
         tmpDir.deleteRecursively()
         prefs.edit().remove("last_sync").apply()
     }
@@ -186,6 +300,9 @@ class BannerManager private constructor(context: Context) {
     }
 
     companion object {
+        const val PICK_DEFAULT = ""
+        const val PICK_APP = "app"
+        private val VERSION_KEY = Regex("^[0-9a-f]{8}_[a-z0-9_]{1,32}$")
         @Volatile private var instance: BannerManager? = null
         fun get(context: Context): BannerManager =
             instance ?: synchronized(this) { instance ?: BannerManager(context).also { instance = it } }

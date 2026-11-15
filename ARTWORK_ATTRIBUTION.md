@@ -13,6 +13,16 @@
 
 The Wishy Blue wallpaper and the Wishy theme's placeholder cover are drawn from scratch by `tools/gen-wallpapers.py`. The ten GNOME wallpapers are the originals from GNOME Backgrounds, centre-cropped to 16:9, scaled to 1920 x 1080 and saved as WebP. Each has the dark and light version that GNOME publishes, so it matches the launcher's two colour modes. They are not changed in any other way. CC BY-SA 3.0 asks for credit and for the same licence on adapted copies of the pictures; the pictures are separate files, they are not part of the GPL-licensed code. The only other third-party files bundled are the fonts and icons listed in `THIRD_PARTY_LICENSES.md`.
 
+## Community wallpaper sources (downloaded by the user, not bundled)
+
+The wallpaper store can list pictures from public GitHub repositories. These pictures are **not** part of this project's source or APK; they are fetched only when a user opens that source and chooses a picture, and each one is credited in the store and in the picture's saved details.
+
+| Source | Owner | Licence |
+|---|---|---|
+| CozyPixels, https://github.com/SleepyCatHey/CozyPixels (built-in source) | SleepyCatHey and the repository's contributors | MIT for the repository. Individual pictures can have their own original authors or rights, so check the repository before redistributing them. |
+
+Repositories a user adds themselves are shown with their `owner/repo` name and "See repository" as the licence, because Wishy cannot know their terms.
+
 ## App banners
 
 The launcher can show a banner that a user picked, or one downloaded from the official `WishyLauncher-Themes` repository. Downloaded banners are **not** part of this project's source or APK. Each entry in the repository's `artwork/index.json` must name the author and licence of the picture, and the Settings screen for theme credits and the repository's `CREDITS.md` show them. At the time of writing that index is empty.

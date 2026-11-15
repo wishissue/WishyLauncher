@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridItemSpanScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
@@ -57,6 +57,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.wishy.launcher.R
+import org.wishy.launcher.art.CommunityRepo
 import org.wishy.launcher.art.CommunityWallpaper
 import org.wishy.launcher.art.CommunityWallpapers
 import org.wishy.launcher.art.StoreWallpaper
@@ -66,15 +67,16 @@ import org.wishy.launcher.data.ConfigStore
 import org.wishy.launcher.data.LauncherConfig
 import org.wishy.launcher.net.Repos
 
-private const val SOURCE_WISHY = 0
-private const val SOURCE_COZY = 1
+private const val MAX_CUSTOM_REPOS = 8
 
 /**
- * Browse and download more wallpapers, from two places: the official Wishy list and the community CozyPixels
- * repository (switch at the top). CozyPixels can be narrowed by palette and category. Tapping a card downloads it
- * (checked before it is kept) and uses it. Nothing happens while offline mode is on.
+ * Browse and download more wallpapers. One chip per source along the top: the official Wishy list, CozyPixels, and any
+ * GitHub repository the person added (plain folders of pictures work). Community sources can be narrowed by their top
+ * folder and sub-folder. Tapping a card downloads it (checked before it is kept) and uses it. Nothing happens while
+ * offline mode is on.
  *
- * The whole screen is one lazy grid, so only the cards on screen load their pictures however long the list is.
+ * The whole screen is one lazy grid that adapts to the width it is given, so it fills a full-screen panel with as many
+ * columns as fit, and only the cards on screen load their pictures however long the list is.
  */
 @Composable
 internal fun WallpaperStoreScreen(
@@ -85,16 +87,25 @@ internal fun WallpaperStoreScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var source by remember { mutableIntStateOf(SOURCE_WISHY) }
+
+    // Source 0 is the official list; 1.. are community repositories (CozyPixels first, then the person's own).
+    val repos = remember(config.wallpaperRepos) {
+        (listOf(CommunityWallpapers.COZY) + config.wallpaperRepos.mapNotNull { CommunityWallpapers.parseRepo(it) }).distinct()
+    }
+    var source by remember { mutableIntStateOf(0) }
+    val active: CommunityRepo? = repos.getOrNull(source - 1)
+
     var list by remember { mutableStateOf<List<StoreWallpaper>?>(null) }
-    var cozy by remember { mutableStateOf<List<CommunityWallpaper>?>(null) }
-    var palette by remember { mutableStateOf<String?>(null) }
-    var category by remember { mutableStateOf<String?>(null) }
+    var lists by remember { mutableStateOf<Map<String, List<CommunityWallpaper>>>(emptyMap()) }
+    var loadingRepos by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var palette by remember(source) { mutableStateOf<String?>(null) }
+    var category by remember(source) { mutableStateOf<String?>(null) }
     var status by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var loadingWishy by remember { mutableStateOf(false) }
-    var loadingCozy by remember { mutableStateOf(false) }
     var tick by remember { mutableIntStateOf(0) }
+    var addDialog by remember { mutableStateOf(false) }
+    var confirmRepo by remember { mutableStateOf<CommunityRepo?>(null) }
     val have by produceState<Set<String>>(emptySet(), tick) {
         value = withContext(Dispatchers.IO) { WallpaperStore.installed(context).map { it.id }.toSet() }
     }
@@ -110,13 +121,14 @@ internal fun WallpaperStoreScreen(
         }
     }
 
-    fun loadCozy() {
-        if (loadingCozy) return
-        loadingCozy = true; status = context.getString(R.string.online_loading)
+    fun loadRepo(repo: CommunityRepo) {
+        val k = repo.slug.lowercase()
+        if (k in loadingRepos) return
+        loadingRepos = loadingRepos + k; status = context.getString(R.string.online_loading)
         scope.launch {
-            val r = withContext(Dispatchers.IO) { runCatching { CommunityWallpapers.fetchIndex(context) } }
-            loadingCozy = false
-            r.onSuccess { cozy = it; status = "" }
+            val r = withContext(Dispatchers.IO) { runCatching { CommunityWallpapers.fetchIndex(context, repo) } }
+            loadingRepos = loadingRepos - k
+            r.onSuccess { lists = lists + (k to it); status = "" }
                 .onFailure { status = context.getString(R.string.online_failed, it.message ?: "") }
         }
     }
@@ -135,7 +147,7 @@ internal fun WallpaperStoreScreen(
         }
     }
 
-    fun useCozy(w: CommunityWallpaper) {
+    fun useCommunity(w: CommunityWallpaper) {
         if (busy) return
         if (w.id in have) { onApply(w.id); return }
         busy = true; status = context.getString(R.string.wp_store_downloading, w.name)
@@ -156,17 +168,17 @@ internal fun WallpaperStoreScreen(
         }
     }
 
-    LaunchedEffect(config.offlineMode, source) {
+    LaunchedEffect(config.offlineMode, source, repos.size) {
         if (config.offlineMode) return@LaunchedEffect
-        if (source == SOURCE_WISHY && list == null) load()
-        if (source == SOURCE_COZY && cozy == null) loadCozy()
+        if (source == 0 && list == null) load()
+        if (active != null && active.slug.lowercase() !in lists) loadRepo(active)
     }
 
     val first = initialFocus()
-    val fullWidth: androidx.compose.foundation.lazy.grid.LazyGridItemSpanScope.() -> GridItemSpan = { GridItemSpan(maxLineSpan) }
+    val fullWidth: LazyGridItemSpanScope.() -> GridItemSpan = { GridItemSpan(maxLineSpan) }
 
     LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
+        columns = GridCells.Adaptive(minSize = 200.dp),
         modifier = Modifier
             .fillMaxSize()
             .onPreviewKeyEvent { e ->
@@ -183,7 +195,11 @@ internal fun WallpaperStoreScreen(
             Column {
                 ScreenHeader(stringResource(R.string.wp_store_title), onBack = onBack)
                 Text(
-                    stringResource(if (source == SOURCE_COZY) R.string.wp_cozy_sub else R.string.wp_store_sub),
+                    when {
+                        active == null -> stringResource(R.string.wp_store_sub)
+                        active == CommunityWallpapers.COZY -> stringResource(R.string.wp_cozy_sub)
+                        else -> stringResource(R.string.wp_repo_sub, active.slug)
+                    },
                     style = MaterialTheme.typography.bodyMedium, color = Wish.TextDim,
                     modifier = Modifier.padding(start = 8.dp),
                 )
@@ -191,11 +207,18 @@ internal fun WallpaperStoreScreen(
         }
         if (config.offlineMode) item(span = fullWidth) { OfflineNotice(config, store) }
 
-        // Where the wallpapers come from.
+        // Where the wallpapers come from: one chip per source, then "add".
         item(span = fullWidth) {
-            Row(Modifier.padding(horizontal = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(stringResource(R.string.wp_src_wishy), source == SOURCE_WISHY, Modifier.focusRequester(first)) { source = SOURCE_WISHY }
-                FilterChip(stringResource(R.string.wp_src_cozy), source == SOURCE_COZY) { source = SOURCE_COZY }
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp)) {
+                item(key = "src_wishy") {
+                    FilterChip(stringResource(R.string.wp_src_wishy), source == 0, Modifier.focusRequester(first)) { source = 0 }
+                }
+                items(repos, key = { "src_" + it.slug.lowercase() }) { r ->
+                    FilterChip(r.repo, active == r) { source = repos.indexOf(r) + 1 }
+                }
+                if (repos.size - 1 < MAX_CUSTOM_REPOS) {
+                    item(key = "src_add") { FilterChip("+  " + stringResource(R.string.wp_repo_add), false) { addDialog = true } }
+                }
             }
         }
 
@@ -205,7 +228,7 @@ internal fun WallpaperStoreScreen(
             }
         }
 
-        if (source == SOURCE_WISHY) {
+        if (active == null) {
             val l = list
             if (l == null) {
                 item(span = fullWidth) {
@@ -239,14 +262,14 @@ internal fun WallpaperStoreScreen(
                 }
             }
         } else {
-            val c = cozy
+            val c = lists[active.slug.lowercase()]
             if (c == null) {
                 item(span = fullWidth) {
                     SettingsItem(
-                        selected = false, enabled = !config.offlineMode && !loadingCozy,
-                        onClick = { loadCozy() },
+                        selected = false, enabled = !config.offlineMode && active.slug.lowercase() !in loadingRepos,
+                        onClick = { loadRepo(active) },
                         headlineContent = { Text(stringResource(R.string.online_try_again)) },
-                        supportingContent = { Text("github.com/SleepyCatHey/CozyPixels", maxLines = 1) },
+                        supportingContent = { Text("github.com/${active.slug}", maxLines = 1) },
                     )
                 }
             } else {
@@ -255,7 +278,10 @@ internal fun WallpaperStoreScreen(
                 val shown = CommunityWallpapers.filter(c, palette, category)
                 if (palettes.size > 1) {
                     item(span = fullWidth) {
-                        FilterRow(stringResource(R.string.wp_filter_palette), palettes, palette) { palette = it; category = null }
+                        FilterRow(
+                            stringResource(if (active == CommunityWallpapers.COZY) R.string.wp_filter_palette else R.string.wp_filter_collection),
+                            palettes, palette,
+                        ) { palette = it; category = null }
                     }
                 }
                 if (categories.size > 1) {
@@ -276,7 +302,7 @@ internal fun WallpaperStoreScreen(
                         subtitle = if (w.id in have) stringResource(R.string.wp_store_have) else "${w.palette} · ${w.category}",
                         owned = w.id in have,
                         loadThumb = { CommunityWallpapers.thumbnail(context, w) },
-                    ) { useCozy(w) }
+                    ) { useCommunity(w) }
                 }
                 val mine = c.filter { it.id in have }
                 if (mine.isNotEmpty()) {
@@ -286,12 +312,57 @@ internal fun WallpaperStoreScreen(
                             selected = false,
                             onClick = { removeInstalled(w.id) },
                             headlineContent = { Text(stringResource(R.string.wp_store_remove, w.name)) },
-                            supportingContent = { Text("CozyPixels community · MIT", maxLines = 1) },
+                            supportingContent = { Text("${w.repo.slug} · ${w.repo.licenseLabel}", maxLines = 1) },
                         )
                     }
                 }
             }
+            // Repositories the person added can be taken away again. CozyPixels is built in and stays.
+            if (active != CommunityWallpapers.COZY) {
+                item(span = fullWidth) {
+                    SettingsItem(
+                        selected = false,
+                        onClick = {
+                            val slug = active.slug
+                            source = 0
+                            scope.launch { store.update { cfg -> cfg.copy(wallpaperRepos = cfg.wallpaperRepos.filterNot { it.equals(slug, ignoreCase = true) }) } }
+                        },
+                        headlineContent = { Text(stringResource(R.string.wp_repo_remove, active.slug)) },
+                    )
+                }
+            }
         }
+    }
+
+    if (addDialog) {
+        TextEntryDialog(
+            title = stringResource(R.string.wp_repo_add_title),
+            hint = stringResource(R.string.wp_repo_hint),
+            initial = "",
+            onSave = { text ->
+                addDialog = false
+                val r = CommunityWallpapers.parseRepo(text)
+                when {
+                    r == null -> status = context.getString(R.string.wp_repo_bad)
+                    r in repos -> status = context.getString(R.string.wp_repo_have)
+                    else -> confirmRepo = r
+                }
+            },
+            onDismiss = { addDialog = false },
+        )
+    }
+    confirmRepo?.let { r ->
+        ConfirmDialog(
+            title = stringResource(R.string.wp_repo_confirm_title, r.slug),
+            body = stringResource(R.string.wp_repo_confirm_body),
+            confirm = stringResource(R.string.online_confirm_add),
+            onConfirm = {
+                confirmRepo = null
+                scope.launch { store.update { cfg -> if (cfg.wallpaperRepos.any { it.equals(r.slug, true) }) cfg else cfg.copy(wallpaperRepos = cfg.wallpaperRepos + r.slug) } }
+                source = repos.size + 1 // the new repository will be the last chip
+            },
+            onDismiss = { confirmRepo = null },
+        )
     }
 }
 

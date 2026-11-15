@@ -9,6 +9,7 @@ import android.os.Build
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.graphics.drawable.toBitmap
 import org.wishy.launcher.ui.tileColor
@@ -65,6 +66,40 @@ object AppRepository {
         "com.nvidia.geforcenow" to "games",
         "com.retroarch" to "games",
     )
+
+    /**
+     * Tile colour for an app that has no banner: the icon's own dominant colour, so the generated tile looks like that app
+     * instead of a random one. Saturated pixels count most and near-black or see-through ones are ignored; the result is
+     * kept dark enough for the white label on top. Falls back to the package-name colour when the icon is missing or has
+     * nothing to average. Flat on purpose: the design has no gradients.
+     */
+    private fun iconTile(icon: Bitmap?, pkg: String): Color {
+        if (icon == null) return tileColor(pkg)
+        return runCatching {
+            val n = 16
+            val small = Bitmap.createScaledBitmap(icon, n, n, true)
+            val px = IntArray(n * n)
+            small.getPixels(px, 0, n, 0, 0, n, n)
+            val hsv = FloatArray(3)
+            var r = 0f; var g = 0f; var b = 0f; var total = 0f
+            for (p in px) {
+                val a = (p ushr 24) / 255f
+                if (a < 0.5f) continue
+                android.graphics.Color.colorToHSV(p, hsv)
+                val w = a * (0.15f + hsv[1]) * (if (hsv[2] < 0.12f) 0.2f else 1f)
+                r += android.graphics.Color.red(p) * w
+                g += android.graphics.Color.green(p) * w
+                b += android.graphics.Color.blue(p) * w
+                total += w
+            }
+            if (total < 0.5f) return@runCatching tileColor(pkg)
+            val avg = android.graphics.Color.rgb((r / total).toInt(), (g / total).toInt(), (b / total).toInt())
+            android.graphics.Color.colorToHSV(avg, hsv)
+            hsv[1] = hsv[1].coerceIn(0.25f, 0.75f)
+            hsv[2] = hsv[2].coerceIn(0.28f, 0.50f)
+            Color(android.graphics.Color.HSVToColor(hsv))
+        }.getOrElse { tileColor(pkg) }
+    }
 
     /** Last successful scan — lets a relaunched activity render instantly. */
     @Volatile
@@ -127,7 +162,9 @@ object AppRepository {
                 previous?.get(pkg)?.takeIf { it.stamp == stamp }?.let { cached ->
                     if (cached.banner != null) validCacheNames.add(bannerName)
                     if (cached.icon != null) validCacheNames.add(iconName)
-                    return@async cached
+                    val androidIcon = cached.icon?.let { runCatching { it.asAndroidBitmap() }.getOrNull() }
+                    val tile = iconTile(androidIcon, pkg)
+                    return@async cached.copy(tile = tile)
                 }
 
                 // Show the banner whenever the app ships one (matches the
@@ -161,7 +198,7 @@ object AppRepository {
                     banner = banner?.asImageBitmap(),
                     icon = icon?.asImageBitmap(),
                     autoCategory = autoCategory(ai.applicationInfo),
-                    tile = tileColor(pkg),
+                    tile = iconTile(icon, pkg),
                     stamp = stamp,
                     firstInstall = firstInstall,
                 )

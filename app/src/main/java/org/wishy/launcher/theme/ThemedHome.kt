@@ -1,5 +1,6 @@
 package org.wishy.launcher.theme
 
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
@@ -10,6 +11,7 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.BringIntoViewSpec
 import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -19,11 +21,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
@@ -33,11 +37,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -53,7 +60,9 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
@@ -70,9 +79,11 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.constrainWidth
 import androidx.compose.ui.unit.offset
@@ -88,6 +99,7 @@ import org.wishy.theme.core.Anchor
 import org.wishy.theme.core.AppsArrangement
 import org.wishy.theme.core.AppsNode
 import org.wishy.theme.core.BgFit
+import org.wishy.theme.core.CardStyle
 import org.wishy.theme.core.ClockNode
 import org.wishy.theme.core.ColumnNode
 import org.wishy.theme.core.DateNode
@@ -117,6 +129,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.sin
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -499,6 +513,8 @@ private fun StatusIconsView(n: StatusIconsNode, env: ThemeEnv, ui: HomeUi, modif
     }
 }
 
+private fun colorLuminance(c: Color): Float = 0.299f * c.red + 0.587f * c.green + 0.114f * c.blue
+
 @Composable
 private fun StatusIconButton(
     icon: ImageVector,
@@ -512,6 +528,9 @@ private fun StatusIconButton(
     onClick: () -> Unit,
 ) {
     var focused by remember { mutableStateOf(false) }
+    val baseColor = if (active) color else dim
+    val lowContrast = abs(colorLuminance(baseColor) - colorLuminance(fill)) < 0.35f
+    val iconColor = if (focused && lowContrast) Color(1f - baseColor.red, 1f - baseColor.green, 1f - baseColor.blue, baseColor.alpha) else baseColor
     Box(
         Modifier
             .onFocusChanged { focused = it.isFocused }
@@ -529,7 +548,7 @@ private fun StatusIconButton(
         Image(
             imageVector = icon,
             contentDescription = description,
-            colorFilter = ColorFilter.tint(if (active) color else dim),
+            colorFilter = ColorFilter.tint(iconColor),
             modifier = Modifier.size(size),
         )
     }
@@ -684,6 +703,10 @@ private fun rememberScrollSpec(env: ThemeEnv, mode: ScrollMode): BringIntoViewSp
 @Composable
 private fun AppsView(n: AppsNode, env: ThemeEnv, ui: HomeUi, modifier: Modifier) {
     val style = env.doc.cardStyles[n.card] ?: return
+    if (n.arrangement == AppsArrangement.WHEEL) {
+        WheelView(n, style, env, ui, modifier)
+        return
+    }
     val apps = ui.shown
     val focusRequesters = remember(apps) { List(apps.size) { FocusRequester() } }
     val firstFocus = remember(focusRequesters) { focusRequesters.firstOrNull() ?: FocusRequester() }
@@ -710,12 +733,12 @@ private fun AppsView(n: AppsNode, env: ThemeEnv, ui: HomeUi, modifier: Modifier)
             ?: env.dims.dp(300f)
         val cardW: Dp = cardW0 * env.tweaks.size
 
-        val card: @Composable (AppEntry, Int, Dp?) -> Unit = { app, index, w ->
+        val card: @Composable (AppEntry, Int, Dp?, CardStyle) -> Unit = { app, index, w, cardStyle ->
             val moving = app.pkg == ui.movePkg
             val itemFocus = focusRequesters.getOrElse(index) { firstFocus }
             ThemedAppCard(
                 app = app,
-                style = style,
+                style = cardStyle,
                 env = env,
                 width = w,
                 isMoving = moving,
@@ -763,9 +786,10 @@ private fun AppsView(n: AppsNode, env: ThemeEnv, ui: HomeUi, modifier: Modifier)
                             horizontalArrangement = Arrangement.spacedBy(gap),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            itemsIndexed(apps, key = { _, a -> a.pkg }) { i, app -> card(app, i, cardW) }
+                            itemsIndexed(apps, key = { _, a -> a.pkg }) { i, app -> card(app, i, cardW, style) }
                         }
                     }
+                    AppsArrangement.WHEEL -> {}
                     AppsArrangement.GRID -> {
                         val cols = n.columns ?: max(1, ((availW + gap) / (cardW + gap)).toInt())
                         LaunchedEffect(cols) { ui.onGridColumns(cols) }
@@ -778,7 +802,38 @@ private fun AppsView(n: AppsNode, env: ThemeEnv, ui: HomeUi, modifier: Modifier)
                             horizontalArrangement = Arrangement.spacedBy(gap),
                             verticalArrangement = Arrangement.spacedBy(gap),
                         ) {
-                            itemsIndexed(apps, key = { _, a -> a.pkg }) { i, app -> card(app, i, null) }
+                            itemsIndexed(apps, key = { _, a -> a.pkg }) { i, app -> card(app, i, null, style) }
+                        }
+                    }
+                    AppsArrangement.BENTO -> {
+                        val cols = (n.columns ?: 5).coerceIn(3, 8)
+                        LaunchedEffect(cols) { ui.onGridColumns(cols) }
+                        val bigStyle = n.bigCard?.let { env.doc.cardStyles[it] } ?: style
+                        // Square-ish cells. A wide tile spans two of them and is exactly as tall as one, so its
+                        // aspect is worked out from the real cell size.
+                        val cellW = (availW - headroom * 2 - gap * (cols - 1)) / cols
+                        val cellH = cellW / style.aspectRatio
+                        val wideW = cellW * 2 + gap
+                        val wideStyle = remember(bigStyle, cellW, cellH) {
+                            bigStyle.copy(aspect = "${wideW.value}:${cellH.value}")
+                        }
+                        // Wide tiles sit first and last in every group of 2*cols-2 apps, which fills two whole rows.
+                        val group = 2 * cols - 2
+                        val isWide = { i: Int -> i % group == 0 || i % group == group - 1 }
+                        val state = rememberLazyGridState()
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(cols),
+                            state = state,
+                            modifier = Modifier.fillMaxSize().focusRestorer(),
+                            contentPadding = PaddingValues(headroom),
+                            horizontalArrangement = Arrangement.spacedBy(gap),
+                            verticalArrangement = Arrangement.spacedBy(gap),
+                        ) {
+                            itemsIndexed(
+                                apps,
+                                key = { _, a -> a.pkg },
+                                span = { i, _ -> GridItemSpan(if (isWide(i)) 2 else 1) },
+                            ) { i, app -> card(app, i, null, if (isWide(i)) wideStyle else style) }
                         }
                     }
                     AppsArrangement.LIST -> {
@@ -790,8 +845,211 @@ private fun AppsView(n: AppsNode, env: ThemeEnv, ui: HomeUi, modifier: Modifier)
                             contentPadding = PaddingValues(headroom),
                             verticalArrangement = Arrangement.spacedBy(gap),
                         ) {
-                            itemsIndexed(apps, key = { _, a -> a.pkg }) { i, app -> card(app, i, width) }
+                            itemsIndexed(apps, key = { _, a -> a.pkg }) { i, app -> card(app, i, width, style) }
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ----------------------------------------------------------------------------------------------
+// Wheel
+// ----------------------------------------------------------------------------------------------
+
+private const val WHEEL_LONG_PRESS_MS = 450L
+/** Radius of the ring as a share of the node's height. Themes draw their ring with this number. */
+private const val WHEEL_RADIUS = 0.62f
+/** Angle between two neighbouring apps, in radians. */
+private const val WHEEL_STEP = 0.37f
+/** Apps drawn above and below the middle one. */
+private const val WHEEL_HALF = 3
+/** Design units between the node's left edge and the left edge of the unscaled middle card. */
+private const val WHEEL_INSET = 40f
+
+private fun floorMod(a: Int, b: Int): Int = ((a % b) + b) % b
+
+/**
+ * A ring turning on the left of the node. Only the app in the middle is selected; up and down turn the ring so the
+ * next app arrives in the middle. The ring has no end: past the last app comes the first. The launcher keeps
+ * ownership of launching, the long-press menu and move mode; this only decides where the cards are drawn.
+ *
+ * Geometry (design units, so a theme can draw a matching ring with shape nodes): the ring's radius is
+ * [WHEEL_RADIUS] times the node's height, its centre is that radius to the left of the middle card, and the middle
+ * card sits level with the node's vertical centre, [WHEEL_INSET] plus 0.56 card widths from the node's left edge.
+ */
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+private fun WheelView(n: AppsNode, style: CardStyle, env: ThemeEnv, ui: HomeUi, modifier: Modifier) {
+    val apps = ui.shown
+    val size = apps.size
+    key(if (ui.flat) -1 else ui.selectedIndex) {
+        var sel by remember { mutableIntStateOf(0) }
+        val pos = remember { Animatable(0f) }
+        val fast = remember { BooleanArray(1) }
+        var lastMoveAt by remember { mutableLongStateOf(0L) }
+        var hasFocus by remember { mutableStateOf(false) }
+        val wheelFocus = remember { FocusRequester() }
+        var focusedOnce by remember { mutableStateOf(false) }
+        var downAt by remember { mutableLongStateOf(0L) }
+        var longFired by remember { mutableStateOf(false) }
+        var longAt by remember { mutableLongStateOf(0L) }
+
+        val current: AppEntry? = if (size == 0) null else apps[floorMod(sel, size)]
+
+        fun step(delta: Int) {
+            val now = android.os.SystemClock.uptimeMillis()
+            // Keys repeating (held) turn the ring faster, so it never trails behind the finger.
+            fast[0] = now - lastMoveAt < REPEAT_WINDOW_MS
+            lastMoveAt = now
+            sel += delta
+        }
+
+        LaunchedEffect(sel) {
+            val target = sel.toFloat()
+            if (env.scrollMs <= 0) pos.snapTo(target)
+            else pos.animateTo(target, tween(if (fast[0]) minOf(env.scrollMs, 50) else minOf(env.scrollMs, 110), easing = env.easing))
+        }
+        LaunchedEffect(size > 0) {
+            if (!focusedOnce && size > 0 && ui.movePkg == null) {
+                focusedOnce = true
+                delay(60)
+                runCatching { wheelFocus.requestFocus() }
+            }
+        }
+        // While an app is being moved, the ring follows it, taking the short way round.
+        val movingIdx = if (ui.movePkg == null) -1 else apps.indexOfFirst { it.pkg == ui.movePkg }
+        LaunchedEffect(movingIdx) {
+            if (movingIdx >= 0 && size > 0) {
+                var d = movingIdx - floorMod(sel, size)
+                if (d > size / 2) d -= size
+                if (d < -size / 2) d += size
+                if (d != 0) sel += d
+            }
+        }
+        LaunchedEffect(hasFocus, current?.pkg) { ui.focusedPkg = if (hasFocus) current?.pkg else null }
+        DisposableEffect(Unit) { onDispose { ui.focusedPkg = null } }
+
+        BoxWithConstraints(
+            modifier
+                .focusRequester(if (ui.movePkg != null) ui.moveFocus else wheelFocus)
+                .onFocusChanged { hasFocus = it.isFocused }
+                .onPreviewKeyEvent { e ->
+                    if (ui.movePkg != null || size == 0) return@onPreviewKeyEvent false
+                    val select = e.key == Key.DirectionCenter || e.key == Key.Enter || e.key == Key.NumPadEnter
+                    when {
+                        e.key == Key.DirectionUp -> { if (e.type == KeyEventType.KeyDown) step(-1); true }
+                        e.key == Key.DirectionDown -> { if (e.type == KeyEventType.KeyDown) step(1); true }
+                        select -> {
+                            val now = android.os.SystemClock.uptimeMillis()
+                            when (e.type) {
+                                KeyEventType.KeyDown -> {
+                                    if (e.nativeKeyEvent.repeatCount == 0) {
+                                        downAt = now
+                                        longFired = false
+                                    } else if (!longFired && now - downAt >= WHEEL_LONG_PRESS_MS) {
+                                        longFired = true
+                                        longAt = now
+                                        current?.let { ui.onMenu(it) }
+                                    }
+                                    true
+                                }
+                                KeyEventType.KeyUp -> {
+                                    val suppress = longFired || (now - longAt < 1_000L && longAt != 0L)
+                                    longFired = false
+                                    if (!suppress) current?.let { ui.onLaunch(it) }
+                                    true
+                                }
+                                else -> false
+                            }
+                        }
+                        else -> false
+                    }
+                }
+                .focusable(),
+        ) {
+            if (size == 0) return@BoxWithConstraints
+            val density = LocalDensity.current
+            val cardW: Dp = (n.itemWidth?.let { env.dims.lengthDp(it, maxWidth) } ?: env.dims.dp(240f)) * env.tweaks.size
+            val cardWpx = with(density) { cardW.toPx() }
+            val cardHpx = cardWpx / style.aspectRatio
+            val hPx = constraints.maxHeight.toFloat()
+            val radius = hPx * WHEEL_RADIUS
+            val x0 = env.dims.px(WHEEL_INSET) + cardWpx * 0.56f
+            val base by remember { derivedStateOf { pos.value.roundToInt() } }
+            val half = minOf(WHEEL_HALF, (size - 1) / 2)
+
+            // The band the cards ride on, centred one radius to the left of the middle card.
+            val ringColor = env.colors.resolve(n.ringColor, Color.Transparent)
+            val edgeColor = env.colors.resolve(n.ringEdgeColor, Color.Transparent)
+            val ringPx = env.dims.px(n.ringWidth)
+            if (ringPx > 0f) {
+                Box(
+                    Modifier.fillMaxSize().drawBehind {
+                        val c = Offset(x0 - radius, hPx / 2f)
+                        drawCircle(ringColor, radius, c, style = Stroke(ringPx))
+                        val edge = env.dims.px(2f).coerceAtLeast(1f)
+                        drawCircle(edgeColor, radius - ringPx / 2f, c, style = Stroke(edge))
+                        drawCircle(edgeColor, radius + ringPx / 2f, c, style = Stroke(edge))
+                    },
+                )
+            }
+
+            // Touch: drag up or down to turn the ring.
+            Box(
+                Modifier.fillMaxSize().pointerInput(cardHpx) {
+                    var acc = 0f
+                    val stepPx = cardHpx * 0.5f
+                    detectVerticalDragGestures(onDragStart = { acc = 0f }) { change, dy ->
+                        change.consume()
+                        acc += dy
+                        while (acc <= -stepPx) { step(1); acc += stepPx }
+                        while (acc >= stepPx) { step(-1); acc -= stepPx }
+                    }
+                },
+            )
+            for (k in -half..half) {
+                val v = base + k
+                key(v) {
+                    val app = apps[floorMod(v, size)]
+                    Box(
+                        Modifier
+                            .zIndex(-abs(k).toFloat())
+                            .offset {
+                                val t = (v - pos.value) * WHEEL_STEP
+                                IntOffset(
+                                    (x0 - radius * (1f - cos(t)) - cardWpx / 2f).roundToInt(),
+                                    (hPx / 2f + radius * sin(t) - cardHpx / 2f).roundToInt(),
+                                )
+                            }
+                            .graphicsLayer {
+                                val d = abs(v - pos.value)
+                                val s = 1f - 0.32f * minOf(d, 1f) - 0.1f * (minOf(d, 2f) - 1f).coerceAtLeast(0f) - 0.05f * (d - 2f).coerceAtLeast(0f)
+                                scaleX = s
+                                scaleY = s
+                                alpha = (1f - 0.36f * d).coerceIn(0f, 1f)
+                            }
+                            .pointerInput(v) {
+                                detectTapGestures(
+                                    onTap = { if (v == sel) ui.onLaunch(app) else step(v - sel) },
+                                    onLongPress = { if (v == sel) ui.onMenu(app) },
+                                )
+                            },
+                    ) {
+                        ThemedAppCard(
+                            app = app,
+                            style = style,
+                            env = env,
+                            width = cardW,
+                            isMoving = app.pkg == ui.movePkg,
+                            isHidden = app.pkg in ui.config.hidden,
+                            passive = true,
+                            passiveFocused = v == sel,
+                            onFocusChange = {},
+                            onLaunch = {},
+                            onLongPress = {},
+                        )
                     }
                 }
             }

@@ -1,0 +1,230 @@
+{
+  "$schema": "../../schema/wishy-theme.schema.v1.json",
+  "schemaVersion": 1,
+  "id": "wishy-bit",
+  "name": "Wishy 2-Bit",
+  "version": "1.0.0",
+  "author": "Wishy Launcher contributors",
+  "description": "Pure black and white, one fat pixel font and nothing else: your apps as a plain text menu with a blinking arrow, like the start screen of an old handheld game.",
+  "license": "GPL-3.0-only",
+  "defaultColorScheme": "dark",
+  "credits": [
+    {
+      "file": "assets/fonts/PressStart2P-Regular.ttf",
+      "title": "Press Start 2P",
+      "author": "The Press Start 2P Project Authors",
+      "license": "OFL-1.1",
+      "source": "https://github.com/codeman38/PressStart2P"
+    }
+  ],
+  "colorSchemes": {
+    "dark": {
+      "background": "#000000",
+      "surface": "#FFFFFF",
+      "surfaceVariant": "#FFFFFF",
+      "onSurface": "#FFFFFF",
+      "onSurfaceMuted": "#AAAAAA",
+      "primary": "#FFFFFF",
+      "onPrimary": "#000000",
+      "accent": "#FFFFFF",
+      "outline": "#FFFFFF",
+      "scrim": "#CC000000"
+    },
+    "light": {
+      "background": "#FFFFFF",
+      "surface": "#000000",
+      "surfaceVariant": "#000000",
+      "onSurface": "#000000",
+      "onSurfaceMuted": "#555555",
+      "primary": "#000000",
+      "onPrimary": "#FFFFFF",
+      "accent": "#000000",
+      "outline": "#000000",
+      "scrim": "#CCFFFFFF"
+    }
+  },
+  "fonts": {
+    "pixel": {
+      "file": "assets/fonts/PressStart2P-Regular.ttf",
+      "pixel": true
+    }
+  },
+  "textStyles": {
+    "title": {
+      "font": "pixel",
+      "size": 44,
+      "color": "@onSurface",
+      "maxLines": 1
+    },
+    "clock": {
+      "font": "pixel",
+      "size": 36,
+      "color": "@onSurface",
+      "maxLines": 1
+    },
+    "date": {
+      "font": "pixel",
+      "size": 20,
+      "color": "@onSurfaceMuted",
+      "maxLines": 1
+    },
+    "row": {
+      "font": "pixel",
+      "size": 32,
+      "color": "@onSurface",
+      "maxLines": 1
+    }
+  },
+  "background": {
+    "color": "@background",
+    "userWallpaper": "ignored",
+    "effect": "scanlines",
+    "effectOpacity": 0.12
+  },
+  "cardStyles": {
+    "row": {
+      "aspect": "20:1",
+      "shape": {
+        "kind": "pixel",
+        "radius": 8,
+        "pixelSize": 4
+      },
+      "fill": "@background",
+      "artwork": {
+        "source": "none"
+      },
+      "label": {
+        "position": "overlayStart",
+        "style": "row"
+      },
+      "idle": {
+        "scale": 1.0,
+        "alpha": 1.0
+      },
+      "focused": {
+        "scale": 1.0,
+        "alpha": 1.0,
+        "fill": "@background",
+        "indicator": {
+          "kind": "arrow",
+          "color": "@primary",
+          "width": 4,
+          "gap": 14,
+          "length": 22,
+          "blink": true,
+          "blinkMillis": 600
+        }
+      },
+      "moving": {
+        "scale": 1.0,
+        "alpha": 1.0,
+        "fill": "@primary",
+        "indicator": {
+          "kind": "arrow",
+          "color": "@primary",
+          "width": 4,
+          "gap": 14,
+          "length": 22
+        }
+      }
+    }
+  },
+  "motion": {
+    "focusMillis": 0,
+    "scrollMillis": 0,
+    "easing": "standard",
+    "screenTransition": "none"
+  },
+  "chrome": {
+    "statusBar": "theme"
+  },
+  "screens": {
+    "home": {
+      "root": {
+        "type": "stack",
+        "children": [
+          {
+            "type": "text",
+            "id": "title",
+            "text": "WISHY",
+            "style": "title",
+            "frame": {
+              "x": "12%",
+              "y": "6%"
+            }
+          },
+          {
+            "type": "clock",
+            "id": "clock",
+            "style": "clock",
+            "showWhen": "clockEnabled",
+            "frame": {
+              "x": "88%",
+              "y": "6.5%",
+              "anchor": "topEnd"
+            }
+          },
+          {
+            "type": "date",
+            "id": "date",
+            "style": "date",
+            "showWhen": "dateEnabled",
+            "frame": {
+              "x": "88%",
+              "y": "13%",
+              "anchor": "topEnd"
+            }
+          },
+          {
+            "type": "shape",
+            "id": "rule",
+            "shape": {
+              "kind": "rect",
+              "radius": 0
+            },
+            "fill": "@primary",
+            "frame": {
+              "x": "12%",
+              "y": "18.5%",
+              "w": "76%",
+              "h": 6
+            }
+          },
+          {
+            "type": "apps",
+            "id": "apps",
+            "arrangement": "list",
+            "card": "row",
+            "gap": 10,
+            "frame": {
+              "x": "12%",
+              "y": "21%",
+              "w": "76%",
+              "h": "72%"
+            }
+          },
+          {
+            "type": "statusIcons",
+            "id": "status",
+            "showWhen": "statusBarEnabled",
+            "iconSize": 26,
+            "gap": 4,
+            "color": "@primary",
+            "inactiveColor": "@onSurfaceMuted/50",
+            "focusFill": "@surface",
+            "shape": {
+              "kind": "rect",
+              "radius": 0
+            },
+            "frame": {
+              "x": "88%",
+              "y": "95%",
+              "anchor": "bottomEnd"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "overrides": []
+}

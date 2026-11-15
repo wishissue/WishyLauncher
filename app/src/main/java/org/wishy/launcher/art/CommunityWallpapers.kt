@@ -15,12 +15,23 @@ import org.wishy.launcher.net.Repos
 import java.io.File
 import java.security.MessageDigest
 
+/** A public GitHub repository used as a wallpaper source. [license] is what we know about its pictures, if anything. */
+class CommunityRepo(val owner: String, val repo: String, val license: String? = null) {
+    val slug: String get() = "$owner/$repo"
+    /** What to show as the licence of its pictures. We only claim one for repositories we know. */
+    val licenseLabel: String get() = license ?: "See repository"
+    override fun equals(other: Any?) = other is CommunityRepo && other.slug.equals(slug, ignoreCase = true)
+    override fun hashCode() = slug.lowercase().hashCode()
+}
+
 /**
  * One picture from a community GitHub repository that is nothing more than folders of images
- * (`<Palette>/<Category>/<file>`), such as SleepyCatHey/CozyPixels. There is no index, so [palette], [category] and [name]
- * are read from the path, and [gitSha] is the file's git blob id from the repository tree, which is what we verify against.
+ * (`<Collection>/<Category>/<file>`), such as SleepyCatHey/CozyPixels. There is no index, so [palette] (the top folder),
+ * [category] (the next one) and [name] are read from the path, and [gitSha] is the file's git blob id from the
+ * repository tree, which is what we verify against.
  */
 class CommunityWallpaper(
+    val repo: CommunityRepo,
     val id: String,
     val path: String,
     val palette: String,
@@ -29,7 +40,7 @@ class CommunityWallpaper(
     val bytes: Long,
     val gitSha: String,
 ) {
-    val rawUrl: String get() = Repos.COZY_RAW_BASE + path.split('/').joinToString("/") { Uri.encode(it) }
+    val rawUrl: String get() = Repos.githubRawBase(repo.owner, repo.repo) + path.split('/').joinToString("/") { Uri.encode(it) }
 }
 
 /**
@@ -59,34 +70,57 @@ object CommunityWallpapers {
     /** Two downloads at once is plenty on TV hardware and keeps a fast scroll from starting dozens of them. */
     private val thumbGate = Semaphore(2)
 
+    /** The built-in community source. */
+    val COZY = CommunityRepo("SleepyCatHey", "CozyPixels", license = "MIT")
+
+    private val OWNER = Regex("^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$")
+    private val REPO_NAME = Regex("^[A-Za-z0-9._-]{1,100}$")
+
+    /**
+     * Reads "owner/repo" or a github.com address (`https://github.com/owner/repo`, with or without `.git` or a path after
+     * it). Null if it isn't one, so nothing else can be turned into a request to another host.
+     */
+    fun parseRepo(input: String): CommunityRepo? {
+        var s = input.trim()
+        val web = Regex("^(?:https://)?(?:www\\.)?github\\.com/", RegexOption.IGNORE_CASE)
+        if (web.containsMatchIn(s)) s = s.replace(web, "") else if (s.contains("://")) return null
+        val parts = s.split('/').filter { it.isNotEmpty() }
+        if (parts.size < 2) return null
+        val owner = parts[0]
+        val repo = parts[1].removeSuffix(".git")
+        if (!OWNER.matches(owner) || !REPO_NAME.matches(repo) || repo == "." || repo == "..") return null
+        return CommunityRepo(owner, repo, license = if (owner.equals(COZY.owner, true) && repo.equals(COZY.repo, true)) COZY.license else null)
+    }
+
     private fun thumbDir(context: Context) = File(context.cacheDir, "community_thumbs").apply { mkdirs() }
-    private fun indexCache(context: Context) = File(context.cacheDir, "community_tree.json")
+    private fun indexCache(context: Context, repo: CommunityRepo) =
+        File(context.cacheDir, "community_tree_" + sha1Hex(repo.slug.lowercase()).take(10) + ".json")
 
     // ---- list -------------------------------------------------------------------------------------------------------
 
     /**
-     * Fetches the file list. A cached copy younger than six hours is used as it is; if the network call fails an older
-     * copy is used rather than showing nothing. Throws only if there is neither. Call off the main thread.
+     * Fetches the file list of [repo]. A cached copy younger than six hours is used as it is; if the network call fails an
+     * older copy is used rather than showing nothing. Throws only if there is neither. Call off the main thread.
      */
-    fun fetchIndex(context: Context, forceRefresh: Boolean = false): List<CommunityWallpaper> {
-        val cache = indexCache(context)
+    fun fetchIndex(context: Context, repo: CommunityRepo, forceRefresh: Boolean = false): List<CommunityWallpaper> {
+        val cache = indexCache(context, repo)
         val fresh = cache.isFile && System.currentTimeMillis() - cache.lastModified() < INDEX_FRESH_MS
         if (fresh && !forceRefresh) {
-            runCatching { parseTree(cache.readText()) }.getOrNull()?.takeIf { it.isNotEmpty() }?.let { return it }
+            runCatching { parseTree(cache.readText(), repo) }.getOrNull()?.takeIf { it.isNotEmpty() }?.let { return it }
         }
         return try {
-            val json = HttpsFetcher.getText(Repos.COZY_TREE_API, MAX_TREE_BYTES)
-            val parsed = parseTree(json)
+            val json = HttpsFetcher.getText(Repos.githubTreeApi(repo.owner, repo.repo), MAX_TREE_BYTES)
+            val parsed = parseTree(json, repo)
             if (parsed.isNotEmpty()) cache.writeText(json) // only keep a copy that actually parses
             parsed
         } catch (t: Throwable) {
-            if (cache.isFile) runCatching { parseTree(cache.readText()) }.getOrNull()?.takeIf { it.isNotEmpty() }?.let { return it }
+            if (cache.isFile) runCatching { parseTree(cache.readText(), repo) }.getOrNull()?.takeIf { it.isNotEmpty() }?.let { return it }
             throw t
         }
     }
 
     /** Parses the GitHub "git tree" answer. Public for tests. Entries that don't look right are skipped, not fatal. */
-    fun parseTree(json: String): List<CommunityWallpaper> {
+    fun parseTree(json: String, repo: CommunityRepo): List<CommunityWallpaper> {
         val tree = JSONObject(json).getJSONArray("tree")
         val out = ArrayList<CommunityWallpaper>()
         for (i in 0 until tree.length()) {
@@ -98,14 +132,16 @@ object CommunityWallpapers {
             val sha = o.optString("sha")
             if (size <= 0 || size > MAX_SOURCE_BYTES || !SHA1.matches(sha)) continue
             val segments = path.split('/')
-            if (segments.size < 2 || path.length > 300 || !segments.all { plainSegment(it) }) continue
+            if (path.length > 300 || !segments.all { plainSegment(it) }) continue
             val file = segments.last()
             val ext = file.substringAfterLast('.', "").lowercase()
             if (ext !in IMAGE_EXT) continue
             out += CommunityWallpaper(
-                id = "cp_" + sha1Hex(path).take(20),
+                repo = repo,
+                // Includes the repository, so two sources with a file at the same path never collide.
+                id = "cp_" + sha1Hex(repo.slug.lowercase() + ":" + path).take(20),
                 path = path,
-                palette = segments.first(),
+                palette = if (segments.size >= 2) segments.first() else "Wallpapers",
                 category = if (segments.size >= 3) segments[1] else "General",
                 name = prettyName(file.substringBeforeLast('.')),
                 bytes = size,
@@ -160,8 +196,8 @@ object CommunityWallpapers {
             darkDest.delete(); lightDest.delete()
             require(darkTmp.renameTo(darkDest) && lightTmp.renameTo(lightDest)) { "could not save" }
             File(d, "${w.id}.json").writeText(
-                JSONObject().put("name", w.name).put("author", "CozyPixels community").put("license", "MIT")
-                    .put("source", Repos.COZY_HOME).toString()
+                JSONObject().put("name", w.name).put("author", w.repo.slug).put("license", w.repo.licenseLabel)
+                    .put("source", Repos.githubHome(w.repo.owner, w.repo.repo)).toString()
             )
         } catch (t: Throwable) {
             File(d, "${w.id}-dark.webp").delete(); File(d, "${w.id}-light.webp").delete(); File(d, "${w.id}.json").delete()

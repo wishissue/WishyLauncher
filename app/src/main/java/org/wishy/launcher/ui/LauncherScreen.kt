@@ -567,7 +567,9 @@ fun LauncherApp(rescanTick: Int) {
 
     fun moveVertical(delta: Int) {
         if (themed) {
-            if (themeCols > 1) moveDock(if (delta < 0) -themeCols else themeCols)
+            // The wheel is one endless column: up and down step one app, like the keys that turn it.
+            if (loadedTheme!!.doc.appsNode.arrangement == org.wishy.theme.core.AppsArrangement.WHEEL) moveDock(delta)
+            else if (themeCols > 1) moveDock(if (delta < 0) -themeCols else themeCols)
         } else when (config.layout) {
             LAYOUT_GRID -> moveGridVertical(delta, gridCols)
             LAYOUT_DOCK -> moveDock(if (delta < 0) -dockCols else dockCols)
@@ -1398,16 +1400,10 @@ private fun PeekStrip(app: AppEntry, cardWidth: Dp, cardHeight: Dp, peekH: Dp) {
     }
 }
 
-/** Sober startup screen: dark backdrop + a minimal spinning arc, nothing else. */
+/** Startup screen: the animated night-sky splash (see Splash.kt). */
 @Composable
 private fun LoadingScreen() {
-    Box(
-        Modifier.fillMaxSize().background(Color(0xFF080B12)),
-        contentAlignment = Alignment.Center,
-    ) {
-        // The Wishy mark with its badge turning on its own centre, instead of a generic spinner.
-        WishyLogo(size = 96.dp, turnMillis = 2400)
-    }
+    WishySplash()
 }
 
 /** Decodes a bitmap with an inSampleSize so its width stays near [maxWidth]. */

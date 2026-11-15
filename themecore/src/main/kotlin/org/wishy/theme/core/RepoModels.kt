@@ -8,6 +8,8 @@ object RepoLimits {
     const val MAX_INDEX_BYTES = 512 * 1024
     const val MAX_THEMES = 500
     const val MAX_ART_ENTRIES = 5000
+    /** Most banner versions one app can offer. The picker downloads them all when opened, so keep it small. */
+    const val MAX_ART_VARIANTS = 12
     const val MAX_ART_BYTES = 2L * 1024 * 1024
     const val MIN_ART_W = 320
     const val MIN_ART_H = 180
@@ -65,11 +67,39 @@ data class ArtEntry(
     val title: String? = null,
 )
 
+/**
+ * `artwork/variants.json`: package name -> several banners the person can choose between. It sits next to the
+ * single-banner `index.json` (which older launchers keep reading unchanged), and anyone can host one.
+ */
+@Serializable
+data class ArtVariantIndex(
+    val schemaVersion: Int,
+    val apps: Map<String, List<ArtVariant>> = emptyMap(),
+)
+
+@Serializable
+data class ArtVariant(
+    /** Unique within the app: lowercase letters, digits and underscores. */
+    val id: String,
+    /** Shown in the picker, for example "Dark logo" or "Key art". */
+    val name: String,
+    /** Relative to the variants index URL. */
+    val url: String,
+    val sha256: String,
+    val sizeBytes: Long,
+    val width: Int,
+    val height: Int,
+    val author: String,
+    val license: String,
+    val source: String? = null,
+)
+
 object RepoJson {
     val json = Json { ignoreUnknownKeys = false; isLenient = false }
 
     fun parseIndex(text: String): RepoIndex = decode(text) { json.decodeFromString(RepoIndex.serializer(), it) }
     fun parseArt(text: String): ArtIndex = decode(text) { json.decodeFromString(ArtIndex.serializer(), it) }
+    fun parseVariants(text: String): ArtVariantIndex = decode(text) { json.decodeFromString(ArtVariantIndex.serializer(), it) }
 
     private fun <T> decode(text: String, f: (String) -> T): T {
         if (text.length > RepoLimits.MAX_INDEX_BYTES) throw ThemeRejectedException("Repository index is too large.")
@@ -86,6 +116,9 @@ object RepoUrls {
 
     fun isHexSha256(s: String) = SHA.matches(s)
     fun isPackageName(s: String) = s.length <= 255 && PKG.matches(s)
+
+    private val VARIANT_ID = Regex("^[a-z0-9_]{1,32}$")
+    fun isVariantId(s: String) = VARIANT_ID.matches(s)
 
     /**
      * [base] is the URL the index was fetched from, [rel] a location from inside it. The result must be
@@ -153,6 +186,31 @@ object RepoChecker {
             else if (!isBannerAspect(e.width, e.height)) out += "$tag: not 16:9."
             if (e.author.isBlank() || e.license.isBlank()) out += "$tag: author and license are required."
             try { RepoUrls.resolve(indexUrl, e.url) } catch (x: ThemeRejectedException) { out += "$tag: ${x.message}" }
+        }
+        return out
+    }
+
+    /** Same rules as a single banner, applied to every version of every app. Problems are reported per version. */
+    fun problems(index: ArtVariantIndex, indexUrl: String): List<String> {
+        val out = ArrayList<String>()
+        if (index.schemaVersion != 1) out += "Unsupported artwork variants schemaVersion ${index.schemaVersion}."
+        if (index.apps.values.sumOf { it.size } > RepoLimits.MAX_ART_ENTRIES) out += "Too many artwork entries."
+        for ((pkg, list) in index.apps) {
+            if (!RepoUrls.isPackageName(pkg)) out += "artwork '$pkg': not a package name."
+            if (list.size > RepoLimits.MAX_ART_VARIANTS) out += "artwork '$pkg': more than ${RepoLimits.MAX_ART_VARIANTS} versions."
+            val seen = HashSet<String>()
+            for (v in list) {
+                val tag = "artwork '$pkg/${v.id}'"
+                if (!RepoUrls.isVariantId(v.id)) out += "$tag: bad version id."
+                if (!seen.add(v.id)) out += "$tag: duplicate version id."
+                if (v.name.isBlank() || v.name.length > 40) out += "$tag: name must be 1 to 40 characters."
+                if (!RepoUrls.isHexSha256(v.sha256)) out += "$tag: bad sha256."
+                if (v.sizeBytes <= 0 || v.sizeBytes > RepoLimits.MAX_ART_BYTES) out += "$tag: sizeBytes out of range."
+                if (v.width !in RepoLimits.MIN_ART_W..RepoLimits.MAX_ART_W || v.height !in RepoLimits.MIN_ART_H..RepoLimits.MAX_ART_H) out += "$tag: size ${v.width}x${v.height} out of range."
+                else if (!isBannerAspect(v.width, v.height)) out += "$tag: not 16:9."
+                if (v.author.isBlank() || v.license.isBlank()) out += "$tag: author and license are required."
+                try { RepoUrls.resolve(indexUrl, v.url) } catch (x: ThemeRejectedException) { out += "$tag: ${x.message}" }
+            }
         }
         return out
     }

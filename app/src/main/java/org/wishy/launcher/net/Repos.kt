@@ -22,6 +22,8 @@ object Repos {
     const val OFFICIAL_BASE = "https://raw.githubusercontent.com/$OWNER_REPO/main/repo/"
     const val OFFICIAL_THEMES_INDEX = OFFICIAL_BASE + "index.json"
     const val OFFICIAL_ART_INDEX = OFFICIAL_BASE + "artwork/index.json"
+    /** Several banner versions per app (see tools/build_repo.py). Anyone can host a file of this format. */
+    const val OFFICIAL_VARIANTS_INDEX = OFFICIAL_BASE + "artwork/variants.json"
     const val OFFICIAL_WALLPAPERS_BASE = OFFICIAL_BASE + "wallpapers/"
     const val OFFICIAL_WALLPAPERS_INDEX = OFFICIAL_WALLPAPERS_BASE + "index.json"
 
@@ -29,10 +31,9 @@ object Repos {
      * Community wallpaper repository: plain folders of pictures, `<Palette>/<Category>/<file>`, no index. `HEAD` means
      * "the default branch", so this keeps working if the repository's branch is renamed.
      */
-    private const val COZY_REPO = "SleepyCatHey/CozyPixels"
-    const val COZY_TREE_API = "https://api.github.com/repos/$COZY_REPO/git/trees/HEAD?recursive=1"
-    const val COZY_RAW_BASE = "https://raw.githubusercontent.com/$COZY_REPO/HEAD/"
-    const val COZY_HOME = "https://github.com/$COZY_REPO"
+    fun githubTreeApi(owner: String, repo: String) = "https://api.github.com/repos/$owner/$repo/git/trees/HEAD?recursive=1"
+    fun githubRawBase(owner: String, repo: String) = "https://raw.githubusercontent.com/$owner/$repo/HEAD/"
+    fun githubHome(owner: String, repo: String) = "https://github.com/$owner/$repo"
 
     /** Latest published release, as JSON. */
     const val LATEST_RELEASE_API = "https://api.github.com/repos/$OWNER_REPO/releases/latest"

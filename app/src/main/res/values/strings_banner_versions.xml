@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="banners_choose_toggle">Choose a banner for each app</string>
+    <string name="banners_choice_auto">Automatic</string>
+    <string name="banners_choice_app">The app\'s own banner</string>
+    <string name="banners_choice_yours">Your picture</string>
+    <string name="banners_choice_version">A banner version</string>
+
+    <string name="banner_pick_loading">Looking for banner versions…</string>
+    <string name="banner_pick_default">Automatic</string>
+    <string name="banner_pick_default_sub">The best banner Wishy knows for this app, or the app\'s own.</string>
+    <string name="banner_pick_app">The app\'s own banner</string>
+    <string name="banner_pick_app_sub">Ignore downloaded artwork for this app.</string>
+    <string name="banner_pick_yours">Your picture</string>
+    <string name="banner_pick_yours_sub">Choose an image from this device.</string>
+    <string name="banner_pick_none">No other versions are listed for this app yet.</string>
+
+    <string name="banner_sources">Banner sources</string>
+    <string name="banner_sources_official">Official Wishy repository</string>
+    <string name="banner_sources_add">Add a banner source</string>
+    <string name="banner_sources_add_sub">A web address ending in variants.json that lists several banners per app.</string>
+    <string name="banner_sources_hint">https://example.com/artwork/variants.json</string>
+    <string name="banner_sources_confirm_body">Banners from this address will be offered when you choose an app\'s banner. Each picture is checked before it is used, but Wishy has not reviewed what this source offers. Only add sources you trust.</string>
+</resources>

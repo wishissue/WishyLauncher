@@ -165,11 +165,12 @@ fun SettingsSheet(
         // dialog's LocalConfiguration is the real (unscaled) device width.
         ScaledUi(uiScaleFactor(config.uiScale, androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp)) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.CenterEnd) {
+            // The wallpaper store is the one screen that takes the whole display: a long list of pictures needs the room.
+            val fullScreen = screen == SettingsScreen.WallpaperStore
             Surface(
-                shape = RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp),
+                shape = if (fullScreen) RoundedCornerShape(0.dp) else RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp),
                 colors = SurfaceDefaults.colors(containerColor = Wish.Bg),
-                modifier = Modifier
-                    .width(440.dp)
+                modifier = (if (fullScreen) Modifier.fillMaxWidth() else Modifier.width(440.dp))
                     .fillMaxHeight(),
             ) {
                 // Slide left when entering a sub-screen, right when going back

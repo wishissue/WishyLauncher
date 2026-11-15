@@ -65,6 +65,33 @@ class RepoModelsTest {
         assertTrue(RepoChecker.problems(RepoJson.parseArt(art("not a package", 640, 360)), base).any { it.contains("package") })
     }
 
+    private fun variant(id: String = "dark", w: Int = 640, h: Int = 360, url: String = "x/dark.png") =
+        """{"id":"$id","name":"Dark","url":"$url","sha256":"$sha","sizeBytes":5000,"width":$w,"height":$h,"author":"A","license":"CC0-1.0"}"""
+
+    private fun variants(pkg: String, vararg v: String) = """{"schemaVersion":1,"apps":{"$pkg":[${v.joinToString(",")}]}}"""
+
+    @Test fun artworkVariantsAcceptSeveralVersionsOfOneApp() {
+        val idx = RepoJson.parseVariants(variants("com.example.app", variant("dark"), variant("light"), variant("key_art")))
+        assertEquals(3, idx.apps.getValue("com.example.app").size)
+        assertTrue(RepoChecker.problems(idx, base).isEmpty())
+    }
+
+    @Test fun artworkVariantsReportBadVersions() {
+        fun problems(vararg v: String, pkg: String = "com.example.app") = RepoChecker.problems(RepoJson.parseVariants(variants(pkg, *v)), base)
+        assertTrue(problems(variant("dark"), variant("dark")).any { it.contains("duplicate") })
+        assertTrue(problems(variant("Bad Id")).any { it.contains("bad version id") })
+        assertTrue(problems(variant(w = 640, h = 480)).any { it.contains("16:9") })
+        assertTrue(problems(variant(w = 100, h = 56)).any { it.contains("out of range") })
+        assertTrue(problems(variant(url = "../x.png")).any { it.contains("Unsafe") })
+        assertTrue(problems(variant(url = "https://evil.example.net/x.png")).any { it.contains("another host") })
+        assertTrue(problems(variant(), pkg = "not a package").any { it.contains("package") })
+        assertTrue(problems(*Array(RepoLimits.MAX_ART_VARIANTS + 1) { variant("v$it") }).any { it.contains("more than") })
+    }
+
+    @Test fun artworkVariantsUnknownKeysFailParsing() {
+        rejects { RepoJson.parseVariants("""{"schemaVersion":1,"apps":{},"extra":1}""") }
+    }
+
     @Test fun versionComparison() {
         assertTrue(RepoChecker.isNewer("1.0.1", "1.0.0"))
         assertTrue(RepoChecker.isNewer("2.0.0", "1.9.9"))

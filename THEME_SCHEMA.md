@@ -119,9 +119,9 @@ A card style says what one app tile looks like in three states: `idle`, `focused
 }
 ```
 
-- **Artwork source**: `auto` uses a banner if one exists and the app icon otherwise. `banner` or `icon` force one. `sampling: "nearest"` with `pixelBlock` gives a pixelated look (downscale by that block size, then upscale without smoothing).
+- **Artwork source**: `auto` uses a banner if one exists and the app icon otherwise. `banner` or `icon` force one. `none` draws no picture at all: a text-only card, for menu-style themes (pair it with a label position). `sampling: "nearest"` with `pixelBlock` gives a pixelated look (downscale by that block size, then upscale without smoothing).
 - **Shapes**: `rect`, `rounded`, `pixel` (stepped corners of `pixelSize`), `chamfer` (cut corners), `bevel`.
-- **Label position**: `none`, `below`, `overlayBottom`, `overlayCenter`, `focusedOnly`.
+- **Label position**: `none`, `below`, `overlayBottom`, `overlayCenter`, `overlayStart` (vertically centred, left aligned, for text-only rows), `focusedOnly`. A card with `artwork.source: "none"` does not grow or lift when focused.
 - **Focus indicators**: `none`, `ring`, `corners` (four corner brackets), `arrow` (a pointer beside the card), `underline`, `fill`, `bar`. `blink: true` toggles it on and off every `blinkMillis`.
 - **Card animation** (per state): `none`, `bob`, `pulse`, `blink`.
 
@@ -139,7 +139,7 @@ A card style says what one app tile looks like in three states: `idle`, `focused
 | `clock`, `date` | The system time and date, shown only if the user has enabled them. | `style`, `showSeconds` |
 | `focusedAppName` | The name of the app that currently has focus. | `style` |
 | `sections` | The section switcher (Streaming, Games and so on). | `arrangement` (`tabs`, `dots`, `list`), `style`, `selectedIndicator` |
-| `apps` | The app collection. | `arrangement`, `card`, `columns`, `rows`, `itemWidth`, `itemHeight`, `gap`, `scroll`, `wrap`, `focusScope` |
+| `apps` | The app collection. | `arrangement`, `card`, `columns`, `rows`, `itemWidth`, `itemHeight`, `gap`, `scroll`, `wrap`, `focusScope`, `bigCard` (bento), `ringColor`, `ringEdgeColor`, `ringWidth` (wheel) |
 | `spacer` | Empty space. | `size` |
 | `statusIcons` | The VPN, network and settings buttons, drawn your way. | `items`, `iconSize`, `gap`, `color`, `inactiveColor`, `focusFill`, `shape` |
 
@@ -153,6 +153,10 @@ A card style says what one app tile looks like in three states: `idle`, `focused
 | `grid` | `columns` by `rows`, scrolling vertically. |
 | `list` | One vertical column. |
 | `cross` | A horizontal bar of icons with the focused one enlarged, like a console main menu. |
+| `wheel` | A ring of cards on the left of the node. Only the middle card is selected; up and down spin the next app into the middle (held keys spin faster) and the ring never ends. Drag up or down to spin by touch. |
+| `bento` | A grid that mixes wide and small tiles. Small tiles use `card`, wide tiles use `bigCard` (default: `card`). `columns` is 3 to 8 (default 5). The first and last app of every group of `2 × columns − 2` is wide, which fills two whole rows. A wide tile is exactly as tall as a small one, so use no `below` labels. |
+
+**`wheel` geometry** (design units, so your own decoration can line up with it). The ring's radius is 0.62 × the node's height and its centre lies one radius to the left of the middle card. The middle card sits level with the node's vertical centre, `40 + 0.56 × itemWidth` from the node's left edge. `itemWidth` sets the card size (default 240). `ringColor`, `ringEdgeColor` and `ringWidth` (0 to 600) make the launcher draw the band the cards ride on; leave `ringWidth` at 0 for no band. Pair it with a `focusedAppName` node, because the cards themselves carry no label.
 
 Every theme must contain exactly one `apps` node on the home screen; otherwise the theme is rejected, because the launcher would have no way to open apps.
 

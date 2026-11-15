@@ -141,7 +141,7 @@ fun AppCard(
                             Image(
                                 bitmap = app.icon,
                                 contentDescription = null,
-                                modifier = Modifier.size(48.dp),
+                                modifier = Modifier.size(56.dp),
                             )
                         }
                     }

@@ -251,6 +251,9 @@ internal fun BannersScreen(
     var status by remember { mutableStateOf("") }
     var pickFor by remember { mutableStateOf<String?>(null) }
     var showOwn by remember { mutableStateOf(false) }
+    var versionsFor by remember { mutableStateOf<AppEntry?>(null) }
+    var addSource by remember { mutableStateOf(false) }
+    var confirmSource by remember { mutableStateOf<String?>(null) }
     val sizes by produceState(BannerManager.Sizes(0, 0, 0, 0), tick) { value = withContext(Dispatchers.IO) { manager.sizes() } }
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
@@ -261,6 +264,18 @@ internal fun BannersScreen(
             status = r.fold({ context.getString(R.string.banners_saved) }, { context.getString(R.string.online_failed, it.message ?: "") })
             tick++; onArtChanged()
         }
+    }
+
+    // Picking a banner for one app is its own screen; Back from there returns to this list.
+    val picking = versionsFor
+    if (picking != null) {
+        BannerVersionsScreen(
+            app = picking, config = config, store = store, manager = manager, refresh = tick,
+            onPickOwn = { pickFor = picking.pkg; picker.launch(arrayOf("image/png", "image/jpeg", "image/webp")) },
+            onChanged = { tick++; onArtChanged() },
+            onBack = { versionsFor = null },
+        )
+        return
     }
 
     Column(
@@ -315,23 +330,81 @@ internal fun BannersScreen(
 
         SettingsItem(
             selected = false, onClick = { showOwn = !showOwn },
-            headlineContent = { Text(stringResource(R.string.banners_own_toggle)) },
+            headlineContent = { Text(stringResource(R.string.banners_choose_toggle)) },
             supportingContent = { Text(stringResource(R.string.banners_yours, sizes.userCount)) },
             trailingContent = { CheckMark(checked = showOwn) },
         )
         if (showOwn) apps.sortedBy { it.label.lowercase() }.forEach { app ->
             val has = remember(tick, app.pkg) { manager.hasUserArt(app.pkg) }
+            val pickNow = remember(tick, app.pkg) { manager.pick(app.pkg) }
             SettingsItem(
                 selected = false,
-                onClick = { pickFor = app.pkg; picker.launch(arrayOf("image/png", "image/jpeg", "image/webp")) },
+                onClick = { versionsFor = app },
                 headlineContent = { Text(app.label) },
-                supportingContent = { Text(if (has) stringResource(R.string.banners_own_set) else stringResource(R.string.banners_choose)) },
+                supportingContent = {
+                    Text(
+                        stringResource(
+                            when {
+                                has -> R.string.banners_choice_yours
+                                pickNow == BannerManager.PICK_APP -> R.string.banners_choice_app
+                                pickNow == BannerManager.PICK_DEFAULT -> R.string.banners_choice_auto
+                                else -> R.string.banners_choice_version
+                            }
+                        ),
+                        maxLines = 1,
+                    )
+                },
                 leadingContent = { AppThumb(app) },
                 trailingContent = {
                     if (has) WishButton(stringResource(R.string.banners_reset), compact = true, filled = false) { manager.clearUserArt(app.pkg); tick++; onArtChanged() }
                 },
             )
         }
+
+        // More places to get banners from. Anyone can host a variants.json; the official one is always included.
+        SectionLabel(stringResource(R.string.banner_sources))
+        SettingsItem(selected = false, onClick = {}, headlineContent = { Text(stringResource(R.string.banner_sources_official)) })
+        config.bannerRepos.forEach { url ->
+            SettingsItem(
+                selected = false, onClick = {},
+                headlineContent = { Text(hostOf(url)) },
+                supportingContent = { Text(url, maxLines = 2) },
+                trailingContent = {
+                    WishButton(stringResource(R.string.online_remove_repo), compact = true, filled = false) {
+                        scope.launch { store.update { c -> c.copy(bannerRepos = c.bannerRepos - url) } }
+                    }
+                },
+            )
+        }
+        SettingsItem(
+            selected = false, onClick = { addSource = true },
+            headlineContent = { Text(stringResource(R.string.banner_sources_add)) },
+            supportingContent = { Text(stringResource(R.string.banner_sources_add_sub)) },
+        )
+    }
+
+    if (addSource) {
+        TextEntryDialog(
+            title = stringResource(R.string.banner_sources_add),
+            hint = stringResource(R.string.banner_sources_hint),
+            initial = "https://",
+            onSave = { text ->
+                addSource = false
+                val u = text.trim()
+                if (u.startsWith("https://") && u.endsWith("variants.json") && u.length < 300 && runCatching { java.net.URI(u).host }.getOrNull() != null) confirmSource = u
+                else status = context.getString(R.string.online_bad_url)
+            },
+            onDismiss = { addSource = false },
+        )
+    }
+    confirmSource?.let { url ->
+        ConfirmDialog(
+            title = stringResource(R.string.online_confirm_title, hostOf(url)),
+            body = stringResource(R.string.banner_sources_confirm_body),
+            confirm = stringResource(R.string.online_confirm_add),
+            onConfirm = { confirmSource = null; scope.launch { store.update { c -> if (url in c.bannerRepos) c else c.copy(bannerRepos = c.bannerRepos + url) } } },
+            onDismiss = { confirmSource = null },
+        )
     }
 }
 
