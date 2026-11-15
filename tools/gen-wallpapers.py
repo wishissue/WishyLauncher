@@ -149,7 +149,7 @@ CATALOG = {
         ],
     ),
 }
-ORDER = list(CATALOG)    # keep in step with art/Wallpapers.kt
+ORDER = ["wishy"]    # only the brand wallpaper is generated now; the others are GNOME Backgrounds photos/renders, see ARTWORK_ATTRIBUTION.md
 
 
 def save(img, path, **kw):

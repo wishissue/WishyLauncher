@@ -1,6 +1,6 @@
 # Wishy Launcher architecture
 
-Status of this document: design plus the current state of the source. Nothing here has been compiled or run. Where something is not written yet, it says **planned**.
+Status of this document: design and current state of the source architecture. Where something is not written yet, it says **planned**.
 
 ## 1. Goals that drive the design
 

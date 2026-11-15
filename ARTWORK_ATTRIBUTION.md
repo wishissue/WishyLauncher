@@ -6,9 +6,12 @@
 |---|---|---|
 | `app_icon.xml`, `app_banner.xml`, `ic_wishy_mark.xml` (placeholder launcher icon, banner and mark) | Wishy Launcher contributors | GPL-3.0-only |
 | Built-in theme `wishy` (colours, shapes, text styles, its wallpapers and placeholder cover) | Wishy Launcher contributors | GPL-3.0-only |
-| Bundled wallpapers `wp_*_dark.webp` and `wp_*_light.webp` in `app/src/main/res/drawable-nodpi/` (eight wallpapers, each in a dark and a light tone) | Wishy Launcher contributors | GPL-3.0-only |
+| Bundled wallpaper `wp_wishy_*.webp` (the Wishy Blue wallpaper, dark and light) | Wishy Launcher contributors | GPL-3.0-only |
+| Bundled wallpapers `wp_<name>_dark.webp` / `wp_<name>_light.webp` for sheet, fold, amber, glass_chip, adwaita, curvy, curvaturingster, dithered_sun, pills, symbolic | GNOME Backgrounds contributors, https://gitlab.gnome.org/GNOME/gnome-backgrounds (mirror: https://github.com/GNOME/gnome-backgrounds). Individual author credits are embedded in the original images. | CC BY-SA 3.0 US |
+| Bundled wallpapers `wp_flow.webp`, `wp_volna.webp`, `wp_milkyway.webp`, `wp_altai.webp` | Sandra Smukaste (Flow), Nikita Babin (Volna), ruvkr (Milky Way), Alesya Khoteeva (Altai); from KDE Plasma wallpapers, https://github.com/KDE/plasma-workspace-wallpapers | CC BY-SA 4.0 |
+| Store wallpapers in `wallpapers/` (served from `repo/wallpapers/`): Mountain (Andy Betts, CC BY-SA 4.0), Shell (Lucas Andrade, CC BY-SA 4.0), Ice Cold (Santiago Cézar, CC BY-SA 4.0), Honeywave (Ken Vermette, CC BY-SA 4.0), Cascade and Opal (Ken Vermette, LGPL-3.0) from KDE; Spheres, Blend pills, Glass stripes, Pixel icons, Pixel pusher, Progress, Tarka, Candy pills and Tubes from GNOME Backgrounds (CC BY-SA 3.0) | As listed; full details per picture in `wallpapers/credits.json` | See left |
 
-All the wallpapers and the Wishy theme's placeholder cover are drawn from scratch by `tools/gen-wallpapers.py` (colour gradients, soft blooms and film grain). None is based on a photograph or on anyone else's artwork, and the script reproduces them exactly. The only third-party files bundled are the Plus Jakarta Sans fonts, see `THIRD_PARTY_LICENSES.md`. No photographs or per-app banners are bundled with the launcher.
+The Wishy Blue wallpaper and the Wishy theme's placeholder cover are drawn from scratch by `tools/gen-wallpapers.py`. The ten GNOME wallpapers are the originals from GNOME Backgrounds, centre-cropped to 16:9, scaled to 1920 x 1080 and saved as WebP. Each has the dark and light version that GNOME publishes, so it matches the launcher's two colour modes. They are not changed in any other way. CC BY-SA 3.0 asks for credit and for the same licence on adapted copies of the pictures; the pictures are separate files, they are not part of the GPL-licensed code. The only other third-party files bundled are the fonts and icons listed in `THIRD_PARTY_LICENSES.md`.
 
 ## App banners
 

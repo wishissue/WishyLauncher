@@ -246,8 +246,14 @@ fun LauncherApp(rescanTick: Int) {
     }
 
     if (!config.setupDone) {
+        // The greeter follows the colour mode too (system by default), so a light TV setup gets the light set.
+        val wizardDark = when (config.themeMode) {
+            1 -> false
+            2 -> true
+            else -> androidx.compose.foundation.isSystemInDarkTheme()
+        }
         ScaledUi(uiScale) {
-            LiteTvTheme(accent = ACCENTS[0]) {
+            LiteTvTheme(accent = ACCENTS[0], dark = wizardDark) {
                 SetupWizard(
                     currentThemeId = config.themeId,
                     onThemeChosen = { id -> scope.launch { store.update { it.copy(themeId = id) } } },
@@ -622,7 +628,7 @@ fun LauncherApp(rescanTick: Int) {
     Box(Modifier.fillMaxSize()) {
     ScaledUi(uiScale) {
     androidx.compose.runtime.CompositionLocalProvider(LocalCornerRadius provides corner) {
-    LiteTvTheme(accent = accent) {
+    LiteTvTheme(accent = accent, dark = wallpaperDark) {
         Box(
             Modifier
                 .fillMaxSize()
@@ -1388,27 +1394,11 @@ private fun PeekStrip(app: AppEntry, cardWidth: Dp, cardHeight: Dp, peekH: Dp) {
 @Composable
 private fun LoadingScreen() {
     Box(
-        Modifier.fillMaxSize().background(Color(0xFF101216)),
+        Modifier.fillMaxSize().background(Color(0xFF080B12)),
         contentAlignment = Alignment.Center,
     ) {
-        // The Wishy mark, gently breathing, instead of a generic spinner.
-        val transition = rememberInfiniteTransition(label = "load")
-        val scale by transition.animateFloat(
-            initialValue = 0.9f,
-            targetValue = 1.06f,
-            animationSpec = infiniteRepeatable(
-                tween(950, easing = androidx.compose.animation.core.FastOutSlowInEasing),
-                androidx.compose.animation.core.RepeatMode.Reverse,
-            ),
-            label = "pulse",
-        )
-        Image(
-            painter = androidx.compose.ui.res.painterResource(org.wishy.launcher.R.drawable.ic_wishy_mark),
-            contentDescription = null,
-            modifier = Modifier
-                .size(88.dp)
-                .graphicsLayer { scaleX = scale; scaleY = scale },
-        )
+        // The Wishy mark with its badge turning on its own centre, instead of a generic spinner.
+        WishyLogo(size = 96.dp, turnMillis = 2400)
     }
 }
 

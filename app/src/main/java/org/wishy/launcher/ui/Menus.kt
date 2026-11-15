@@ -73,8 +73,8 @@ private fun MenuDialog(
     var released by remember { mutableStateOf(false) }
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = RoundedCornerShape(16.dp),
-            colors = SurfaceDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
+            shape = RoundedCornerShape(24.dp),
+            colors = SurfaceDefaults.colors(containerColor = Wish.Bg),
             modifier = Modifier.onPreviewKeyEvent { e ->
                 val select = e.key == Key.DirectionCenter || e.key == Key.Enter ||
                     e.key == Key.NumPadEnter
@@ -90,18 +90,17 @@ private fun MenuDialog(
                 Text(
                     text = title,
                     style = MaterialTheme.typography.headlineSmall,
+                    color = Wish.Text,
                     fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                 )
                 val firstFocus = remember { FocusRequester() }
                 entries.forEachIndexed { index, entry ->
-                    ListItem(
+                    SettingsItem(
                         selected = false,
                         onClick = entry.action,
                         headlineContent = { Text(entry.label) },
-                        leadingContent = {
-                            Icon(entry.icon, contentDescription = null)
-                        },
+                        leadingContent = { Icon(entry.icon, contentDescription = null) },
                         modifier = if (index == 0) Modifier.focusRequester(firstFocus) else Modifier,
                     )
                 }

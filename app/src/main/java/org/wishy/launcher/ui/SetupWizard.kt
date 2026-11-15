@@ -9,32 +9,30 @@ import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -51,21 +49,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Border
-import androidx.tv.material3.Button
 import androidx.tv.material3.ClickableSurfaceDefaults
-import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.Icon
 import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 import kotlinx.coroutines.delay
@@ -74,19 +70,23 @@ import org.wishy.launcher.R
 import java.net.Inet4Address
 import java.net.NetworkInterface
 
-/** One choice on the "pick your look" step: a few colours so the card and the backdrop can preview it. */
-private class Look(val id: String, val name: String, val c1: Color, val c2: Color, val accent: Color, val corner: Int)
+/** One choice on the "pick your look" step. [bg], [tile] and [accent] draw a small flat preview of the home screen. */
+private class Look(val id: String, val name: String, val bg: Color, val tile: Color, val accent: Color, val corner: Int)
 
 private val LOOKS = listOf(
-    Look("wishy", "Wishy", Color(0xFF0B1B33), Color(0xFF0166FF), Color(0xFF66A3FF), 8),
-    Look("classic", "Classic", Color(0xFF111827), Color(0xFF374151), Color(0xFF8AB4F8), 10),
+    Look("wishy", "Wishy", Color(0xFF0B1B33), Color(0xFF0166FF), Color(0xFF66A3FF), 10),
+    Look("classic", "Classic", Color(0xFF111827), Color(0xFF374151), Color(0xFF8AB4F8), 4),
 )
 
 private const val STEPS = 6
 
+private val StepIcons: List<() -> ImageVector> = listOf(
+    { Sym.RocketLaunch }, { Sym.Palette }, { Sym.Home }, { Sym.VpnKey }, { Sym.Cloud }, { Sym.Check },
+)
+
 /**
- * First-launch wizard. Six short steps: welcome, pick a look (previewed live on the backdrop), make Wishy the
- * home app (including certified Google TV devices, where ADB is required), VPN button, online features, tips.
+ * First-launch greeter. Six steps, one idea each: welcome, pick a look, make Wishy the home app, VPN button,
+ * online features, done. Big icon, big title, a little text, big buttons. Flat WishIssue surfaces, no gradients.
  * [onVpnChosen] receives the picked VPN package, or null to hide the VPN icon.
  */
 @Composable
@@ -126,144 +126,86 @@ fun SetupWizard(
             }
         }
         runCatching { context.startActivity(Intent(Settings.ACTION_HOME_SETTINGS)) }
-            .onFailure {
-                Actions.toast(context, context.getString(R.string.wizard_no_chooser))
-            }
+            .onFailure { Actions.toast(context, context.getString(R.string.wizard_no_chooser)) }
     }
 
-    // The backdrop drifts slowly and re-tints to whichever look is highlighted, so choosing feels immediate.
-    val c1 by animateColorAsState(look.c1, tween(450), label = "c1")
-    val c2 by animateColorAsState(look.c2, tween(450), label = "c2")
-    val accent by animateColorAsState(look.accent, tween(450), label = "accent")
-    val drift by rememberInfiniteTransition(label = "drift").animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(12_000, easing = LinearEasing), RepeatMode.Reverse),
-        label = "driftValue",
-    )
-    val pulse by rememberInfiniteTransition(label = "pulse").animateFloat(
-        initialValue = 1f,
-        targetValue = 1.07f,
-        animationSpec = infiniteRepeatable(tween(1_800, easing = LinearEasing), RepeatMode.Reverse),
-        label = "pulseValue",
-    )
-    val backdrop = Brush.linearGradient(
-        colors = listOf(c1, lerp(c1, c2, 0.35f + 0.5f * drift), c2),
-        start = Offset(0f, 0f),
-        end = Offset(1800f * (0.7f + 0.3f * drift), 1100f),
-    )
-
-    Box(Modifier.fillMaxSize().background(backdrop)) {
-        // Soft accent discs: decoration that also tells you which look is selected.
-        Box(
-            Modifier
-                .align(Alignment.BottomStart)
-                .padding(start = 30.dp, bottom = 10.dp)
-                .size(260.dp)
-                .graphicsLayer { scaleX = pulse; scaleY = pulse }
-                .background(accent.copy(alpha = 0.16f), CircleShape)
-        )
-        Box(
-            Modifier
-                .align(Alignment.TopEnd)
-                .padding(end = 10.dp, top = 6.dp)
-                .size(150.dp)
-                .background(accent.copy(alpha = 0.10f), CircleShape)
-        )
-
-        Row(
-            Modifier.fillMaxSize().padding(horizontal = 52.dp, vertical = 32.dp),
-            horizontalArrangement = Arrangement.spacedBy(40.dp),
+    Box(Modifier.fillMaxSize().background(Wish.Bg)) {
+        Column(
+            Modifier.fillMaxSize().padding(horizontal = 40.dp, vertical = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // ---- left: where you are ----
-            Column(
-                Modifier.weight(1f).fillMaxHeight(),
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Image(
-                        painter = painterResource(R.drawable.ic_wishy_mark),
-                        contentDescription = null,
-                        modifier = Modifier.size(46.dp).graphicsLayer { scaleX = pulse; scaleY = pulse },
-                    )
+            Progress(step)
+            AnimatedContent(
+                targetState = step,
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                transitionSpec = {
+                    val dir = if (targetState > initialState) 1 else -1
+                    (slideInHorizontally(tween(320)) { w -> dir * w / 5 } + fadeIn(tween(320))) togetherWith
+                        (slideOutHorizontally(tween(220)) { w -> -dir * w / 5 } + fadeOut(tween(180)))
+                },
+                contentAlignment = Alignment.Center,
+                label = "wizardStep",
+            ) { s ->
+                Column(
+                    Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(vertical = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Hero(s)
                     Text(
-                        stringResource(R.string.app_name),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Color.White.copy(alpha = 0.9f),
+                        stringResource(stepTitle(s)),
+                        fontSize = 32.sp,
+                        lineHeight = 38.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = WishFont,
+                        color = Wish.Text,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 12.dp),
                     )
-                }
-                Progress(step)
-                Text(
-                    stringResource(R.string.wizard_step, step + 1, STEPS),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = Color.White.copy(alpha = 0.65f),
-                    modifier = Modifier.padding(top = 10.dp, bottom = 6.dp),
-                )
-                AnimatedContent(
-                    targetState = step,
-                    transitionSpec = { fadeIn(tween(140)) togetherWith fadeOut(tween(90)) },
-                    label = "wizardTitle",
-                ) { s ->
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    stepSubtitle(s)?.let { sub ->
                         Text(
-                            stringResource(stepTitle(s)),
-                            style = MaterialTheme.typography.headlineLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
+                            stringResource(sub),
+                            fontSize = 17.sp,
+                            fontFamily = WishFont,
+                            color = Wish.TextDim,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(top = 6.dp),
                         )
-                        stepSubtitle(s)?.let { sub ->
-                            Text(
-                                stringResource(sub),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = Color.White.copy(alpha = 0.8f),
-                            )
-                        }
                     }
-                }
-            }
-
-            // ---- right: the thing to do ----
-            Box(Modifier.weight(1.15f).fillMaxHeight(), contentAlignment = Alignment.CenterStart) {
-                AnimatedContent(
-                    targetState = step,
-                    transitionSpec = {
-                        val dir = if (targetState > initialState) 1 else -1
-                        (slideInHorizontally(tween(150)) { w -> dir * w / 6 } + fadeIn(tween(150))) togetherWith
-                            (slideOutHorizontally(tween(100)) { w -> -dir * w / 6 } + fadeOut(tween(100)))
-                    },
-                    label = "wizardStep",
-                ) { s ->
                     Column(
-                        Modifier.verticalScroll(rememberScrollState()).padding(vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        Modifier.padding(top = 16.dp, bottom = 16.dp).widthIn(max = 640.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         when (s) {
                             0 -> {
-                                Feature(stringResource(R.string.wizard_feat_1), accent)
-                                Feature(stringResource(R.string.wizard_feat_2), accent)
-                                Feature(stringResource(R.string.wizard_feat_3), accent)
-                                Body(stringResource(R.string.wizard_privacy_body))
-                                NavRow(nextLabel = stringResource(R.string.next)) { step = 1 }
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    Chip(AppIcons.Bolt, stringResource(R.string.wz_chip_fast), Modifier.weight(1f))
+                                    Chip(Sym.Shield, stringResource(R.string.wz_chip_private), Modifier.weight(1f))
+                                    Chip(Sym.Palette, stringResource(R.string.wz_chip_themes), Modifier.weight(1f))
+                                }
+                                NavRow(nextLabel = stringResource(R.string.wz_start)) { step = 1 }
                             }
                             1 -> {
                                 val selectedFocus = remember { FocusRequester() }
-                                LaunchedEffect(Unit) { delay(120); runCatching { selectedFocus.requestFocus() } }
+                                LaunchedEffect(Unit) { delay(200); runCatching { selectedFocus.requestFocus() } }
                                 val pick = { l: Look -> look = l; onThemeChosen(if (l.id == "classic") CLASSIC_THEME_ID else l.id) }
-                                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    LOOKS.take(4).forEach { l ->
-                                        LookCard(l, l.id == look.id, if (l.id == look.id) Modifier.focusRequester(selectedFocus) else Modifier) { pick(l) }
-                                    }
-                                }
-                                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    LOOKS.drop(4).forEach { l ->
-                                        LookCard(l, l.id == look.id, if (l.id == look.id) Modifier.focusRequester(selectedFocus) else Modifier) { pick(l) }
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                                    LOOKS.forEach { l ->
+                                        LookCard(l, l.id == look.id, if (l.id == look.id) Modifier.weight(1f).focusRequester(selectedFocus) else Modifier.weight(1f)) { pick(l) }
                                     }
                                 }
                                 NavRow(backAction = { step = 0 }, nextLabel = stringResource(R.string.next), autoFocus = false) { step = 2 }
                             }
                             2 -> {
                                 if (isDefault) {
-                                    Body(stringResource(R.string.wizard_already_default))
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                        Icon(Sym.Check, null, tint = Wish.Success, modifier = Modifier.size(28.dp))
+                                        Text(stringResource(R.string.wz_home_done), fontSize = 20.sp, fontFamily = WishFont, color = Wish.Success)
+                                    }
                                     NavRow(backAction = { step = 1 }, nextLabel = stringResource(R.string.next)) { step = 3 }
                                 } else if (isGoogleTv) {
                                     // Carousel: 3 short pages so it fits and stays centred at any DPI.
@@ -284,9 +226,9 @@ fun SetupWizard(
                                         else -> {
                                             Body(stringResource(R.string.wizard_gtv_which))
                                             Body(stringResource(R.string.wizard_gtv_remap))
-                                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                                Button(onClick = { requestDefault() }) { Text(stringResource(R.string.wizard_try_dialog)) }
-                                                Button(onClick = { defaultHome = defaultHomePackage(context) }) { Text(stringResource(R.string.wizard_check_again)) }
+                                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                                WishButton(stringResource(R.string.wizard_try_dialog), modifier = Modifier.weight(1f), filled = false) { requestDefault() }
+                                                WishButton(stringResource(R.string.wizard_check_again), modifier = Modifier.weight(1f), filled = false) { defaultHome = defaultHomePackage(context) }
                                             }
                                         }
                                     }
@@ -297,13 +239,12 @@ fun SetupWizard(
                                         onNext = { if (gtvPage < 2) gtvPage++ else step = 3 },
                                     )
                                 } else {
-                                    Body(stringResource(R.string.wizard_aosp_body))
-                                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                        Button(onClick = { requestDefault() }) { Text(stringResource(R.string.wizard_set_default)) }
-                                        Button(onClick = { defaultHome = defaultHomePackage(context) }) { Text(stringResource(R.string.wizard_check_again)) }
+                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                        WishButton(stringResource(R.string.wz_home_set), modifier = Modifier.weight(1f), icon = Sym.Home) { requestDefault() }
+                                        WishButton(stringResource(R.string.wizard_check_again), modifier = Modifier.weight(1f), filled = false) { defaultHome = defaultHomePackage(context) }
                                     }
                                     Body(stringResource(R.string.wizard_no_dialog_hint))
-                                    NavRow(backAction = { step = 1 }, nextLabel = stringResource(R.string.wizard_skip)) { step = 3 }
+                                    NavRow(backAction = { step = 1 }, nextLabel = stringResource(R.string.wizard_skip), autoFocus = false) { step = 3 }
                                 }
                             }
                             3 -> {
@@ -311,35 +252,33 @@ fun SetupWizard(
                                 if (vpns.isEmpty()) {
                                     Body(stringResource(R.string.wizard_vpn_none))
                                 } else {
-                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        vpns.forEach { (pkg, label) ->
-                                            Button(onClick = { onVpnChosen(pkg); step = 4 }) { Text(label) }
-                                        }
+                                    vpns.forEach { (pkg, label) ->
+                                        ChoiceCard(Sym.VpnKey, label, null, Modifier) { onVpnChosen(pkg); step = 4 }
                                     }
                                 }
                                 NavRow(backAction = { step = 2 }, nextLabel = stringResource(R.string.wizard_vpn_skip)) { onVpnChosen(null); step = 4 }
                             }
                             4 -> {
                                 val yesFocus = remember { FocusRequester() }
-                                LaunchedEffect(Unit) { delay(120); runCatching { yesFocus.requestFocus() } }
+                                LaunchedEffect(Unit) { delay(200); runCatching { yesFocus.requestFocus() } }
                                 ChoiceCard(
+                                    Sym.Cloud,
                                     stringResource(R.string.wizard_online_yes),
                                     stringResource(R.string.wizard_online_yes_sub),
                                     Modifier.focusRequester(yesFocus),
                                 ) { onOnlineChosen(true); step = 5 }
                                 ChoiceCard(
+                                    Sym.Shield,
                                     stringResource(R.string.wizard_online_no),
                                     stringResource(R.string.wizard_online_no_sub),
                                     Modifier,
                                 ) { onOnlineChosen(false); step = 5 }
-                                Row(Modifier.padding(top = 4.dp)) {
-                                    Button(onClick = { step = 3 }) { Text(stringResource(R.string.back)) }
-                                }
+                                WishButton(stringResource(R.string.back), filled = false, icon = Sym.ArrowBack) { step = 3 }
                             }
                             else -> {
-                                Tip(stringResource(R.string.wizard_tip_1), stringResource(R.string.wizard_tip_1_sub), accent)
-                                Tip(stringResource(R.string.wizard_tip_2), stringResource(R.string.wizard_tip_2_sub), accent)
-                                Tip(stringResource(R.string.wizard_tip_3), stringResource(R.string.wizard_tip_3_sub), accent)
+                                Tip(stringResource(R.string.wizard_tip_1), stringResource(R.string.wizard_tip_1_sub))
+                                Tip(stringResource(R.string.wizard_tip_2), stringResource(R.string.wizard_tip_2_sub))
+                                Tip(stringResource(R.string.wizard_tip_3), stringResource(R.string.wizard_tip_3_sub))
                                 if (!isDefault) Body(stringResource(R.string.wizard_rerun_note))
                                 NavRow(backAction = { step = 4 }, nextLabel = stringResource(R.string.wizard_start)) { onDone() }
                             }
@@ -361,129 +300,194 @@ private fun stepTitle(step: Int): Int = when (step) {
 }
 
 private fun stepSubtitle(step: Int): Int? = when (step) {
-    0 -> R.string.wizard_welcome_body
-    1 -> R.string.wizard_look_sub
-    3 -> R.string.wizard_vpn_body
-    4 -> R.string.wizard_online_sub
+    0 -> R.string.wz_welcome_sub
+    1 -> R.string.wz_look_sub
     else -> null
 }
 
 /** Id the theme system uses for "no theme, classic layout". Mirrors ThemeStorage.CLASSIC_ID. */
 private val CLASSIC_THEME_ID: String get() = org.wishy.launcher.theme.ThemeStorage.CLASSIC_ID
 
+internal val WishFont: FontFamily = FontFamily(
+    androidx.compose.ui.text.font.Font(R.font.plus_jakarta_sans_regular, FontWeight.Normal),
+    androidx.compose.ui.text.font.Font(R.font.plus_jakarta_sans_medium, FontWeight.Medium),
+    androidx.compose.ui.text.font.Font(R.font.plus_jakarta_sans_semibold, FontWeight.SemiBold),
+    androidx.compose.ui.text.font.Font(R.font.plus_jakarta_sans_bold, FontWeight.Bold),
+)
+
 /* ------------------------------ pieces ------------------------------ */
+
+/** The big picture on top of each step: the turning logo on the welcome step, a springy icon tile elsewhere. */
+@Composable
+private fun Hero(step: Int) {
+    if (step == 0) {
+        WishyLogo(size = 100.dp, turnMillis = 5000)
+        return
+    }
+    var shown by remember(step) { mutableStateOf(false) }
+    LaunchedEffect(step) { shown = true }
+    val scale by animateFloatAsState(
+        if (shown) 1f else 0.6f,
+        spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+        label = "heroScale",
+    )
+    val done = step == STEPS - 1
+    Box(
+        Modifier
+            .size(88.dp)
+            .graphicsLayer { scaleX = scale; scaleY = scale }
+            .background(if (done) Wish.Success.copy(alpha = 0.18f) else Wish.PrimaryContainer, RoundedCornerShape(22.dp)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            StepIcons[step](),
+            contentDescription = null,
+            tint = if (done) Wish.Success else Wish.OnPrimaryContainer,
+            modifier = Modifier.size(46.dp),
+        )
+    }
+}
 
 @Composable
 private fun Progress(step: Int) {
     Row(
-        Modifier.padding(top = 18.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        Modifier.padding(bottom = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         repeat(STEPS) { i ->
-            val w by animateDpAsState(if (i == step) 36.dp else 12.dp, tween(150), label = "pill")
+            val w by animateDpAsState(if (i == step) 40.dp else 10.dp, tween(250), label = "dotW")
             Box(
                 Modifier
                     .width(w)
-                    .height(6.dp)
-                    .background(if (i <= step) Color.White else Color.White.copy(alpha = 0.3f), RoundedCornerShape(3.dp))
+                    .height(8.dp)
+                    .background(if (i <= step) Wish.Primary else Wish.Outline, RoundedCornerShape(4.dp))
             )
         }
     }
 }
 
 @Composable
-private fun Feature(text: String, accent: Color) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-        Box(Modifier.size(12.dp).background(accent, CircleShape))
-        Text(text, style = MaterialTheme.typography.titleMedium, color = Color.White)
+private fun Chip(icon: ImageVector, label: String, modifier: Modifier = Modifier) {
+    Column(
+        modifier
+            .background(Wish.Surface, RoundedCornerShape(14.dp))
+            .padding(vertical = 12.dp, horizontal = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Icon(icon, null, tint = Wish.Primary, modifier = Modifier.size(30.dp))
+        Text(label, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, fontFamily = WishFont, color = Wish.Text, maxLines = 1)
     }
 }
 
 @Composable
-private fun Tip(title: String, sub: String, accent: Color) {
+private fun Tip(title: String, sub: String) {
     Row(
         Modifier
             .fillMaxWidth()
-            .background(Color.White.copy(alpha = 0.08f), RoundedCornerShape(14.dp))
-            .padding(14.dp),
+            .background(Wish.Surface, RoundedCornerShape(14.dp))
+            .padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Box(Modifier.width(5.dp).height(38.dp).background(accent, RoundedCornerShape(3.dp)))
+        Icon(Sym.Lightbulb, null, tint = Wish.Primary, modifier = Modifier.size(26.dp))
         Column {
-            Text(title, style = MaterialTheme.typography.titleSmall, color = Color.White)
-            Text(sub, style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.75f))
+            Text(title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, fontFamily = WishFont, color = Wish.Text)
+            Text(sub, fontSize = 14.sp, fontFamily = WishFont, color = Wish.TextDim, maxLines = 2)
         }
     }
 }
 
+/** A flat mini home screen in the look's colours, with a check that pops in when it is the chosen one. */
 @Composable
-private fun LookCard(look: Look, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
+private fun LookCard(look: Look, selected: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
-        modifier = modifier.width(112.dp),
-        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(14.dp)),
+        modifier = modifier,
+        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(18.dp)),
         colors = ClickableSurfaceDefaults.colors(
-            containerColor = Color.White.copy(alpha = 0.08f),
-            focusedContainerColor = Color.White.copy(alpha = 0.18f),
-            contentColor = Color.White,
-            focusedContentColor = Color.White,
+            containerColor = Wish.Surface,
+            focusedContainerColor = Wish.SurfaceHigh,
+            contentColor = Wish.Text,
+            focusedContentColor = Wish.Text,
         ),
-        scale = ClickableSurfaceDefaults.scale(focusedScale = 1.08f),
+        scale = ClickableSurfaceDefaults.scale(focusedScale = 1.05f),
         border = ClickableSurfaceDefaults.border(
-            border = if (selected) Border(BorderStroke(2.dp, Color.White)) else Border.None,
-            focusedBorder = Border(BorderStroke(3.dp, Color.White)),
+            border = if (selected) Border(BorderStroke(2.dp, Wish.Primary)) else Border.None,
+            focusedBorder = Border(BorderStroke(3.dp, Wish.Primary)),
         ),
     ) {
-        Column(Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Box(
-                Modifier
-                    .fillMaxWidth()
-                    .height(52.dp)
-                    .background(Brush.linearGradient(listOf(look.c1, look.c2)), RoundedCornerShape(8.dp)),
-                contentAlignment = Alignment.Center,
+                Modifier.fillMaxWidth().height(96.dp).background(look.bg, RoundedCornerShape(10.dp)).padding(8.dp),
             ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                    repeat(3) {
-                        Box(Modifier.size(20.dp).background(look.accent, RoundedCornerShape(look.corner.dp)))
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Box(Modifier.width(50.dp).height(5.dp).background(look.accent, RoundedCornerShape(3.dp)))
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        repeat(3) { Box(Modifier.size(width = 46.dp, height = 34.dp).background(look.tile, RoundedCornerShape(look.corner.dp))) }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        repeat(3) { Box(Modifier.size(width = 46.dp, height = 16.dp).background(look.tile.copy(alpha = 0.55f), RoundedCornerShape(look.corner.dp))) }
+                    }
+                }
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = selected,
+                    modifier = Modifier.align(Alignment.TopEnd),
+                    enter = scaleIn(spring(Spring.DampingRatioMediumBouncy)) + fadeIn(),
+                    exit = fadeOut(),
+                ) {
+                    Box(Modifier.size(24.dp).background(Wish.Primary, CircleShape), contentAlignment = Alignment.Center) {
+                        Icon(Sym.Check, null, tint = Wish.OnPrimary, modifier = Modifier.size(18.dp))
                     }
                 }
             }
-            Text(look.name, style = MaterialTheme.typography.labelMedium, maxLines = 1)
+            Text(
+                look.name,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = WishFont,
+                modifier = Modifier.padding(start = 4.dp, bottom = 2.dp),
+                maxLines = 1,
+            )
         }
     }
 }
 
 @Composable
-private fun ChoiceCard(title: String, sub: String, modifier: Modifier, onClick: () -> Unit) {
+private fun ChoiceCard(icon: ImageVector, title: String, sub: String?, modifier: Modifier, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
-        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(16.dp)),
+        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(14.dp)),
         colors = ClickableSurfaceDefaults.colors(
-            containerColor = Color.White.copy(alpha = 0.08f),
-            focusedContainerColor = Color.White.copy(alpha = 0.2f),
-            contentColor = Color.White,
-            focusedContentColor = Color.White,
+            containerColor = Wish.Surface,
+            focusedContainerColor = Wish.SurfaceHigh,
+            contentColor = Wish.Text,
+            focusedContentColor = Wish.Text,
         ),
-        scale = ClickableSurfaceDefaults.scale(focusedScale = 1.04f),
-        border = ClickableSurfaceDefaults.border(focusedBorder = Border(BorderStroke(3.dp, Color.White))),
+        scale = ClickableSurfaceDefaults.scale(focusedScale = 1.03f),
+        border = ClickableSurfaceDefaults.border(focusedBorder = Border(BorderStroke(3.dp, Wish.Primary))),
     ) {
-        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
-            Text(sub, style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.8f))
+        Row(
+            Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Box(Modifier.size(44.dp).background(Wish.PrimaryContainer, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
+                Icon(icon, null, tint = Wish.OnPrimaryContainer, modifier = Modifier.size(24.dp))
+            }
+            Column(Modifier.weight(1f)) {
+                Text(title, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, fontFamily = WishFont)
+                if (sub != null) Text(sub, fontSize = 14.sp, fontFamily = WishFont, color = Wish.TextDim, maxLines = 2)
+            }
         }
     }
 }
 
 @Composable
 private fun Body(text: String) {
-    Text(
-        text,
-        style = MaterialTheme.typography.bodyMedium,
-        color = Color.White.copy(alpha = 0.85f),
-    )
+    Text(text, fontSize = 16.sp, lineHeight = 22.sp, fontFamily = WishFont, color = Wish.TextDim, textAlign = TextAlign.Center)
 }
 
 @Composable
@@ -491,15 +495,10 @@ private fun CodeLine(text: String) {
     Box(
         Modifier
             .fillMaxWidth()
-            .background(Color.Black.copy(alpha = 0.45f), RoundedCornerShape(8.dp))
+            .background(Wish.Surface, RoundedCornerShape(8.dp))
             .padding(horizontal = 12.dp, vertical = 8.dp)
     ) {
-        Text(
-            text,
-            style = MaterialTheme.typography.bodySmall,
-            fontFamily = FontFamily.Monospace,
-            color = Color(0xFF8AB4F8),
-        )
+        Text(text, fontSize = 13.sp, fontFamily = FontFamily.Monospace, color = Wish.Primary)
     }
 }
 
@@ -514,47 +513,45 @@ private fun NavRow(
     val nextFocus = remember { FocusRequester() }
     if (autoFocus) {
         LaunchedEffect(Unit) {
-            delay(80)
+            delay(200)
             runCatching { nextFocus.requestFocus() }
         }
     }
     Row(
-        Modifier.padding(top = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         if (backAction != null) {
-            Button(onClick = backAction) { Text(stringResource(R.string.back)) }
-        }
-        Button(onClick = nextAction, modifier = Modifier.focusRequester(nextFocus)) {
-            Text(nextLabel)
+            WishButton(stringResource(R.string.back), modifier = Modifier.weight(1f), filled = false, icon = Sym.ArrowBack, onClick = backAction)
+            WishButton(nextLabel, modifier = Modifier.weight(1f).focusRequester(nextFocus), trailingIcon = Sym.ArrowForward, onClick = nextAction)
+        } else {
+            WishButton(nextLabel, modifier = Modifier.widthIn(min = 200.dp, max = 320.dp).focusRequester(nextFocus), trailingIcon = Sym.ArrowForward, onClick = nextAction)
         }
     }
 }
 
-/** Carousel controls: Prev / "n / N" / Next. On the ends they step out. */
+/** Carousel controls: back arrow / "n / N" / forward arrow. On the ends they step out. */
 @Composable
 private fun PagerRow(page: Int, count: Int, onPrev: () -> Unit, onNext: () -> Unit) {
     val nextFocus = remember { FocusRequester() }
     LaunchedEffect(page) {
-        delay(80)
+        delay(120)
         runCatching { nextFocus.requestFocus() }
     }
     Row(
-        Modifier.padding(top = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        Modifier.padding(top = 10.dp, bottom = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Button(onClick = onPrev) {
-            Text(if (page > 0) "◄" else stringResource(R.string.back))
-        }
-        Text(
-            "${page + 1} / $count",
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color.White.copy(alpha = 0.7f),
+        WishButton(if (page > 0) "" else stringResource(R.string.back), filled = false, icon = Sym.ArrowBack, onClick = onPrev)
+        Text("${page + 1} / $count", fontSize = 16.sp, fontFamily = WishFont, color = Wish.TextDim)
+        WishButton(
+            if (page < count - 1) "" else stringResource(R.string.wizard_skip),
+            modifier = Modifier.focusRequester(nextFocus),
+            trailingIcon = Sym.ArrowForward,
+            onClick = onNext,
         )
-        Button(onClick = onNext, modifier = Modifier.focusRequester(nextFocus)) {
-            Text(if (page < count - 1) "►" else stringResource(R.string.wizard_skip))
-        }
     }
 }
 

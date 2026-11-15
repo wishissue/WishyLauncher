@@ -136,7 +136,7 @@ internal fun OnlineThemesScreen(config: LauncherConfig, store: ConfigStore, onBa
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Text(stringResource(R.string.themes_get_more), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(bottom = 12.dp, start = 8.dp))
+        ScreenHeader(stringResource(R.string.themes_get_more), onBack = onBack)
         val f = initialFocus()
         OfflineNotice(config, store)
         if (status.isNotEmpty()) {
@@ -165,7 +165,7 @@ internal fun OnlineThemesScreen(config: LauncherConfig, store: ConfigStore, onBa
                         headlineContent = { Text(hostOf(url)) },
                         supportingContent = { Text(url + "\n" + stringResource(R.string.online_third_party_hint)) },
                         trailingContent = {
-                            Button(onClick = { scope.launch { store.update { c -> c.copy(extraRepos = c.extraRepos - url) } } }) { Text(stringResource(R.string.online_remove_repo)) }
+                            WishButton(stringResource(R.string.online_remove_repo), compact = true, filled = false) { scope.launch { store.update { c -> c.copy(extraRepos = c.extraRepos - url) } } }
                         },
                     )
                 }
@@ -267,7 +267,7 @@ internal fun BannersScreen(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Text(stringResource(R.string.item_banners), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(bottom = 12.dp, start = 8.dp))
+        ScreenHeader(stringResource(R.string.item_banners), onBack = onBack)
         val f = initialFocus()
         if (status.isNotEmpty()) SettingsItem(selected = false, onClick = { status = "" }, headlineContent = { Text(status) })
 
@@ -284,7 +284,7 @@ internal fun BannersScreen(
             },
             headlineContent = { Text(stringResource(R.string.banners_auto)) },
             supportingContent = { Text(stringResource(R.string.banners_auto_sub)) },
-            trailingContent = { CheckMark(checked = config.artworkOnline && !config.offlineMode) },
+            trailingContent = { SwitchPill(config.artworkOnline && !config.offlineMode) },
             modifier = Modifier.focusRequester(f),
         )
         if (config.artworkOnline && !config.offlineMode) {
@@ -328,7 +328,7 @@ internal fun BannersScreen(
                 supportingContent = { Text(if (has) stringResource(R.string.banners_own_set) else stringResource(R.string.banners_choose)) },
                 leadingContent = { AppThumb(app) },
                 trailingContent = {
-                    if (has) Button(onClick = { manager.clearUserArt(app.pkg); tick++; onArtChanged() }) { Text(stringResource(R.string.banners_reset)) }
+                    if (has) WishButton(stringResource(R.string.banners_reset), compact = true, filled = false) { manager.clearUserArt(app.pkg); tick++; onArtChanged() }
                 },
             )
         }
@@ -344,10 +344,10 @@ internal fun TextEntryDialog(title: String, hint: String, initial: String, onSav
                 Text(title, style = MaterialTheme.typography.titleMedium)
                 Text(hint, style = MaterialTheme.typography.bodySmall)
                 val f = initialFocus()
-                Box(Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.08f), RoundedCornerShape(8.dp)).padding(12.dp)) {
+                Box(Modifier.fillMaxWidth().background(Wish.Text.copy(alpha = 0.08f), RoundedCornerShape(8.dp)).padding(12.dp)) {
                     BasicTextField(
                         value = text, onValueChange = { text = it }, singleLine = true,
-                        textStyle = TextStyle(color = Color.White, fontSize = 15.sp),
+                        textStyle = TextStyle(color = Wish.Text, fontSize = 15.sp),
                         cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = { onSave(text) }),
@@ -355,8 +355,8 @@ internal fun TextEntryDialog(title: String, hint: String, initial: String, onSav
                     )
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Button(onClick = { onSave(text) }) { Text(stringResource(R.string.save)) }
-                    Button(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+                    WishButton(stringResource(R.string.save), compact = true) { onSave(text) }
+                    WishButton(stringResource(R.string.cancel), compact = true, filled = false, onClick = onDismiss)
                 }
             }
         }
@@ -373,8 +373,8 @@ internal fun ConfirmDialog(title: String, body: String, confirm: String, onConfi
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     // Cancel is first so it holds the initial focus: the safe choice is the default.
                     val f = initialFocus()
-                    Button(onClick = onDismiss, modifier = Modifier.focusRequester(f)) { Text(stringResource(R.string.cancel)) }
-                    Button(onClick = onConfirm) { Text(confirm) }
+                    WishButton(stringResource(R.string.cancel), compact = true, filled = false, modifier = Modifier.focusRequester(f), onClick = onDismiss)
+                    WishButton(confirm, compact = true, onClick = onConfirm)
                 }
             }
         }

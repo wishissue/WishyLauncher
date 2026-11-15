@@ -1,0 +1,305 @@
+{
+  "schemaVersion": 1,
+  "wallpapers": [
+    {
+      "id": "balls",
+      "name": "Spheres",
+      "author": "GNOME Backgrounds contributors",
+      "license": "CC-BY-SA-3.0",
+      "source": "https://gitlab.gnome.org/GNOME/gnome-backgrounds",
+      "dark": {
+        "file": "balls-dark.webp",
+        "sha256": "6339c659355f50a4926f3e4e1221556d16108369d2ff865e3566da1e4e7d2b0d",
+        "bytes": 69988
+      },
+      "light": {
+        "file": "balls-light.webp",
+        "sha256": "f0545a65902ebb08d8a6cf1ddcee0f7adb72e00b1fd648ce889c5ce5c9a3d02c",
+        "bytes": 91146
+      },
+      "thumb": {
+        "file": "balls-thumb.webp",
+        "sha256": "a36c52c29d1b79e241be2583eba37a8247de9177e9fff26e4daf673d167be0da",
+        "bytes": 9216
+      }
+    },
+    {
+      "id": "blendpills",
+      "name": "Blend pills",
+      "author": "GNOME Backgrounds contributors",
+      "license": "CC-BY-SA-3.0",
+      "source": "https://gitlab.gnome.org/GNOME/gnome-backgrounds",
+      "dark": {
+        "file": "blendpills-dark.webp",
+        "sha256": "493d99940a6f57141564634a3ca4db59acc7798249acc15304f1559742808b7a",
+        "bytes": 91076
+      },
+      "light": {
+        "file": "blendpills-light.webp",
+        "sha256": "b744315d447ed7a05d85335b013eac10ff14fc478d197d06bd079328149dc9f4",
+        "bytes": 85408
+      },
+      "thumb": {
+        "file": "blendpills-thumb.webp",
+        "sha256": "7b455ac67e19c8d15e1fe85b43f0e3b9c9279ea16926c720114c7d6a9cfc4750",
+        "bytes": 10810
+      }
+    },
+    {
+      "id": "cascade",
+      "name": "Cascade",
+      "author": "Ken Vermette",
+      "license": "LGPL-3.0-only",
+      "source": "https://github.com/KDE/plasma-workspace-wallpapers/tree/master/Cascade",
+      "dark": {
+        "file": "cascade.webp",
+        "sha256": "0a0a0ce8ed4d1d747e1877a8f59a2f6534aea0da659eb1b8ab0e4d6cc0c9c14d",
+        "bytes": 68858
+      },
+      "thumb": {
+        "file": "cascade-thumb.webp",
+        "sha256": "c4d38eb2b8bc6a7036ec62f0f750650d24f05b7f7f1af838548dee6f7fb14693",
+        "bytes": 6436
+      }
+    },
+    {
+      "id": "glass_stripes",
+      "name": "Glass stripes",
+      "author": "GNOME Backgrounds contributors",
+      "license": "CC-BY-SA-3.0",
+      "source": "https://gitlab.gnome.org/GNOME/gnome-backgrounds",
+      "dark": {
+        "file": "glass_stripes-dark.webp",
+        "sha256": "fba9ea36bd46548dde475c90aea8be709e30f13d4ce5aaaa52c1163db6b4da50",
+        "bytes": 96222
+      },
+      "light": {
+        "file": "glass_stripes-light.webp",
+        "sha256": "67fac95c9ff179ae111b192f9ea1168c2a52bf7b6bf9077f6fe52f9d2dfe6d2a",
+        "bytes": 155424
+      },
+      "thumb": {
+        "file": "glass_stripes-thumb.webp",
+        "sha256": "31a3744d20541f84532bb90ec6c8df4aa3d18a890156060e3d332daff8476a9c",
+        "bytes": 9470
+      }
+    },
+    {
+      "id": "honeywave",
+      "name": "Honeywave",
+      "author": "Ken Vermette",
+      "license": "CC-BY-SA-4.0",
+      "source": "https://github.com/KDE/plasma-workspace-wallpapers/tree/master/Honeywave",
+      "dark": {
+        "file": "honeywave.webp",
+        "sha256": "45488e573024d3fe221d81f866e9cdb09e287efdca496f1ba93f94ac59af442d",
+        "bytes": 110814
+      },
+      "thumb": {
+        "file": "honeywave-thumb.webp",
+        "sha256": "97d47b7500eaf3ba7218a1df5015a8e4828aac270abe6a81a942e186dd9bb7a4",
+        "bytes": 9256
+      }
+    },
+    {
+      "id": "icecold",
+      "name": "Ice Cold",
+      "author": "Santiago Cézar",
+      "license": "CC-BY-SA-4.0",
+      "source": "https://github.com/KDE/plasma-workspace-wallpapers/tree/master/IceCold",
+      "dark": {
+        "file": "icecold.webp",
+        "sha256": "ad7996e44af14cde942282324e51d6fe9d561e98e5ad545909186dfd36986312",
+        "bytes": 55964
+      },
+      "thumb": {
+        "file": "icecold-thumb.webp",
+        "sha256": "7979807763087035878b7717ded957c5961e78e43aa1f25162796b8a971b5acb",
+        "bytes": 5712
+      }
+    },
+    {
+      "id": "lcd_rainbow",
+      "name": "Pixel icons",
+      "author": "GNOME Backgrounds contributors",
+      "license": "CC-BY-SA-3.0",
+      "source": "https://gitlab.gnome.org/GNOME/gnome-backgrounds",
+      "dark": {
+        "file": "lcd_rainbow-dark.webp",
+        "sha256": "0e7c7d7819b381555f8b24e99512263c0c701c1cb0a716b036d29b72225a359f",
+        "bytes": 104634
+      },
+      "light": {
+        "file": "lcd_rainbow-light.webp",
+        "sha256": "0e8a0fba253f690db7df4fde95fe52b123dd1c045caff96553f88fd57742a54a",
+        "bytes": 72552
+      },
+      "thumb": {
+        "file": "lcd_rainbow-thumb.webp",
+        "sha256": "6850d4d4275e7ac06b0db67590f1f73beef324a5f875da28a2865f71d2413bb4",
+        "bytes": 8572
+      }
+    },
+    {
+      "id": "mountain",
+      "name": "Mountain",
+      "author": "Andy Betts",
+      "license": "CC-BY-SA-4.0",
+      "source": "https://github.com/KDE/plasma-workspace-wallpapers/tree/master/Mountain",
+      "dark": {
+        "file": "mountain.webp",
+        "sha256": "dda7f3429ca9fe0e57c3c1ca8ad99f5f072d18ff930137c888fbee9320c3ffad",
+        "bytes": 50592
+      },
+      "thumb": {
+        "file": "mountain-thumb.webp",
+        "sha256": "e60fd0b870cc5d38beff98ca232a72204709113eef76b3c6dfc68317c602add3",
+        "bytes": 3608
+      }
+    },
+    {
+      "id": "opal",
+      "name": "Opal",
+      "author": "Ken Vermette",
+      "license": "LGPL-3.0-only",
+      "source": "https://github.com/KDE/plasma-workspace-wallpapers/tree/master/Opal",
+      "dark": {
+        "file": "opal.webp",
+        "sha256": "ec115826f41e9affa9a8eb692401598f3131462277be9b822dd98951b039b99e",
+        "bytes": 132510
+      },
+      "thumb": {
+        "file": "opal-thumb.webp",
+        "sha256": "35fbdab7705c32b0bd08742ba61cbdda6c6ca9431eda4cf4d659ab99a1363678",
+        "bytes": 6580
+      }
+    },
+    {
+      "id": "pixel_pusher",
+      "name": "Pixel pusher",
+      "author": "GNOME Backgrounds contributors",
+      "license": "CC-BY-SA-3.0",
+      "source": "https://gitlab.gnome.org/GNOME/gnome-backgrounds",
+      "dark": {
+        "file": "pixel_pusher-dark.webp",
+        "sha256": "3324816d6bf3ece8630a7545b1129712838a91a0b3e84bfc6fb72e5fa61ee905",
+        "bytes": 652348
+      },
+      "light": {
+        "file": "pixel_pusher-light.webp",
+        "sha256": "96c8133587f7f4141b5932f4eddb52d754b23a4a1631e1d56db2404bac75267e",
+        "bytes": 814410
+      },
+      "thumb": {
+        "file": "pixel_pusher-thumb.webp",
+        "sha256": "68a98dabc4b608718535357f68f5048cf290394ed1bba7353373608d7677cae8",
+        "bytes": 39312
+      }
+    },
+    {
+      "id": "progress",
+      "name": "Progress",
+      "author": "GNOME Backgrounds contributors",
+      "license": "CC-BY-SA-3.0",
+      "source": "https://gitlab.gnome.org/GNOME/gnome-backgrounds",
+      "dark": {
+        "file": "progress-dark.webp",
+        "sha256": "48f83fdc182042adc3623238f2c6d7f4e0f47e47c763ebefd3d2ca3eb2f95342",
+        "bytes": 75546
+      },
+      "light": {
+        "file": "progress-light.webp",
+        "sha256": "ddbbc7c97e6c75f17debce3bd85944d039f85d0d639e840fe604e6bf3a66d6e4",
+        "bytes": 97296
+      },
+      "thumb": {
+        "file": "progress-thumb.webp",
+        "sha256": "57a37231dc2f3a744e8b35ee74b9b3451d0726a3136b9afa920a1ac7a07565a8",
+        "bytes": 9502
+      }
+    },
+    {
+      "id": "shell",
+      "name": "Shell",
+      "author": "Lucas Andrade",
+      "license": "CC-BY-SA-4.0",
+      "source": "https://github.com/KDE/plasma-workspace-wallpapers/tree/master/Shell",
+      "dark": {
+        "file": "shell.webp",
+        "sha256": "1354e2c1109424a50e43378c0fdb4fbbad63c34c01a12d1aa6d01d054a2fb54d",
+        "bytes": 83548
+      },
+      "thumb": {
+        "file": "shell-thumb.webp",
+        "sha256": "9be7b0ccf15fa2da4e6ffe10c5dd326d4cd278b2e856e8635952df3c9943bc88",
+        "bytes": 8260
+      }
+    },
+    {
+      "id": "tarka",
+      "name": "Tarka",
+      "author": "GNOME Backgrounds contributors",
+      "license": "CC-BY-SA-3.0",
+      "source": "https://gitlab.gnome.org/GNOME/gnome-backgrounds",
+      "dark": {
+        "file": "tarka-dark.webp",
+        "sha256": "f3064d83b779f8e4aa6be9f447498394d98008d1b3f797d6456be0c16614703d",
+        "bytes": 59438
+      },
+      "light": {
+        "file": "tarka-light.webp",
+        "sha256": "e645519915860f1c1bf1ee9c6f5c993fa44a9380db1b60984271b0a5546cf60a",
+        "bytes": 34796
+      },
+      "thumb": {
+        "file": "tarka-thumb.webp",
+        "sha256": "9b6418627e42414ecb13af1dd8161c9f79417a1ede53009f66868962d83cc52f",
+        "bytes": 5400
+      }
+    },
+    {
+      "id": "tarkov_pills",
+      "name": "Candy pills",
+      "author": "GNOME Backgrounds contributors",
+      "license": "CC-BY-SA-3.0",
+      "source": "https://gitlab.gnome.org/GNOME/gnome-backgrounds",
+      "dark": {
+        "file": "tarkov_pills-dark.webp",
+        "sha256": "0e894591c3c966190f7b80211362e9c51c9932422130d95e72c552e93ad3dff2",
+        "bytes": 102146
+      },
+      "light": {
+        "file": "tarkov_pills-light.webp",
+        "sha256": "44edf6da84cdf4f2e8e29f9de396f24af9edaab13a737c63669bb9d2de8a285c",
+        "bytes": 104834
+      },
+      "thumb": {
+        "file": "tarkov_pills-thumb.webp",
+        "sha256": "9c9269193a2250d5e0bfbc7c804fb070f6ac96cea9dc61cd4d3a7d6d3efdb7f0",
+        "bytes": 11156
+      }
+    },
+    {
+      "id": "tubes",
+      "name": "Tubes",
+      "author": "GNOME Backgrounds contributors",
+      "license": "CC-BY-SA-3.0",
+      "source": "https://gitlab.gnome.org/GNOME/gnome-backgrounds",
+      "dark": {
+        "file": "tubes-dark.webp",
+        "sha256": "2f7d05752770875082bf7f1ad038b140bbfcfb33340c8d9612f8d50135f51dfc",
+        "bytes": 25870
+      },
+      "light": {
+        "file": "tubes-light.webp",
+        "sha256": "8a8aa9ba792ed447c29f29089ac066da13341c39c2c19ec408c65e0329de8488",
+        "bytes": 30234
+      },
+      "thumb": {
+        "file": "tubes-thumb.webp",
+        "sha256": "7e0b30ac44d21708022994d44ad984fa745fdafd609914c6b30cf378ae3dd819",
+        "bytes": 2626
+      }
+    }
+  ]
+}

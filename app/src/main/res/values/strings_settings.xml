@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="themes_wp_yours">Your wallpaper works</string>
+    <string name="themes_wp_fixed">Uses its own wallpaper</string>
+    <string name="themes_wp_required">Needs your wallpaper</string>
+    <string name="themes_manage">Manage</string>
+    <string name="sb_group_bar">Status bar</string>
+    <string name="sb_group_clock">Clock and date</string>
+    <string name="sb_group_vpn">VPN button</string>
+</resources>

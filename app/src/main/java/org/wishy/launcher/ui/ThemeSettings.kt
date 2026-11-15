@@ -27,6 +27,31 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.wishy.launcher.R
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.Image
+import androidx.compose.ui.text.font.FontWeight
+import androidx.tv.material3.Border
+import androidx.tv.material3.ClickableSurfaceDefaults
+import androidx.tv.material3.Icon
+import androidx.tv.material3.Surface
 import org.wishy.launcher.data.ConfigStore
 import org.wishy.launcher.data.LauncherConfig
 import org.wishy.launcher.theme.ThemeEntry
@@ -61,11 +86,7 @@ internal fun ThemesScreen(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Text(
-            stringResource(R.string.item_themes),
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(bottom = 12.dp, start = 8.dp),
-        )
+        ScreenHeader(stringResource(R.string.item_themes), onBack = onBack)
         val f = initialFocus()
         SettingsItem(
             selected = false, onClick = onGetMore,
@@ -73,42 +94,48 @@ internal fun ThemesScreen(
             supportingContent = { Text(stringResource(R.string.themes_get_more_sub)) },
         )
         SectionLabel(stringResource(R.string.themes_installed))
-        entries.forEachIndexed { i, e ->
-            SettingsItem(
-                selected = false,
-                onClick = { update { it.copy(themeId = e.summary.id) } },
-                headlineContent = { Text(e.summary.name) },
-                supportingContent = {
-                    Text(
-                        listOf(e.summary.author, e.summary.version, if (e.bundled) stringResource(R.string.themes_builtin) else "")
-                            .filter { it.isNotEmpty() }.joinToString("  ·  ")
-                    )
-                },
-                trailingContent = {
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        if (e.installed && !e.bundled) {
-                            Button(onClick = {
-                                scope.launch {
-                                    if (config.themeId == e.summary.id) store.update { it.copy(themeId = ThemeStorage.DEFAULT_ID) }
-                                    withContext(Dispatchers.IO) { storage.remove(e.summary.id) }
-                                    listTick++
-                                }
-                            }) { Text(stringResource(R.string.themes_remove)) }
-                        }
-                        CheckMark(checked = config.themeId == e.summary.id)
-                    }
-                },
-                modifier = if (i == 0) Modifier.focusRequester(f) else Modifier,
-            )
+        val dark = when (config.themeMode) {
+            1 -> false
+            2 -> true
+            else -> androidx.compose.foundation.isSystemInDarkTheme()
+        } || config.themeId == ThemeStorage.CLASSIC_ID
+        val peeks by produceState<Map<String, ThemePeek?>>(emptyMap(), entries, dark) {
+            value = withContext(Dispatchers.IO) { entries.associate { it.summary.id to peekTheme(storage, it.summary.id, dark) } }
         }
-        SettingsItem(
-            selected = false,
-            onClick = { update { it.copy(themeId = ThemeStorage.CLASSIC_ID) } },
-            headlineContent = { Text(stringResource(R.string.themes_classic)) },
-            supportingContent = { Text(stringResource(R.string.themes_classic_sub)) },
-            trailingContent = { CheckMark(checked = config.themeId == ThemeStorage.CLASSIC_ID) },
-            modifier = if (entries.isEmpty()) Modifier.focusRequester(f) else Modifier,
-        )
+        // One card per look, two to a row: a flat preview in the theme's own colours, its name, and whether your wallpaper shows.
+        val cards = entries.map { CardItem(it.summary.id, it.summary.name, peeks[it.summary.id]) } +
+            CardItem(ThemeStorage.CLASSIC_ID, stringResource(R.string.themes_classic), null)
+        cards.chunked(2).forEachIndexed { row, pair ->
+            Row(Modifier.padding(horizontal = 6.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                pair.forEachIndexed { col, c ->
+                    ThemeCard(
+                        item = c,
+                        selected = config.themeId == c.id,
+                        modifier = Modifier.weight(1f).let { if (row == 0 && col == 0) it.focusRequester(f) else it },
+                    ) { update { it.copy(themeId = c.id) } }
+                }
+                if (pair.size == 1) Box(Modifier.weight(1f))
+            }
+            Box(Modifier.height(10.dp))
+        }
+        val removable = entries.filter { it.installed && !it.bundled }
+        if (removable.isNotEmpty()) {
+            SectionLabel(stringResource(R.string.themes_manage))
+            removable.forEach { e ->
+                SettingsItem(
+                    selected = false,
+                    onClick = {
+                        scope.launch {
+                            if (config.themeId == e.summary.id) store.update { it.copy(themeId = ThemeStorage.DEFAULT_ID) }
+                            withContext(Dispatchers.IO) { storage.remove(e.summary.id) }
+                            listTick++
+                        }
+                    },
+                    headlineContent = { Text(e.summary.name) },
+                    supportingContent = { Text(stringResource(R.string.themes_remove)) },
+                )
+            }
+        }
 
         SectionLabel(stringResource(R.string.themes_options))
         SelectorRow(
@@ -137,7 +164,7 @@ internal fun ThemesScreen(
             selected = false,
             onClick = { update { it.copy(showClock = !it.showClock) } },
             headlineContent = { Text(stringResource(R.string.themes_clock)) },
-            trailingContent = { CheckMark(checked = config.showClock) },
+            trailingContent = { SwitchPill(config.showClock) },
         )
         SelectorRow(
             label = stringResource(R.string.themes_date),
@@ -153,7 +180,7 @@ internal fun ThemesScreen(
             onClick = { update { it.copy(offlineMode = !it.offlineMode) } },
             headlineContent = { Text(stringResource(R.string.themes_offline)) },
             supportingContent = { Text(stringResource(R.string.themes_offline_sub)) },
-            trailingContent = { CheckMark(checked = config.offlineMode) },
+            trailingContent = { SwitchPill(config.offlineMode) },
         )
 
         SectionLabel(stringResource(R.string.themes_info))
@@ -200,11 +227,7 @@ internal fun ThemeCreditsScreen(config: LauncherConfig, onBack: () -> Unit) {
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Text(
-            stringResource(R.string.themes_credits),
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(bottom = 12.dp, start = 8.dp),
-        )
+        ScreenHeader(stringResource(R.string.themes_credits), onBack = onBack)
         val f = initialFocus()
         val doc = loaded?.doc
         if (doc == null) {
@@ -234,6 +257,107 @@ internal fun ThemeCreditsScreen(config: LauncherConfig, onBack: () -> Unit) {
                     selected = false, onClick = {},
                     headlineContent = { Text(stringResource(R.string.themes_credits_empty)) },
                 )
+            }
+        }
+    }
+}
+
+/* ------------------------------ theme cards ------------------------------ */
+
+private class CardItem(val id: String, val name: String, val peek: ThemePeek?)
+
+/** The few colours of a theme that make a recognisable preview, and its wallpaper rule ("allowed", "ignored" or "required"). */
+internal class ThemePeek(val bg: Color, val surface: Color, val primary: Color, val text: Color, val wallpaper: String, val image: java.io.File?)
+
+internal fun peekTheme(storage: ThemeStorage, id: String, dark: Boolean): ThemePeek? = runCatching {
+    val dir = storage.dirFor(id) ?: return@runCatching null
+    val root = org.json.JSONObject(java.io.File(dir, "theme.json").readText())
+    val cs = root.getJSONObject("colorSchemes").getJSONObject(if (dark) "dark" else "light")
+    fun c(k: String) = Color(android.graphics.Color.parseColor(cs.getString(k)))
+    val bgObj = root.optJSONObject("background")
+    // The theme's own background picture, in the tone being shown (its file names carry "dark" or "light").
+    val rel = bgObj?.optString("image", "").orEmpty()
+    val image = if (rel.isEmpty() || rel.contains("..")) null else {
+        val tone = if (dark) "dark" else "light"
+        listOf(rel.replace(if (dark) "light" else "dark", tone), rel).map { java.io.File(dir, it) }.firstOrNull { it.isFile }
+    }
+    ThemePeek(
+        bg = c("background"), surface = c("surface"), primary = c("primary"), text = c("onSurface"),
+        wallpaper = bgObj?.optString("userWallpaper", "allowed") ?: "allowed",
+        image = image,
+    )
+}.getOrNull()
+
+@Composable
+private fun ThemeCard(item: CardItem, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    val p = item.peek
+    val pic by androidx.compose.runtime.produceState<androidx.compose.ui.graphics.ImageBitmap?>(null, p?.image) {
+        value = withContext(Dispatchers.IO) {
+            val f = p?.image ?: return@withContext null
+            runCatching {
+                val o = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                android.graphics.BitmapFactory.decodeFile(f.path, o)
+                var s = 1
+                while (o.outWidth / (s * 2) >= 480) s *= 2
+                android.graphics.BitmapFactory.decodeFile(f.path, android.graphics.BitmapFactory.Options().apply { inSampleSize = s })
+                    ?.asImageBitmap()
+            }.getOrNull()
+        }
+    }
+    val bg = p?.bg ?: Color(0xFF111827)
+    val tile = p?.surface ?: Color(0xFF374151)
+    val bar = p?.primary ?: Color(0xFF8AB4F8)
+    val line = (p?.text ?: Color.White).copy(alpha = 0.7f)
+    val wpText = when (p?.wallpaper) {
+        "ignored" -> stringResource(R.string.themes_wp_fixed)
+        "required" -> stringResource(R.string.themes_wp_required)
+        else -> stringResource(R.string.themes_wp_yours)
+    }
+    Surface(
+        onClick = onClick,
+        modifier = modifier,
+        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(20.dp)),
+        colors = ClickableSurfaceDefaults.colors(
+            containerColor = Wish.Surface,
+            focusedContainerColor = Wish.SurfaceHigh,
+            contentColor = Wish.Text,
+            focusedContentColor = Wish.Text,
+        ),
+        scale = ClickableSurfaceDefaults.scale(focusedScale = 1f),
+        border = ClickableSurfaceDefaults.border(
+            border = if (selected) Border(BorderStroke(2.dp, Wish.Primary)) else Border.None,
+            focusedBorder = Border(BorderStroke(3.dp, Wish.Primary)),
+        ),
+    ) {
+        Column(Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Box(Modifier.fillMaxWidth().height(84.dp).clip(RoundedCornerShape(14.dp)).background(bg)) {
+                pic?.let { Image(it, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop) }
+                Box(Modifier.fillMaxSize().padding(10.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Box(Modifier.width(44.dp).height(5.dp).background(bar, RoundedCornerShape(3.dp)))
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        repeat(3) { Box(Modifier.width(38.dp).height(26.dp).background(tile, RoundedCornerShape(6.dp))) }
+                    }
+                    Box(Modifier.width(70.dp).height(4.dp).background(line, RoundedCornerShape(2.dp)))
+                }
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = selected,
+                    modifier = Modifier.align(Alignment.TopEnd),
+                    enter = scaleIn(spring(Spring.DampingRatioMediumBouncy)) + fadeIn(),
+                    exit = fadeOut(),
+                ) {
+                    Box(Modifier.size(24.dp).background(Wish.Primary, CircleShape), contentAlignment = Alignment.Center) {
+                        Icon(Sym.Check, null, tint = Wish.OnPrimary, modifier = Modifier.size(16.dp))
+                    }
+                }
+                }
+            }
+            Column(Modifier.padding(horizontal = 6.dp)) {
+                Text(item.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Icon(Sym.Wallpaper, null, tint = Wish.TextDim, modifier = Modifier.size(14.dp))
+                    Text(wpText, style = MaterialTheme.typography.bodySmall, color = Wish.TextDim, maxLines = 1)
+                }
             }
         }
     }

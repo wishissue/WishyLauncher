@@ -41,7 +41,7 @@ fun StatusBar(
         Modifier
             .clip(SmoothCornerShape(LocalCornerRadius.current))
             .background(Color(0xB3121418))
-            .background(Color.White.copy(alpha = 0.06f))
+            .background(Wish.Text.copy(alpha = 0.06f))
             .padding(horizontal = 12.dp, vertical = 4.dp)
     } else Modifier
     Row(
@@ -85,7 +85,7 @@ fun StatusBar(
             Text(
                 text = date,
                 style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum"),
-                color = Color.White.copy(alpha = 0.75f),
+                color = Wish.Text.copy(alpha = 0.75f),
                 modifier = Modifier.padding(start = 10.dp),
             )
         }
@@ -93,7 +93,7 @@ fun StatusBar(
             // Tabular figures: digits keep a fixed width so the clock never jitters.
             text = time,
             style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum"),
-            color = Color.White,
+            color = Wish.Text,
             modifier = Modifier.padding(start = 10.dp),
         )
       }
@@ -112,9 +112,9 @@ private fun StatusIcon(
         shape = ClickableSurfaceDefaults.shape(CircleShape),
         colors = ClickableSurfaceDefaults.colors(
             containerColor = Color.Transparent,
-            focusedContainerColor = Color.White.copy(alpha = 0.22f),
-            contentColor = Color.White,
-            focusedContentColor = Color.White,
+            focusedContainerColor = Wish.Text.copy(alpha = 0.22f),
+            contentColor = Wish.Text,
+            focusedContentColor = Wish.Text,
         ),
         scale = ClickableSurfaceDefaults.scale(focusedScale = 1.18f),
     ) {
@@ -122,7 +122,7 @@ private fun StatusIcon(
             Icon(
                 imageVector = icon,
                 contentDescription = contentDescription,
-                tint = Color.White.copy(alpha = if (active) 0.95f else 0.35f),
+                tint = Wish.Text.copy(alpha = if (active) 0.95f else 0.35f),
                 modifier = Modifier.size(22.dp),
             )
         }

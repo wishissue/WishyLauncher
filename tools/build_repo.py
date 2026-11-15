@@ -30,6 +30,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 THEMES = ROOT / "themes"
 ART_SRC = ROOT / "artwork"
+WP_SRC = ROOT / "wallpapers"
 OUT = ROOT / "repo"
 
 ALLOWED_EXT = {"png", "jpg", "jpeg", "webp", "ttf", "otf"}
@@ -218,12 +219,53 @@ def build_artwork():
     write_json(OUT / "artwork" / "index.json", {"schemaVersion": 1, "apps": apps})
 
 
+def build_wallpapers():
+    """wallpapers/<id>.webp (one picture) or <id>-dark.webp + <id>-light.webp, plus <id>-thumb.webp and credits.json."""
+    import shutil
+    credits_file = WP_SRC / "credits.json"
+    if not credits_file.is_file():
+        return
+    credits = json.loads(credits_file.read_text(encoding="utf-8"))
+    out = OUT / "wallpapers"
+    out.mkdir(parents=True, exist_ok=True)
+
+    def one(name, thumb=False):
+        src = WP_SRC / name
+        if not src.is_file():
+            fail(f"wallpapers/{name} is missing")
+            return None
+        w, h = image_size(src)
+        lo, hi = (320, 640) if thumb else (1280, 3840)
+        if abs(w * 9 - h * 16) > 16 or w < lo or w > hi:
+            fail(f"wallpapers/{name}: {w}x{h} must be 16:9 and {lo} to {hi} wide")
+        if src.stat().st_size > (150_000 if thumb else 1_500_000):
+            fail(f"wallpapers/{name}: over 1.5 MB")
+        shutil.copyfile(src, out / name)
+        return {"file": name, "sha256": sha256(src), "bytes": src.stat().st_size}
+
+    items = []
+    for wid, c in sorted(credits.items()):
+        for k in ("name", "author", "license", "source", "tone"):
+            if not c.get(k):
+                fail(f"wallpapers/credits.json: '{wid}' needs {k}")
+        e = {"id": wid, "name": c["name"], "author": c["author"], "license": c["license"], "source": c["source"]}
+        if c["tone"] == "pair":
+            e["dark"], e["light"] = one(f"{wid}-dark.webp"), one(f"{wid}-light.webp")
+        else:
+            e["dark"] = one(f"{wid}.webp")  # one picture serves both colour modes
+        e["thumb"] = one(f"{wid}-thumb.webp", thumb=True)
+        items.append(e)
+    print(f"wallpapers: {len(items)} entries")
+    write_json(out / "index.json", {"schemaVersion": 1, "wallpapers": items})
+
+
 def main():
     import shutil
     if OUT.exists():
         shutil.rmtree(OUT)
     build_themes()
     build_artwork()
+    build_wallpapers()
     if "--check" in sys.argv:
         import subprocess
         r = subprocess.run(["git", "status", "--porcelain", "--", "repo"], cwd=ROOT, capture_output=True, text=True)

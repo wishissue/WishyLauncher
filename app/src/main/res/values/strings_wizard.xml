@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="wz_welcome_sub">A fast, private home for your TV.</string>
+    <string name="wz_chip_fast">Fast</string>
+    <string name="wz_chip_private">Private</string>
+    <string name="wz_chip_themes">Themes</string>
+    <string name="wz_start">Get started</string>
+    <string name="wz_look_sub">Pick a style. You can change it later.</string>
+    <string name="wz_home_done">Wishy is your home app</string>
+    <string name="wz_home_set">Set as home app</string>
+</resources>

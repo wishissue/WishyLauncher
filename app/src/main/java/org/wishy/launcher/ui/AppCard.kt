@@ -102,16 +102,11 @@ fun AppCard(
             contentColor = Color.White,
             focusedContentColor = Color.White,
         ),
-        scale = ClickableSurfaceDefaults.scale(focusedScale = 1.10f),
-        glow = ClickableSurfaceDefaults.glow(
-            // Softer + tighter than before: reads at 3m, cheap to render on weak
-            // TV GPUs, and no longer competes with the accent ring.
-            focusedGlow = Glow(elevationColor = Color.Black.copy(alpha = 0.5f), elevation = 8.dp)
-        ),
+        scale = ClickableSurfaceDefaults.scale(focusedScale = 1.06f),
         border = ClickableSurfaceDefaults.border(
             // Thin accent ring on focus (thicker while dragging in move mode).
             focusedBorder = Border(
-                BorderStroke(if (isMoving) 3.dp else 2.dp, accent),
+                BorderStroke(if (isMoving) 4.dp else 3.dp, accent),
                 shape = cardShape,
             )
         ),
@@ -131,21 +126,7 @@ fun AppCard(
                     modifier = Modifier.fillMaxSize().graphicsLayer { },
                 )
             } else {
-                // Banner-less apps: give the flat tile depth with a subtle sheen
-                // (light top, dark bottom) so it sits next to real banners.
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .background(
-                            androidx.compose.ui.graphics.Brush.verticalGradient(
-                                listOf(
-                                    Color.White.copy(alpha = 0.10f),
-                                    Color.Transparent,
-                                    Color.Black.copy(alpha = 0.14f),
-                                )
-                            )
-                        )
-                )
+                // Banner-less apps: a flat tile, like everything else in the WishIssue look.
                 Column(
                     Modifier
                         .fillMaxSize()

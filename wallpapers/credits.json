@@ -1,0 +1,107 @@
+{
+  "mountain": {
+    "name": "Mountain",
+    "author": "Andy Betts",
+    "license": "CC-BY-SA-4.0",
+    "source": "https://github.com/KDE/plasma-workspace-wallpapers/tree/master/Mountain",
+    "tone": "single"
+  },
+  "shell": {
+    "name": "Shell",
+    "author": "Lucas Andrade",
+    "license": "CC-BY-SA-4.0",
+    "source": "https://github.com/KDE/plasma-workspace-wallpapers/tree/master/Shell",
+    "tone": "single"
+  },
+  "icecold": {
+    "name": "Ice Cold",
+    "author": "Santiago C\u00e9zar",
+    "license": "CC-BY-SA-4.0",
+    "source": "https://github.com/KDE/plasma-workspace-wallpapers/tree/master/IceCold",
+    "tone": "single"
+  },
+  "honeywave": {
+    "name": "Honeywave",
+    "author": "Ken Vermette",
+    "license": "CC-BY-SA-4.0",
+    "source": "https://github.com/KDE/plasma-workspace-wallpapers/tree/master/Honeywave",
+    "tone": "single"
+  },
+  "cascade": {
+    "name": "Cascade",
+    "author": "Ken Vermette",
+    "license": "LGPL-3.0-only",
+    "source": "https://github.com/KDE/plasma-workspace-wallpapers/tree/master/Cascade",
+    "tone": "single"
+  },
+  "opal": {
+    "name": "Opal",
+    "author": "Ken Vermette",
+    "license": "LGPL-3.0-only",
+    "source": "https://github.com/KDE/plasma-workspace-wallpapers/tree/master/Opal",
+    "tone": "single"
+  },
+  "balls": {
+    "name": "Spheres",
+    "author": "GNOME Backgrounds contributors",
+    "license": "CC-BY-SA-3.0",
+    "source": "https://gitlab.gnome.org/GNOME/gnome-backgrounds",
+    "tone": "pair"
+  },
+  "blendpills": {
+    "name": "Blend pills",
+    "author": "GNOME Backgrounds contributors",
+    "license": "CC-BY-SA-3.0",
+    "source": "https://gitlab.gnome.org/GNOME/gnome-backgrounds",
+    "tone": "pair"
+  },
+  "glass_stripes": {
+    "name": "Glass stripes",
+    "author": "GNOME Backgrounds contributors",
+    "license": "CC-BY-SA-3.0",
+    "source": "https://gitlab.gnome.org/GNOME/gnome-backgrounds",
+    "tone": "pair"
+  },
+  "lcd_rainbow": {
+    "name": "Pixel icons",
+    "author": "GNOME Backgrounds contributors",
+    "license": "CC-BY-SA-3.0",
+    "source": "https://gitlab.gnome.org/GNOME/gnome-backgrounds",
+    "tone": "pair"
+  },
+  "pixel_pusher": {
+    "name": "Pixel pusher",
+    "author": "GNOME Backgrounds contributors",
+    "license": "CC-BY-SA-3.0",
+    "source": "https://gitlab.gnome.org/GNOME/gnome-backgrounds",
+    "tone": "pair"
+  },
+  "progress": {
+    "name": "Progress",
+    "author": "GNOME Backgrounds contributors",
+    "license": "CC-BY-SA-3.0",
+    "source": "https://gitlab.gnome.org/GNOME/gnome-backgrounds",
+    "tone": "pair"
+  },
+  "tarka": {
+    "name": "Tarka",
+    "author": "GNOME Backgrounds contributors",
+    "license": "CC-BY-SA-3.0",
+    "source": "https://gitlab.gnome.org/GNOME/gnome-backgrounds",
+    "tone": "pair"
+  },
+  "tarkov_pills": {
+    "name": "Candy pills",
+    "author": "GNOME Backgrounds contributors",
+    "license": "CC-BY-SA-3.0",
+    "source": "https://gitlab.gnome.org/GNOME/gnome-backgrounds",
+    "tone": "pair"
+  },
+  "tubes": {
+    "name": "Tubes",
+    "author": "GNOME Backgrounds contributors",
+    "license": "CC-BY-SA-3.0",
+    "source": "https://gitlab.gnome.org/GNOME/gnome-backgrounds",
+    "tone": "pair"
+  }
+}

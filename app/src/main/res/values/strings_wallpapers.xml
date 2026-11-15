@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="wp_store_title">More wallpapers</string>
+    <string name="wp_store_sub">Free pictures from GNOME and KDE</string>
+    <string name="wp_store_downloading">Downloading %1$s…</string>
+    <string name="wp_store_have">On this device</string>
+    <string name="wp_store_get">Tap to download</string>
+    <string name="wp_store_remove">Remove %1$s</string>
+    <string name="wp_store_manage">Downloaded</string>
+    <string name="wp_note_ignored">This theme uses its own wallpaper. Pick another theme to use yours.</string>
+    <string name="wp_note_required">This theme needs a wallpaper of your own. Pick one below.</string>
+</resources>

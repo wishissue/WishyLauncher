@@ -48,3 +48,11 @@ All are licensed under the SIL Open Font License 1.1. The full licence text is i
 | Font | Used by | Authors | Licence text |
 |---|---|---|---|
 | Plus Jakarta Sans (Regular, Medium, SemiBold, Bold) | Wishy theme | The Plus Jakarta Sans Project Authors | `licenses/OFL-PlusJakartaSans.txt` |
+
+## Added with the UI redesign
+
+| Item | Author | Licence |
+|---|---|---|
+| Material Symbols Rounded icons in `ui/SymbolIcons.kt` | Google, https://github.com/google/material-design-icons | Apache-2.0 |
+| Bagel Fat One (`res/font/bagel_fat_one.ttf`), brand wordmark face | The Bagel Fat Project Authors, https://github.com/JAMO-TYPEFACE/BagelFat | SIL OFL 1.1 |
+| Plus Jakarta Sans, also copied to `res/font/` for screens outside the theme engine | The Plus Jakarta Sans Project Authors | SIL OFL 1.1 |

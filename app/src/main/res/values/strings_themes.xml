@@ -121,11 +121,18 @@
     <string name="wp_dim_theme">Dim wallpaper</string>
     <string name="wp_dim_none">Off</string>
     <string name="wpx_wishy">Wishy Blue</string>
-    <string name="wpx_aurora">Aurora</string>
-    <string name="wpx_dusk">Dusk</string>
-    <string name="wpx_ember">Ember</string>
-    <string name="wpx_orchid">Orchid</string>
-    <string name="wpx_ocean">Ocean</string>
-    <string name="wpx_forest">Forest</string>
-    <string name="wpx_mono">Mono</string>
+    <string name="wpx_sheet">Sheet</string>
+    <string name="wpx_fold">Fold</string>
+    <string name="wpx_amber">Amber</string>
+    <string name="wpx_glass_chip">Glass</string>
+    <string name="wpx_adwaita">Adwaita</string>
+    <string name="wpx_curvy">Curvy</string>
+    <string name="wpx_curvaturingster">Ribbons</string>
+    <string name="wpx_dithered_sun">Sun</string>
+    <string name="wpx_pills">Pills</string>
+    <string name="wpx_symbolic">Weave</string>
+    <string name="wpx_flow">Flow</string>
+    <string name="wpx_volna">Shore</string>
+    <string name="wpx_milkyway">Milky Way</string>
+    <string name="wpx_altai">Altai</string>
 </resources>

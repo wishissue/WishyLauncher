@@ -6,6 +6,7 @@ package org.wishy.launcher.net
  *  - `repo/themes/<id>.zip`       theme packages
  *  - `repo/artwork/index.json`    per-app banner list
  *  - `repo/artwork/<file>`        banner pictures
+ *  - `repo/wallpapers/index.json` the wallpaper store list, `repo/wallpapers/<file>.webp` the pictures
  *  - GitHub Releases              new launcher versions
  *
  * `repo/` is built by `tools/build_repo.py` (a GitHub Action runs it on every push), so the hashes
@@ -17,6 +18,8 @@ object Repos {
     const val OFFICIAL_BASE = "https://raw.githubusercontent.com/$OWNER_REPO/main/repo/"
     const val OFFICIAL_THEMES_INDEX = OFFICIAL_BASE + "index.json"
     const val OFFICIAL_ART_INDEX = OFFICIAL_BASE + "artwork/index.json"
+    const val OFFICIAL_WALLPAPERS_BASE = OFFICIAL_BASE + "wallpapers/"
+    const val OFFICIAL_WALLPAPERS_INDEX = OFFICIAL_WALLPAPERS_BASE + "index.json"
 
     /** Latest published release, as JSON. */
     const val LATEST_RELEASE_API = "https://api.github.com/repos/$OWNER_REPO/releases/latest"
