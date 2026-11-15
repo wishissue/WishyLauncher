@@ -12,8 +12,8 @@
       "schemaVersion": 1,
       "minLauncherVersion": 1,
       "downloadUrl": "themes/wishy.zip",
-      "sha256": "d75b7412c191ab3a9a7924748b38fa8b112a2534ab7b10b27e33c3befd89db4a",
-      "sizeBytes": 503180
+      "sha256": "36b2225bfadbe2b3d02bb6166d11e24469a84cc66414b855d15ff0b5a2819641",
+      "sizeBytes": 501758
     },
     {
       "id": "wishy-grid",
@@ -25,8 +25,8 @@
       "schemaVersion": 1,
       "minLauncherVersion": 1,
       "downloadUrl": "themes/wishy-grid.zip",
-      "sha256": "1a3d2d636e110387f2f9dc257368f6f516135f12f3acdf665e38ebd455f86f54",
-      "sizeBytes": 452149
+      "sha256": "c8495031cbf1da237688b595be57ff1ee0f8761f91432cd6355f8a13f694f5ad",
+      "sizeBytes": 451277
     }
   ]
 }
