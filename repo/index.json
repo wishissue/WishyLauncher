@@ -16,6 +16,32 @@
       "sizeBytes": 501758
     },
     {
+      "id": "wishy-bit",
+      "name": "Wishy 2-Bit",
+      "version": "1.0.0",
+      "author": "Wishy Launcher contributors",
+      "description": "Pure black and white, one fat pixel font and nothing else: your apps as a plain text menu with a blinking arrow, like the start screen of an old handheld game.",
+      "license": "GPL-3.0-only",
+      "schemaVersion": 1,
+      "minLauncherVersion": 1,
+      "downloadUrl": "themes/wishy-bit.zip",
+      "sha256": "fba7350652bc2ab9581c2b839ce901f4c7d4fb699bd978f9229f46f8d179e60c",
+      "sizeBytes": 42128
+    },
+    {
+      "id": "wishy-cozy",
+      "name": "Wishy Cozy",
+      "version": "1.0.0",
+      "author": "Wishy Launcher contributors",
+      "description": "A warm, soft bento home: a greeting and clock card on the left, the focused app on the right, and your apps below as a mix of big banner tiles and small square icons.",
+      "license": "GPL-3.0-only",
+      "schemaVersion": 1,
+      "minLauncherVersion": 1,
+      "downloadUrl": "themes/wishy-cozy.zip",
+      "sha256": "532c854b3342fc180a3f4bb3ea10dd1ed62c0a252d5e08a2eac3887ccd3b8d56",
+      "sizeBytes": 112411
+    },
+    {
       "id": "wishy-grid",
       "name": "Wishy Grid",
       "version": "1.0.0",
@@ -27,6 +53,19 @@
       "downloadUrl": "themes/wishy-grid.zip",
       "sha256": "c8495031cbf1da237688b595be57ff1ee0f8761f91432cd6355f8a13f694f5ad",
       "sizeBytes": 451277
+    },
+    {
+      "id": "wishy-wheel",
+      "name": "Wishy Wheel",
+      "version": "1.0.0",
+      "author": "Wishy Launcher contributors",
+      "description": "A ring of round app icons on the left where only the middle one is selected. Press up or down and the next app spins into the middle, fast, and the ring never ends. The name of the selected app sits big on the right.",
+      "license": "GPL-3.0-only",
+      "schemaVersion": 1,
+      "minLauncherVersion": 1,
+      "downloadUrl": "themes/wishy-wheel.zip",
+      "sha256": "5036d38219fa84b46e51f393b1aab5606de65befcceb11b906b256b76e1a0563",
+      "sizeBytes": 72782
     }
   ]
 }
