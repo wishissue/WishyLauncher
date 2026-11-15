@@ -7,6 +7,14 @@
     <string name="wp_store_get">Tap to download</string>
     <string name="wp_store_remove">Remove %1$s</string>
     <string name="wp_store_manage">Downloaded</string>
+    <string name="wp_src_wishy">Wishy</string>
+    <string name="wp_src_cozy">CozyPixels</string>
+    <string name="wp_cozy_sub">Community wallpapers from CozyPixels (MIT). Each picture is checked against GitHub before it is used.</string>
+    <string name="wp_filter_palette">Palette</string>
+    <string name="wp_filter_category">Category</string>
+    <string name="wp_filter_all">All</string>
+    <string name="wp_store_count">%1$d wallpapers</string>
+    <string name="wp_store_empty">Nothing matches these filters.</string>
     <string name="wp_note_ignored">This theme uses its own wallpaper. Pick another theme to use yours.</string>
     <string name="wp_note_required">This theme needs a wallpaper of your own. Pick one below.</string>
 </resources>
