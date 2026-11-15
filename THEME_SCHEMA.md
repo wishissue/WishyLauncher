@@ -135,12 +135,13 @@ A card style says what one app tile looks like in three states: `idle`, `focused
 | `row`, `column` | Flow layout. Children share leftover space by `weight`. | `children`, `gap`, `align` |
 | `shape` | A filled, bordered shape. | `shape`, `fill`, `border`, `shadow` |
 | `image` | A theme image. | `source`, `fit`, `sampling`, `tint`, `alpha` |
-| `text` | Literal text. No variables or interpolation. | `text`, `style` |
+| `text` | Literal text, or one fixed piece of live data. No expressions. | `text`, `style`, `bind` |
 | `clock`, `date` | The system time and date, shown only if the user has enabled them. | `style`, `showSeconds` |
 | `focusedAppName` | The name of the app that currently has focus. | `style` |
 | `sections` | The section switcher (Streaming, Games and so on). | `arrangement` (`tabs`, `dots`, `list`), `style`, `selectedIndicator` |
 | `apps` | The app collection. | `arrangement`, `card`, `columns`, `rows`, `itemWidth`, `itemHeight`, `gap`, `scroll`, `wrap`, `focusScope` |
 | `spacer` | Empty space. | `size` |
+| `statusIcons` | The VPN, network and settings buttons, drawn your way. | `items`, `iconSize`, `gap`, `color`, `inactiveColor`, `focusFill`, `shape` |
 
 **`frame`** places a node inside a `stack`: `x`, `y`, `w`, `h` (lengths) and an `anchor` (`topStart`, `top`, `topEnd`, `start`, `center`, `end`, `bottomStart`, `bottom`, `bottomEnd`) saying which point of the node `x` and `y` refer to, plus `zIndex`.
 
@@ -157,7 +158,28 @@ Every theme must contain exactly one `apps` node on the home screen; otherwise t
 
 The `sections` node is optional. If a theme leaves it out, the launcher treats the `apps` node as `focusScope: "all"` and shows every visible app in one list, so nothing becomes unreachable. Section switching with the remote's channel or page keys keeps working either way.
 
-**`showWhen`** is how a theme reacts to user settings without code: `always`, `clockEnabled`, `dateEnabled`, `hasFocusedApp`.
+**`showWhen`** is how a theme reacts to user settings without code: `always`, `clockEnabled`, `dateEnabled`, `hasFocusedApp`, `statusBarEnabled`, `hasSections`, `online`.
+
+**`text.bind`** swaps the literal text for live data from a closed list: `sectionName`, `appCount`, `focusedPackage`, `focusedPosition` ("3 / 12"), `networkName`.
+
+**`chrome.statusBar`** (top level): `launcher` (default) keeps the launcher's own status bar above the theme; `theme` hides it so the theme places a `statusIcons` node wherever it likes, or none. Menu always opens Settings, so nothing is ever unreachable.
+
+**`sections.always`**: `true` for a theme built around sections. They stay on, and the "Group apps into sections" switch is hidden.
+
+## 8b. Settings that apply to every theme
+
+These Display settings are applied by the launcher on top of any theme, as factors of what the theme designed (the default setting leaves the theme exactly as drawn):
+
+| Setting | Effect on a theme |
+|---|---|
+| Corner roundness | Scales the radius of every `rounded`, `pixel`, `chamfer` and `bevel` shape: cards, shape nodes, status-icon buttons, focus rings. `rect` stays square. |
+| Icon size | Scales app tiles. |
+| Spacing | Scales every gap in rows, columns, tab lists and the app list. |
+| Show app names | Hides every card label. |
+| Accent colour | Replaces `@primary` and `@accent`. The first choice, "Default", keeps the theme's own colours. |
+| UI scale, animations, light/dark, wallpaper and dimming, clock, 24-hour, date | Already apply to every theme. |
+
+A setting the active theme cannot use is **hidden** instead of shown dead: no `clock` node hides Show clock and 24-hour; no `date` node hides Date format; no `sections` node hides the sections switch and the Sections page; no rounded shape hides Corner roundness; no label hides Show app names; `userWallpaper: "ignored"` hides Wallpaper; a theme with `chrome.statusBar: "theme"` and no `statusIcons` hides the status-bar page's bar, glass and VPN options. The classic layout-only choices (view mode, section names) only appear in Classic mode.
 
 ## 9. Responsive overrides
 

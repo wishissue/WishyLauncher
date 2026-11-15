@@ -2,6 +2,72 @@
   "schemaVersion": 1,
   "wallpapers": [
     {
+      "id": "abyss",
+      "name": "Deep Abyss",
+      "author": "Wishy Launcher contributors",
+      "license": "GPL-3.0-only",
+      "source": "https://github.com/wishissue/WishyLauncher",
+      "dark": {
+        "file": "abyss-dark.webp",
+        "sha256": "af33b87cb1236776ab30ff57ca54e3c633476816673c21ce38beef1d94e405e8",
+        "bytes": 121308
+      },
+      "light": {
+        "file": "abyss-light.webp",
+        "sha256": "fa2661aa6dc352b37360230602053c644713434cc928e28f941b11891f625fa2",
+        "bytes": 129580
+      },
+      "thumb": {
+        "file": "abyss-thumb.webp",
+        "sha256": "411a6ac6fe39d26c78db488cc4ae52e11cbed283f3163727ed06d34a7a867a0f",
+        "bytes": 6378
+      }
+    },
+    {
+      "id": "amethyst",
+      "name": "Amethyst Haze",
+      "author": "Wishy Launcher contributors",
+      "license": "GPL-3.0-only",
+      "source": "https://github.com/wishissue/WishyLauncher",
+      "dark": {
+        "file": "amethyst-dark.webp",
+        "sha256": "181f4487c259860245a26727b29d79ed43c0efbb16b3116a58fb69e8df0d6e90",
+        "bytes": 117428
+      },
+      "light": {
+        "file": "amethyst-light.webp",
+        "sha256": "345e70cad36f6c067856c42879e518c11ef109dfa8da479af21db24021d1eec9",
+        "bytes": 117016
+      },
+      "thumb": {
+        "file": "amethyst-thumb.webp",
+        "sha256": "3a737b7db7f21dc17b62db4a4edb8081b02282d47e529854575c3639e17bd37f",
+        "bytes": 6210
+      }
+    },
+    {
+      "id": "aurora_borealis",
+      "name": "Aurora Glow",
+      "author": "Wishy Launcher contributors",
+      "license": "GPL-3.0-only",
+      "source": "https://github.com/wishissue/WishyLauncher",
+      "dark": {
+        "file": "aurora_borealis-dark.webp",
+        "sha256": "63de4b2af504d0135395a6e4f59484f920f0bc8d942532ddd9f08d76c958e9ab",
+        "bytes": 123362
+      },
+      "light": {
+        "file": "aurora_borealis-light.webp",
+        "sha256": "f639eed3773627dd7580262a8cc5944974f14336b5b675e9e12ecfa8228d4071",
+        "bytes": 124862
+      },
+      "thumb": {
+        "file": "aurora_borealis-thumb.webp",
+        "sha256": "eaa2ea4ab31288d2b26d300d80c7b415091aee04352ef1e3967c90e0680ec1a1",
+        "bytes": 6872
+      }
+    },
+    {
       "id": "balls",
       "name": "Spheres",
       "author": "GNOME Backgrounds contributors",
@@ -46,6 +112,28 @@
       }
     },
     {
+      "id": "canyon",
+      "name": "Canyon Earth",
+      "author": "Wishy Launcher contributors",
+      "license": "GPL-3.0-only",
+      "source": "https://github.com/wishissue/WishyLauncher",
+      "dark": {
+        "file": "canyon-dark.webp",
+        "sha256": "f925e8e21782489593b42ec0b3163f209573f78af5f9dea507c4afd1ce1bbf2d",
+        "bytes": 121266
+      },
+      "light": {
+        "file": "canyon-light.webp",
+        "sha256": "18320fc64cf3f2a940c85ac32263bc222799fe0f88654f7e7ada735299e625c9",
+        "bytes": 124340
+      },
+      "thumb": {
+        "file": "canyon-thumb.webp",
+        "sha256": "cec930cf3a905b9366790b5993f2473443549f6f109e5dff1984b01cdcdea61f",
+        "bytes": 6666
+      }
+    },
+    {
       "id": "cascade",
       "name": "Cascade",
       "author": "Ken Vermette",
@@ -60,6 +148,50 @@
         "file": "cascade-thumb.webp",
         "sha256": "c4d38eb2b8bc6a7036ec62f0f750650d24f05b7f7f1af838548dee6f7fb14693",
         "bytes": 6436
+      }
+    },
+    {
+      "id": "emerald",
+      "name": "Emerald City",
+      "author": "Wishy Launcher contributors",
+      "license": "GPL-3.0-only",
+      "source": "https://github.com/wishissue/WishyLauncher",
+      "dark": {
+        "file": "emerald-dark.webp",
+        "sha256": "d8c6bb8f9286c80569df8070bd9feb2b8d97da647b82d72a578da54f1368750e",
+        "bytes": 119792
+      },
+      "light": {
+        "file": "emerald-light.webp",
+        "sha256": "044e85ea8a0fc9ff8fee4a3da9675a6d3aaccdaa707c84e4f28e2270ab55ab53",
+        "bytes": 123440
+      },
+      "thumb": {
+        "file": "emerald-thumb.webp",
+        "sha256": "d72f12a8998a19e04a7c0732d68c757dcba9d3f26d35e8762994f7250ede8f1c",
+        "bytes": 6092
+      }
+    },
+    {
+      "id": "frost",
+      "name": "Frost Glacial",
+      "author": "Wishy Launcher contributors",
+      "license": "GPL-3.0-only",
+      "source": "https://github.com/wishissue/WishyLauncher",
+      "dark": {
+        "file": "frost-dark.webp",
+        "sha256": "3851b5238ff74057b5993b243c1889d3ad727b7775c74ad56f81757c1c5fce08",
+        "bytes": 121982
+      },
+      "light": {
+        "file": "frost-light.webp",
+        "sha256": "f0b0284f2bae55e06d2284501ac6484d2856959de95ba1374559498b061e4de9",
+        "bytes": 123676
+      },
+      "thumb": {
+        "file": "frost-thumb.webp",
+        "sha256": "5e9c0b7222bb37611b5c15b8a56026cd8e786a7c3c22edf1821c3d518dc5f78d",
+        "bytes": 6966
       }
     },
     {
@@ -141,6 +273,50 @@
       }
     },
     {
+      "id": "matrix",
+      "name": "Cyber Matrix",
+      "author": "Wishy Launcher contributors",
+      "license": "GPL-3.0-only",
+      "source": "https://github.com/wishissue/WishyLauncher",
+      "dark": {
+        "file": "matrix-dark.webp",
+        "sha256": "e683f037a4a2c951ef6251f4468767572d9684db2d6fb5c95b088e625da0c0a3",
+        "bytes": 122070
+      },
+      "light": {
+        "file": "matrix-light.webp",
+        "sha256": "4795f82332eb763b44812899de671b9e2764d51a46622910907b9b6cded88c8e",
+        "bytes": 124954
+      },
+      "thumb": {
+        "file": "matrix-thumb.webp",
+        "sha256": "70a2b0aeb41f623ef35c0bbcc55e9c3cef2b27c575dbe04414704a6f2d6e1284",
+        "bytes": 6766
+      }
+    },
+    {
+      "id": "midnight",
+      "name": "Midnight Glow",
+      "author": "Wishy Launcher contributors",
+      "license": "GPL-3.0-only",
+      "source": "https://github.com/wishissue/WishyLauncher",
+      "dark": {
+        "file": "midnight-dark.webp",
+        "sha256": "d7688966071701fe05ea5f80fb2a9e3efbfcea7a69cdfbd8f016fabc8898a78c",
+        "bytes": 118118
+      },
+      "light": {
+        "file": "midnight-light.webp",
+        "sha256": "7120083f747b3140f1cd922a7c24fbfc5f9c91c9a089e04f0d8314996dfcb205",
+        "bytes": 122350
+      },
+      "thumb": {
+        "file": "midnight-thumb.webp",
+        "sha256": "434c3667d3703e7c020e33dee899624cbd8bd3fdba701c9344da58dc1d1d8d46",
+        "bytes": 5976
+      }
+    },
+    {
       "id": "mountain",
       "name": "Mountain",
       "author": "Andy Betts",
@@ -155,6 +331,50 @@
         "file": "mountain-thumb.webp",
         "sha256": "e60fd0b870cc5d38beff98ca232a72204709113eef76b3c6dfc68317c602add3",
         "bytes": 3608
+      }
+    },
+    {
+      "id": "nebula",
+      "name": "Deep Nebula",
+      "author": "Wishy Launcher contributors",
+      "license": "GPL-3.0-only",
+      "source": "https://github.com/wishissue/WishyLauncher",
+      "dark": {
+        "file": "nebula-dark.webp",
+        "sha256": "c3ab1348c0606a5077fb7d1a9fc34bb75b465417fe8ff77b502c515af68c95ae",
+        "bytes": 119510
+      },
+      "light": {
+        "file": "nebula-light.webp",
+        "sha256": "6bd34fa3d485328be4405653f83c3671eecf9bd0440299ada040d2456c276531",
+        "bytes": 125782
+      },
+      "thumb": {
+        "file": "nebula-thumb.webp",
+        "sha256": "1b921378813645ec76c65ba55ee5c6d5dcbd033b7fbdd63ad7ff83450401a735",
+        "bytes": 6574
+      }
+    },
+    {
+      "id": "neon",
+      "name": "Neon Pulse",
+      "author": "Wishy Launcher contributors",
+      "license": "GPL-3.0-only",
+      "source": "https://github.com/wishissue/WishyLauncher",
+      "dark": {
+        "file": "neon-dark.webp",
+        "sha256": "240aab013a7325800e14810c2e00777ffb6fafa9d66af16209b9468dcc51b16c",
+        "bytes": 121246
+      },
+      "light": {
+        "file": "neon-light.webp",
+        "sha256": "884ac0e7f5ba117aad135920540f23d80d15a7b6da9eb4e35d893b3193707b8d",
+        "bytes": 124854
+      },
+      "thumb": {
+        "file": "neon-thumb.webp",
+        "sha256": "1c75a4b0a694aee26dff4f5ff3fa2772f402a6dcf00b3803fb1dcfcf14ec08e7",
+        "bytes": 6272
       }
     },
     {
@@ -219,6 +439,28 @@
       }
     },
     {
+      "id": "sakura",
+      "name": "Sakura Bloom",
+      "author": "Wishy Launcher contributors",
+      "license": "GPL-3.0-only",
+      "source": "https://github.com/wishissue/WishyLauncher",
+      "dark": {
+        "file": "sakura-dark.webp",
+        "sha256": "75055cdb9aa752e3a00b4f18cb10ee0b7b52a8c1bfc13ca2ad9f2deb1b365b65",
+        "bytes": 118070
+      },
+      "light": {
+        "file": "sakura-light.webp",
+        "sha256": "34cb1aa2f2b8945fa2d584e2eb0c1cd6dcab35f8cd23ca3eb5010a5bdb6a1394",
+        "bytes": 121158
+      },
+      "thumb": {
+        "file": "sakura-thumb.webp",
+        "sha256": "1db29e0b7b838ac83978332932412aa3a569f2d0c7bc2c0cb1c5af6b8c28f7dc",
+        "bytes": 6366
+      }
+    },
+    {
       "id": "shell",
       "name": "Shell",
       "author": "Lucas Andrade",
@@ -233,6 +475,50 @@
         "file": "shell-thumb.webp",
         "sha256": "9be7b0ccf15fa2da4e6ffe10c5dd326d4cd278b2e856e8635952df3c9943bc88",
         "bytes": 8260
+      }
+    },
+    {
+      "id": "solar",
+      "name": "Solar Flare",
+      "author": "Wishy Launcher contributors",
+      "license": "GPL-3.0-only",
+      "source": "https://github.com/wishissue/WishyLauncher",
+      "dark": {
+        "file": "solar-dark.webp",
+        "sha256": "12cc1a61cdda6256c6c402ba1119c0d483e30d16acdd6f41dc60f0722b615525",
+        "bytes": 122760
+      },
+      "light": {
+        "file": "solar-light.webp",
+        "sha256": "cb5c82b2ae528d3a3ef6895efd9bde22d1c9aac6acac59433168c01d0981c027",
+        "bytes": 124128
+      },
+      "thumb": {
+        "file": "solar-thumb.webp",
+        "sha256": "9f8b3e73fec52bc20ccb0e88f236e006dbb9c72f53e43c1749a49981de57a22c",
+        "bytes": 6832
+      }
+    },
+    {
+      "id": "sunset",
+      "name": "Sunset Horizon",
+      "author": "Wishy Launcher contributors",
+      "license": "GPL-3.0-only",
+      "source": "https://github.com/wishissue/WishyLauncher",
+      "dark": {
+        "file": "sunset-dark.webp",
+        "sha256": "885cf153644c440ea7d3af29167757bee17e047447f102bbea13923cf0c78689",
+        "bytes": 120846
+      },
+      "light": {
+        "file": "sunset-light.webp",
+        "sha256": "8e24fde759dd65037a3f7645029f346f9975afc767ae4523457e27e8d3fd666b",
+        "bytes": 125024
+      },
+      "thumb": {
+        "file": "sunset-thumb.webp",
+        "sha256": "1d8c4a7c8a9ee30946d448c4a0ca50a7371a2d7d1adf5122c4167b7c581355cc",
+        "bytes": 6330
       }
     },
     {
@@ -280,6 +566,28 @@
       }
     },
     {
+      "id": "topaz",
+      "name": "Golden Topaz",
+      "author": "Wishy Launcher contributors",
+      "license": "GPL-3.0-only",
+      "source": "https://github.com/wishissue/WishyLauncher",
+      "dark": {
+        "file": "topaz-dark.webp",
+        "sha256": "e8837ced0b5efcc321e44ad9df0b6fbd1b5a7e0903095565355c8b685340ea8c",
+        "bytes": 123804
+      },
+      "light": {
+        "file": "topaz-light.webp",
+        "sha256": "67de645fc97c3a68334c37c763a216a384ae5d557a59ef4e7ad55325744784f9",
+        "bytes": 122430
+      },
+      "thumb": {
+        "file": "topaz-thumb.webp",
+        "sha256": "8d218f3c44b2fe3dd8abd2b970baa75cc53850b5f3735e9b3b7ef924c87851f9",
+        "bytes": 7288
+      }
+    },
+    {
       "id": "tubes",
       "name": "Tubes",
       "author": "GNOME Backgrounds contributors",
@@ -299,6 +607,28 @@
         "file": "tubes-thumb.webp",
         "sha256": "7e0b30ac44d21708022994d44ad984fa745fdafd609914c6b30cf378ae3dd819",
         "bytes": 2626
+      }
+    },
+    {
+      "id": "velvet",
+      "name": "Velvet Crimson",
+      "author": "Wishy Launcher contributors",
+      "license": "GPL-3.0-only",
+      "source": "https://github.com/wishissue/WishyLauncher",
+      "dark": {
+        "file": "velvet-dark.webp",
+        "sha256": "76e43442c9e33864923f25c49426dda6802b5c57c705c0734e14b08faa0f4f54",
+        "bytes": 117586
+      },
+      "light": {
+        "file": "velvet-light.webp",
+        "sha256": "6d7aa041645c2856a21511aa1c3ad505faf60914dacf975e7664c2533cb18688",
+        "bytes": 116068
+      },
+      "thumb": {
+        "file": "velvet-thumb.webp",
+        "sha256": "c6a95929aa009b38bbbc23cbeae24cbb55aa49769817e78679692de62951627b",
+        "bytes": 6060
       }
     }
   ]

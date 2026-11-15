@@ -105,12 +105,15 @@ fun ThemedAppCard(
     }
 
     val spec = env.focusSpec<Float>()
-    // Kept as State objects and read inside graphicsLayer, so animating costs a redraw, not a recomposition.
-    val scaleS = animateFloatAsState(state.scale, spec, label = "cardScale")
-    val alphaS = animateFloatAsState(state.alpha, spec, label = "cardAlpha")
-    val liftS = animateFloatAsState(state.offsetY, spec, label = "cardLift")
-
     val active = focused || isMoving
+    // Ensure focused app selection is crystal clear: at least 1.12 scale & -6dp lift when active
+    val targetScale = if (active) maxOf(state.scale, 1.12f) else state.scale
+    val targetLift = if (active) minOf(state.offsetY, -6f) else state.offsetY
+    // Kept as State objects and read inside graphicsLayer, so animating costs a redraw, not a recomposition.
+    val scaleS = animateFloatAsState(targetScale, spec, label = "cardScale")
+    val alphaS = animateFloatAsState(state.alpha, spec, label = "cardAlpha")
+    val liftS = animateFloatAsState(targetLift, spec, label = "cardLift")
+
     val anim = if (active && env.loops) state.animation else CardAnimation.NONE
     val phaseS = cardPhase(anim)
 
@@ -126,10 +129,15 @@ fun ThemedAppCard(
         }
     }
 
-    val shape = remember(style.shape, env) { composeShape(style.shape, env.dims) }
+    val cardShape = remember(style.shape, env) { env.tweakShape(style.shape) }
+    val shape = remember(cardShape, env) { composeShape(cardShape, env.dims) }
     val colors = env.colors
     val fill = colors.resolve(state.fill ?: style.fill, colors.surface)
     val border = state.border ?: style.border
+    val defaultIndicator = remember {
+        org.wishy.theme.core.FocusIndicator(kind = org.wishy.theme.core.IndicatorKind.RING, color = "@primary", width = 4f, gap = 4f)
+    }
+    val effectiveIndicator = state.indicator ?: if (active && border == null) defaultIndicator else null
     val shadow = state.shadow ?: style.shadow
     val shadowColor = colors.resolve(shadow?.color, Color.Black.copy(alpha = 0.35f))
     val shadowPx = shadow?.let { env.dims.px(it.blur) } ?: 0f
@@ -141,7 +149,7 @@ fun ThemedAppCard(
     var longAt by remember { mutableLongStateOf(0L) }
 
     val label = style.label
-    val showLabel = when (label.position) {
+    val showLabel = if (!env.tweaks.labels) false else when (label.position) {
         LabelPosition.NONE -> false
         LabelPosition.FOCUSED_ONLY -> focused || isMoving
         else -> true
@@ -166,7 +174,7 @@ fun ThemedAppCard(
                     this.shape = shape
                     clip = false
                 }
-                .themeIndicator(state.indicator, env, style.shape, visible = active && blinkOn)
+                .themeIndicator(effectiveIndicator, env, cardShape, visible = active && blinkOn)
                 .onPreviewKeyEvent { e ->
                     val select = e.key == Key.DirectionCenter || e.key == Key.Enter || e.key == Key.NumPadEnter
                     if (!select) return@onPreviewKeyEvent false

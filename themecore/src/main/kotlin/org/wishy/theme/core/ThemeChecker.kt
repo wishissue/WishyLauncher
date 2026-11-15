@@ -158,6 +158,15 @@ object ThemeChecker {
                 if (n.alpha !in 0f..1f) c.add("$where.alpha out of range")
             }
             is TextNode -> { style(n.style); if (n.text.length > 80) c.add("$where.text is longer than 80 characters") }
+            is StatusIconsNode -> {
+                n.color?.let { refs.color(it, "$where.color") }
+                n.inactiveColor?.let { refs.color(it, "$where.inactiveColor") }
+                n.focusFill?.let { refs.color(it, "$where.focusFill") }
+                shape(n.shape, "$where.shape", c)
+                gap(n.gap, where, c)
+                if (n.iconSize !in 12f..96f) c.add("$where.iconSize out of range")
+                if (n.items.isEmpty() || n.items.size > 3 || n.items.toSet().size != n.items.size) c.add("$where.items must list each of vpn, network, settings at most once")
+            }
             is ClockNode -> style(n.style)
             is DateNode -> style(n.style)
             is FocusedAppNameNode -> style(n.style)

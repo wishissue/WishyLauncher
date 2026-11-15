@@ -15,7 +15,7 @@
   },
   "icecold": {
     "name": "Ice Cold",
-    "author": "Santiago C\u00e9zar",
+    "author": "Santiago Cézar",
     "license": "CC-BY-SA-4.0",
     "source": "https://github.com/KDE/plasma-workspace-wallpapers/tree/master/IceCold",
     "tone": "single"
@@ -102,6 +102,111 @@
     "author": "GNOME Backgrounds contributors",
     "license": "CC-BY-SA-3.0",
     "source": "https://gitlab.gnome.org/GNOME/gnome-backgrounds",
+    "tone": "pair"
+  },
+  "neon": {
+    "name": "Neon Pulse",
+    "author": "Wishy Launcher contributors",
+    "license": "GPL-3.0-only",
+    "source": "https://github.com/wishissue/WishyLauncher",
+    "tone": "pair"
+  },
+  "solar": {
+    "name": "Solar Flare",
+    "author": "Wishy Launcher contributors",
+    "license": "GPL-3.0-only",
+    "source": "https://github.com/wishissue/WishyLauncher",
+    "tone": "pair"
+  },
+  "midnight": {
+    "name": "Midnight Glow",
+    "author": "Wishy Launcher contributors",
+    "license": "GPL-3.0-only",
+    "source": "https://github.com/wishissue/WishyLauncher",
+    "tone": "pair"
+  },
+  "frost": {
+    "name": "Frost Glacial",
+    "author": "Wishy Launcher contributors",
+    "license": "GPL-3.0-only",
+    "source": "https://github.com/wishissue/WishyLauncher",
+    "tone": "pair"
+  },
+  "velvet": {
+    "name": "Velvet Crimson",
+    "author": "Wishy Launcher contributors",
+    "license": "GPL-3.0-only",
+    "source": "https://github.com/wishissue/WishyLauncher",
+    "tone": "pair"
+  },
+  "canyon": {
+    "name": "Canyon Earth",
+    "author": "Wishy Launcher contributors",
+    "license": "GPL-3.0-only",
+    "source": "https://github.com/wishissue/WishyLauncher",
+    "tone": "pair"
+  },
+  "nebula": {
+    "name": "Deep Nebula",
+    "author": "Wishy Launcher contributors",
+    "license": "GPL-3.0-only",
+    "source": "https://github.com/wishissue/WishyLauncher",
+    "tone": "pair"
+  },
+  "aurora_borealis": {
+    "name": "Aurora Glow",
+    "author": "Wishy Launcher contributors",
+    "license": "GPL-3.0-only",
+    "source": "https://github.com/wishissue/WishyLauncher",
+    "tone": "pair"
+  },
+  "sakura": {
+    "name": "Sakura Bloom",
+    "author": "Wishy Launcher contributors",
+    "license": "GPL-3.0-only",
+    "source": "https://github.com/wishissue/WishyLauncher",
+    "tone": "pair"
+  },
+  "emerald": {
+    "name": "Emerald City",
+    "author": "Wishy Launcher contributors",
+    "license": "GPL-3.0-only",
+    "source": "https://github.com/wishissue/WishyLauncher",
+    "tone": "pair"
+  },
+  "sunset": {
+    "name": "Sunset Horizon",
+    "author": "Wishy Launcher contributors",
+    "license": "GPL-3.0-only",
+    "source": "https://github.com/wishissue/WishyLauncher",
+    "tone": "pair"
+  },
+  "abyss": {
+    "name": "Deep Abyss",
+    "author": "Wishy Launcher contributors",
+    "license": "GPL-3.0-only",
+    "source": "https://github.com/wishissue/WishyLauncher",
+    "tone": "pair"
+  },
+  "amethyst": {
+    "name": "Amethyst Haze",
+    "author": "Wishy Launcher contributors",
+    "license": "GPL-3.0-only",
+    "source": "https://github.com/wishissue/WishyLauncher",
+    "tone": "pair"
+  },
+  "topaz": {
+    "name": "Golden Topaz",
+    "author": "Wishy Launcher contributors",
+    "license": "GPL-3.0-only",
+    "source": "https://github.com/wishissue/WishyLauncher",
+    "tone": "pair"
+  },
+  "matrix": {
+    "name": "Cyber Matrix",
+    "author": "Wishy Launcher contributors",
+    "license": "GPL-3.0-only",
+    "source": "https://github.com/wishissue/WishyLauncher",
     "tone": "pair"
   }
 }

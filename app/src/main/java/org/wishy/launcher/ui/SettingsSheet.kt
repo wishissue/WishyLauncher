@@ -271,6 +271,7 @@ fun SettingsSheet(
                             scope.launch { store.update { it.copy(wallpaperId = id, useCustomWallpaper = false) } }
                             screen = SettingsScreen.Wallpaper
                         },
+                        onBack = { screen = SettingsScreen.Wallpaper },
                     )
                     SettingsScreen.Display -> DisplayScreen(
                         config = config,
@@ -440,6 +441,10 @@ private fun DisplayScreen(
     onBack: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
+    // Under a theme the theme decides the layout, so the classic layout switches are not shown. Every other
+    // option below is applied by every theme that has something for it to change.
+    val themed = config.themeId != org.wishy.launcher.theme.ThemeStorage.CLASSIC_ID
+    val caps = rememberThemeCaps(config.themeId)
     fun update(transform: (LauncherConfig) -> LauncherConfig) {
         scope.launch { store.update(transform) }
     }
@@ -448,10 +453,10 @@ private fun DisplayScreen(
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         ScreenHeader(stringResource(R.string.item_display), onBack = onBack)
-        LayoutPreview(config)
-        SectionLabel(stringResource(R.string.section_layout))
+        if (!themed) LayoutPreview(config)
         val f = initialFocus()
-        SelectorRow(
+        if (!themed) SectionLabel(stringResource(R.string.section_layout))
+        if (!themed) SelectorRow(
             modifier = Modifier.focusRequester(f),
             label = stringResource(R.string.view_mode),
             value = listOf(stringResource(R.string.mode_carousel), stringResource(R.string.mode_grid), stringResource(R.string.mode_dock))[config.layout.coerceIn(0, 2)],
@@ -465,7 +470,7 @@ private fun DisplayScreen(
             onSelect = { v -> update { it.copy(layout = v) } },
         )
         // Section names are only drawn in carousel/grid — hide the toggle in dock.
-        if (config.layout != LAYOUT_DOCK) {
+        if (!themed && config.layout != LAYOUT_DOCK) {
             SectionLabel(stringResource(R.string.section_elements))
             SettingsItem(
                 selected = false,
@@ -479,6 +484,7 @@ private fun DisplayScreen(
             val labels = listOf(stringResource(R.string.scale_auto), "75%", "90%", "100%", "115%", "130%")
             val idx = config.uiScale.coerceIn(0, labels.size - 1)
             SelectorRow(
+                modifier = if (themed) Modifier.focusRequester(f) else Modifier,
                 label = stringResource(R.string.ui_scale),
                 value = labels[idx],
                 description = if (idx == 0) stringResource(R.string.ui_scale_auto_sub) else null,
@@ -487,7 +493,7 @@ private fun DisplayScreen(
                 onSelect = { v -> update { it.copy(uiScale = v) } },
             )
         }
-        SelectorRow(
+        if (caps.corners) SelectorRow(
             label = stringResource(R.string.roundness),
             value = listOf(stringResource(R.string.size_xs), stringResource(R.string.size_s), stringResource(R.string.size_n), stringResource(R.string.size_l), stringResource(R.string.size_xl))[config.cornerRadius.coerceIn(0, 4)],
             steps = 5,
@@ -508,6 +514,26 @@ private fun DisplayScreen(
             current = config.spacing.coerceIn(0, 4),
             onSelect = { v -> update { it.copy(spacing = v) } },
         )
+        if (caps.labels) SettingsItem(
+            selected = false,
+            onClick = { update { it.copy(showAppLabels = !it.showAppLabels) } },
+            headlineContent = { Text(stringResource(R.string.app_labels_label)) },
+            trailingContent = { SwitchPill(config.showAppLabels) },
+        )
+        run {
+            val names = listOf(
+                stringResource(R.string.accent_default), stringResource(R.string.accent_green), stringResource(R.string.accent_yellow),
+                stringResource(R.string.accent_red), stringResource(R.string.accent_purple), stringResource(R.string.accent_cyan),
+            )
+            val idx = config.accent.coerceIn(0, names.size - 1)
+            SelectorRow(
+                label = stringResource(R.string.accent_label),
+                value = names[idx],
+                steps = names.size,
+                current = idx,
+                onSelect = { v -> update { it.copy(accent = v) } },
+            )
+        }
     }
 }
 
@@ -864,6 +890,10 @@ private fun StatusBarScreen(
     onBack: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
+    // Show only what the active theme can use: the launcher's bar (and its glass) when it is drawn, the clock and
+    // date when the theme has them.
+    val caps = rememberThemeCaps(config.themeId)
+    val barUsed = !caps.ownsStatusBar || caps.statusIcons
     var pickVpn by remember { mutableStateOf(false) }
     val vpnLabel = apps.firstOrNull { it.pkg == config.vpnApp }?.label ?: stringResource(R.string.vpn_system)
 
@@ -872,10 +902,10 @@ private fun StatusBarScreen(
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         ScreenHeader(stringResource(R.string.item_statusbar), onBack = onBack)
-        StatusBarPreview(config)
-        SectionLabel(stringResource(R.string.sb_group_bar))
+        if (barUsed) StatusBarPreview(config)
+        if (barUsed) SectionLabel(stringResource(R.string.sb_group_bar))
         val f = initialFocus()
-        SettingsItem(
+        if (barUsed) SettingsItem(
             selected = false,
             onClick = { scope.launch { store.update { it.copy(showStatusBar = !it.showStatusBar) } } },
             modifier = Modifier.focusRequester(f),
@@ -883,21 +913,21 @@ private fun StatusBarScreen(
             supportingContent = { Text(stringResource(R.string.show_statusbar_sub)) },
             trailingContent = { SwitchPill(config.showStatusBar) },
         )
-        SettingsItem(
+        if (!caps.ownsStatusBar) SettingsItem(
             selected = false,
             onClick = { scope.launch { store.update { it.copy(statusBarGlass = !it.statusBarGlass) } } },
             headlineContent = { Text(stringResource(R.string.statusbar_glass)) },
             supportingContent = { Text(stringResource(R.string.statusbar_glass_sub)) },
             trailingContent = { SwitchPill(config.statusBarGlass) },
         )
-        SectionLabel(stringResource(R.string.sb_group_clock))
-        SettingsItem(
+        if (caps.clock || caps.date) SectionLabel(stringResource(R.string.sb_group_clock))
+        if (caps.clock) SettingsItem(
             selected = false,
             onClick = { scope.launch { store.update { it.copy(h24 = !it.h24) } } },
             headlineContent = { Text(stringResource(R.string.clock_24h)) },
             trailingContent = { SwitchPill(config.h24) },
         )
-        run {
+        if (caps.date) run {
             val idx = config.dateFormat.coerceIn(0, DATE_FORMATS.size - 1)
             SelectorRow(
                 label = stringResource(R.string.date_label),
@@ -910,8 +940,8 @@ private fun StatusBarScreen(
                 onSelect = { v -> scope.launch { store.update { it.copy(dateFormat = v) } } },
             )
         }
-        SectionLabel(stringResource(R.string.sb_group_vpn))
-        SettingsItem(
+        if (barUsed) SectionLabel(stringResource(R.string.sb_group_vpn))
+        if (barUsed) SettingsItem(
             selected = false,
             onClick = { scope.launch { store.update { it.copy(showVpnButton = !it.showVpnButton) } } },
             headlineContent = { Text(stringResource(R.string.show_vpn_button)) },
@@ -919,7 +949,7 @@ private fun StatusBarScreen(
             trailingContent = { SwitchPill(config.showVpnButton) },
         )
         // Grayed out (and not focusable) while the VPN button is hidden
-        SettingsItem(
+        if (barUsed) SettingsItem(
             selected = false,
             enabled = config.showVpnButton,
             onClick = { pickVpn = true },

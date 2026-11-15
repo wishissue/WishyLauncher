@@ -22,6 +22,7 @@ data class CategoryCfg(
 @Serializable
 data class LauncherConfig(
     val categories: List<CategoryCfg> = listOf(
+        CategoryCfg(AppRepository.ALL_APPS_ID, "All Apps"),
         CategoryCfg("streaming", "Streaming"),
         CategoryCfg("games", "Games"),
         CategoryCfg("music", "Music"),
@@ -85,6 +86,8 @@ data class LauncherConfig(
     /** Manual theme scale in percent (50..150) on top of the automatic screen scaling. */
     val themeScalePct: Int = 100,
     /** No network use at all. Default on: the launcher works fully offline. */
+    /** Themes: split apps into the sections (Streaming, Games...) with a tab row. Off = one simple row of everything. */
+    val themeSections: Boolean = false,
     val offlineMode: Boolean = false,
     /** Look up banner artwork in the official repository for installed apps. Needs offlineMode = false. */
     val artworkOnline: Boolean = true,
@@ -114,17 +117,27 @@ private val json = Json { ignoreUnknownKeys = true }
 class ConfigStore(private val context: Context) {
 
     val flow: Flow<LauncherConfig> = context.dataStore.data.map { prefs ->
-        prefs[KEY_CONFIG]?.let {
+        val cfg = prefs[KEY_CONFIG]?.let {
             runCatching { json.decodeFromString<LauncherConfig>(it) }.getOrNull()
         } ?: LauncherConfig(categories = defaultCategories(context))
+        ensureAllAppsFirst(cfg, context)
     }
 
     private fun defaultCategories(ctx: Context) = listOf(
+        CategoryCfg(AppRepository.ALL_APPS_ID, ctx.getString(R.string.cat_all_apps)),
         CategoryCfg("streaming", ctx.getString(R.string.cat_streaming)),
         CategoryCfg("games", ctx.getString(R.string.cat_games)),
         CategoryCfg("music", ctx.getString(R.string.cat_music)),
         CategoryCfg("apps", ctx.getString(R.string.cat_apps)),
     )
+
+    private fun ensureAllAppsFirst(cfg: LauncherConfig, ctx: Context): LauncherConfig {
+        val allAppsCat = CategoryCfg(AppRepository.ALL_APPS_ID, ctx.getString(R.string.cat_all_apps))
+        val currentCats = cfg.categories
+        if (currentCats.firstOrNull()?.id == AppRepository.ALL_APPS_ID) return cfg
+        val rest = currentCats.filter { it.id != AppRepository.ALL_APPS_ID }
+        return cfg.copy(categories = listOf(allAppsCat) + rest)
+    }
 
     suspend fun update(transform: (LauncherConfig) -> LauncherConfig) {
         context.dataStore.edit { prefs ->

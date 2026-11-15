@@ -65,15 +65,15 @@ class ThemeDims(val unitPx: Float, private val density: Float, private val fontS
 
 /** Resolves colour literals and tokens such as @primary, @custom.sky and @primary/40. */
 @Immutable
-class ThemeColors(scheme: ColorScheme) {
+class ThemeColors(scheme: ColorScheme, accentOverride: Color? = null) {
     val background = parse(scheme.background)
     val surface = parse(scheme.surface)
     val onSurface = parse(scheme.onSurface)
-    val primary = parse(scheme.primary)
+    val primary = accentOverride ?: parse(scheme.primary)
     val onPrimary = parse(scheme.onPrimary)
     val surfaceVariant = scheme.surfaceVariant?.let(::parse) ?: surface
     val onSurfaceMuted = scheme.onSurfaceMuted?.let(::parse) ?: onSurface.copy(alpha = 0.7f)
-    val accent = scheme.accent?.let(::parse) ?: primary
+    val accent = accentOverride ?: scheme.accent?.let(::parse) ?: primary
     val outline = scheme.outline?.let(::parse) ?: onSurface.copy(alpha = 0.3f)
     val scrim = scheme.scrim?.let(::parse) ?: Color.Black.copy(alpha = 0.5f)
     private val custom: Map<String, Color> = scheme.custom.mapValues { parse(it.value) }
@@ -113,6 +113,39 @@ class ThemeColors(scheme: ColorScheme) {
         runCatching { Color(android.graphics.Color.parseColor(hex)) }.getOrDefault(Color.Transparent)
 }
 
+/**
+ * The user's Display settings, applied on top of ANY theme. Corners and spacing are factors of what the theme
+ * designed (1 = as designed, which is what the default setting gives), so every theme keeps its character and
+ * every setting does something in every theme that has the thing to change.
+ */
+@Immutable
+class ThemeTweaks(
+    /** Multiplies the radius of every rounded, pixel, chamfer and bevel shape (Corner roundness setting). */
+    val radiusScale: Float = 1f,
+    /** Multiplies every gap in rows, columns, tab lists and the app list (Spacing setting). */
+    val gapScale: Float = 1f,
+    /** Multiplies the size of app tiles (Icon size setting). */
+    val size: Float = 1f,
+    /** Accent colour (Accent setting), or null for the theme's own. Replaces @primary and @accent. */
+    val accent: Color? = null,
+    /** False hides every app label (App labels setting). */
+    val labels: Boolean = true,
+) {
+    companion object {
+        val None = ThemeTweaks()
+        private val RADII = listOf(0f, 0.35f, 0.65f, 1f, 1.6f)
+        private val GAPS = listOf(0.4f, 1f, 1.7f, 2.4f, 3.2f)
+        private val SIZES = listOf(0.8f, 1f, 1.25f, 1.5f, 1.8f)
+        fun from(c: org.wishy.launcher.data.LauncherConfig, accents: List<Color>) = ThemeTweaks(
+            radiusScale = RADII[c.cornerRadius.coerceIn(0, 4)],
+            gapScale = GAPS[c.spacing.coerceIn(0, 4)],
+            size = SIZES[c.iconScale.coerceIn(0, 4)],
+            accent = if (c.accent in 1..accents.lastIndex) accents[c.accent] else null,
+            labels = c.showAppLabels,
+        )
+    }
+}
+
 class ResolvedText(val style: TextStyle, val uppercase: Boolean, val maxLines: Int)
 
 /** Everything a theme needs while drawing. Built once per theme, screen size and setting change. */
@@ -130,8 +163,15 @@ class ThemeEnv(
     val loops: Boolean,
     val screenWidthPx: Int,
     val screenHeightPx: Int,
+    val tweaks: ThemeTweaks = ThemeTweaks.None,
 ) {
     private val textCache = HashMap<String, ResolvedText>()
+
+    /** A theme shape with the user's corner setting applied. Square shapes stay square. */
+    fun tweakShape(s: TShape): TShape {
+        val f = tweaks.radiusScale
+        return if (f == 1f || s.kind == org.wishy.theme.core.ShapeKind.RECT) s else s.copy(radius = s.radius * f)
+    }
 
     fun <T> focusSpec(): AnimationSpec<T> = if (focusMs <= 0) snap() else tween(focusMs, easing = easing)
 
@@ -197,11 +237,13 @@ private fun loadFonts(theme: LoadedTheme): Map<String, FontFamily> {
  * [userScale] multiplies the whole theme (1 = as designed). [animations]: 0 full, 1 reduced, 2 off.
  */
 @Composable
-fun rememberThemeEnv(theme: LoadedTheme, dark: Boolean, userScale: Float, animations: Int): ThemeEnv {
+fun rememberThemeEnv(
+    theme: LoadedTheme, dark: Boolean, userScale: Float, animations: Int, tweaks: ThemeTweaks = ThemeTweaks.None,
+): ThemeEnv {
     val density = LocalDensity.current
     val dm = LocalContext.current.resources.displayMetrics
     val fonts = remember(theme) { loadFonts(theme) }
-    return remember(theme, dark, userScale, animations, density.density, density.fontScale, fonts) {
+    return remember(theme, dark, userScale, animations, density.density, density.fontScale, fonts, tweaks.radiusScale, tweaks.gapScale, tweaks.size, tweaks.accent, tweaks.labels) {
         val doc = theme.doc
         val unit = dm.heightPixels.toFloat() / doc.designHeight * userScale
         var focus = doc.motion.focusMillis
@@ -218,7 +260,7 @@ fun rememberThemeEnv(theme: LoadedTheme, dark: Boolean, userScale: Float, animat
             doc = doc,
             dir = theme.dir,
             dims = ThemeDims(unit, density.density, density.fontScale),
-            colors = ThemeColors(doc.schemeFor(dark)),
+            colors = ThemeColors(doc.schemeFor(dark), tweaks.accent),
             fonts = fonts,
             focusMs = focus,
             scrollMs = scroll,
@@ -226,6 +268,7 @@ fun rememberThemeEnv(theme: LoadedTheme, dark: Boolean, userScale: Float, animat
             loops = animations == 0,
             screenWidthPx = dm.widthPixels,
             screenHeightPx = dm.heightPixels,
+            tweaks = tweaks,
         )
     }
 }

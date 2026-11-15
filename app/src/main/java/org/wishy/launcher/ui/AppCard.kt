@@ -102,11 +102,14 @@ fun AppCard(
             contentColor = Color.White,
             focusedContentColor = Color.White,
         ),
-        scale = ClickableSurfaceDefaults.scale(focusedScale = 1.06f),
+        scale = ClickableSurfaceDefaults.scale(focusedScale = 1.12f),
+        glow = ClickableSurfaceDefaults.glow(
+            focusedGlow = Glow(accent.copy(alpha = 0.5f), 16.dp)
+        ),
         border = ClickableSurfaceDefaults.border(
-            // Thin accent ring on focus (thicker while dragging in move mode).
+            // Prominent accent ring on focus (thicker while dragging in move mode).
             focusedBorder = Border(
-                BorderStroke(if (isMoving) 4.dp else 3.dp, accent),
+                BorderStroke(if (isMoving) 5.dp else 4.dp, accent),
                 shape = cardShape,
             )
         ),

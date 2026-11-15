@@ -64,6 +64,12 @@ internal fun SettingsHome(
     onAbout: () -> Unit,
 ) {
     val context = LocalContext.current
+    val themed = config.themeId != org.wishy.launcher.theme.ThemeStorage.CLASSIC_ID
+    val caps = rememberThemeCaps(config.themeId)
+    // A theme that ignores the user's wallpaper, or has no sections or status icons, would make these entries dead ends.
+    val showWallpaper = !(themed && caps.wallpaper == "ignored")
+    val showSections = !themed || caps.sections
+    val showStatusBar = !themed || !caps.ownsStatusBar || caps.statusIcons || caps.clock || caps.date
     // A small copy of the wallpaper in use, for the banner. Off the main thread.
     val thumb by produceState<ImageBitmap?>(null, config.wallpaperId, config.useCustomWallpaper, dark) {
         value = withContext(Dispatchers.IO) {
@@ -105,7 +111,7 @@ internal fun SettingsHome(
                     Icon(Sym.Palette, null, tint = Wish.OnPrimaryContainer, modifier = Modifier.size(44.dp))
                 }
             }
-            Banner(
+            if (showWallpaper) Banner(
                 title = stringResource(R.string.item_wallpaper),
                 sub = stringResource(R.string.item_wallpaper_sub),
                 modifier = Modifier.weight(1f),
@@ -130,7 +136,7 @@ internal fun SettingsHome(
             supportingContent = { Text(stringResource(R.string.item_app_sub), maxLines = 1) },
             leadingContent = { Icon(AppIcons.Apps, contentDescription = null) },
         )
-        SettingsItem(
+        if (showSections) SettingsItem(
             onClick = onCategories,
             headlineContent = { Text(stringResource(R.string.item_sections)) },
             supportingContent = { Text(stringResource(R.string.item_sections_sub), maxLines = 1) },
@@ -150,7 +156,7 @@ internal fun SettingsHome(
             supportingContent = { Text(stringResource(R.string.item_display_sub), maxLines = 1) },
             leadingContent = { Icon(AppIcons.Display, contentDescription = null) },
         )
-        SettingsItem(
+        if (showStatusBar) SettingsItem(
             onClick = onStatusBar,
             headlineContent = { Text(stringResource(R.string.item_statusbar)) },
             supportingContent = { Text(stringResource(R.string.item_statusbar_sub), maxLines = 1) },

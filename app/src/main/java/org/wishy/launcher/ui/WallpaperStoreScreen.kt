@@ -53,6 +53,12 @@ import org.wishy.launcher.data.ConfigStore
 import org.wishy.launcher.data.LauncherConfig
 import org.wishy.launcher.net.Repos
 
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+
 /**
  * Browse and download more wallpapers. Tapping a card downloads it (checked against its SHA-256) and uses it.
  * The list and the small pictures come from the official repository; nothing happens while offline mode is on.
@@ -102,7 +108,18 @@ internal fun WallpaperStoreScreen(
     LaunchedEffect(config.offlineMode) { if (!config.offlineMode && list == null) load() }
 
     Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
+        Modifier
+            .fillMaxSize()
+            .onPreviewKeyEvent { e ->
+                if (e.key == Key.Back || e.key == Key.Escape) {
+                    if (e.type == KeyEventType.KeyUp) {
+                        onBack()
+                    }
+                    true
+                } else false
+            }
+            .verticalScroll(rememberScrollState())
+            .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         ScreenHeader(stringResource(R.string.wp_store_title), onBack = onBack)

@@ -3,9 +3,9 @@
   "schemaVersion": 1,
   "id": "wishy",
   "name": "Wishy",
-  "version": "3.0.0",
+  "version": "4.1.0",
   "author": "Wishy Launcher contributors",
-  "description": "The Wishy Browser look on your TV. Brand blue, Plus Jakarta Sans, soft rounded shapes, a glass shelf for your apps and a blue glow on the focused banner. Light and dark wallpapers included, and you can swap them for your own.",
+  "description": "Clean, console-style home. A big title for the focused app, one calm row of square tiles, a bold clock, and hints along the bottom. Every Display setting (corners, size, spacing, labels, accent, wallpaper, clock, date) applies. Sections are off by default: just one row of all your apps.",
   "license": "GPL-3.0-only",
   "defaultColorScheme": "system",
   "credits": [
@@ -36,6 +36,13 @@
       "author": "The Plus Jakarta Sans Project Authors",
       "license": "OFL-1.1",
       "source": "https://github.com/tokotype/PlusJakartaSans"
+    },
+    {
+      "file": "assets/fonts/BagelFatOne-Regular.ttf",
+      "title": "Bagel Fat One",
+      "author": "The Bagel Fat Project Authors",
+      "license": "OFL-1.1",
+      "source": "https://github.com/JAMO-TYPEFACE/BagelFat"
     },
     {
       "file": "assets/ui/wallpaper-dark.webp",
@@ -73,7 +80,8 @@
       "scrim": "#660B1B33",
       "custom": {
         "glass": "#B8FFFFFF",
-        "glassEdge": "#99FFFFFF"
+        "glassEdge": "#99FFFFFF",
+        "ring": "#FFFFFF"
       }
     },
     "dark": {
@@ -89,7 +97,8 @@
       "scrim": "#99000000",
       "custom": {
         "glass": "#80111725",
-        "glassEdge": "#26FFFFFF"
+        "glassEdge": "#26FFFFFF",
+        "ring": "#FFFFFF"
       }
     }
   },
@@ -105,14 +114,19 @@
     },
     "bold": {
       "file": "assets/fonts/PlusJakartaSans-Bold.ttf"
+    },
+    "display": {
+      "file": "assets/fonts/BagelFatOne-Regular.ttf"
     }
   },
   "textStyles": {
     "clock": {
-      "font": "semibold",
-      "size": 96,
+      "font": "display",
+      "size": 72,
       "color": "@onSurface",
-      "letterSpacing": -3,
+      "letterSpacing": 1,
+      "align": "end",
+      "maxLines": 1,
       "shadow": {
         "color": "@background/55",
         "dy": 2,
@@ -120,9 +134,11 @@
       }
     },
     "date": {
-      "font": "medium",
-      "size": 30,
+      "font": "semibold",
+      "size": 26,
       "color": "@onSurfaceMuted",
+      "align": "end",
+      "maxLines": 1,
       "shadow": {
         "color": "@background/55",
         "dy": 1,
@@ -130,86 +146,117 @@
       }
     },
     "title": {
-      "font": "bold",
-      "size": 50,
+      "font": "display",
+      "size": 104,
       "color": "@onSurface",
-      "letterSpacing": -1,
       "maxLines": 1,
+      "letterSpacing": 0,
       "shadow": {
         "color": "@background/55",
-        "dy": 2,
-        "blur": 14
+        "dy": 3,
+        "blur": 20
       }
     },
     "tab": {
       "font": "semibold",
-      "size": 28,
+      "size": 24,
       "color": "@onSurfaceMuted",
+      "uppercase": true,
+      "letterSpacing": 1.5,
       "maxLines": 1
     },
-    "brand": {
-      "font": "bold",
-      "size": 34,
-      "color": "@primary",
-      "letterSpacing": -0.5,
-      "align": "end",
+    "label": {
+      "font": "semibold",
+      "size": 24,
+      "color": "@onSurface",
+      "maxLines": 1,
+      "shadow": {
+        "color": "@background/55",
+        "dy": 1,
+        "blur": 8
+      }
+    },
+    "hint": {
+      "font": "semibold",
+      "size": 22,
+      "color": "@onSurfaceMuted",
+      "uppercase": true,
+      "letterSpacing": 1,
       "maxLines": 1
+    },
+    "hintKey": {
+      "font": "bold",
+      "size": 22,
+      "color": "@primary",
+      "uppercase": true,
+      "letterSpacing": 1,
+      "maxLines": 1
+    },
+    "count": {
+      "font": "semibold",
+      "size": 24,
+      "color": "@onSurfaceMuted",
+      "letterSpacing": 1,
+      "maxLines": 1,
+      "shadow": {
+        "color": "@background/55",
+        "dy": 1,
+        "blur": 8
+      }
     }
   },
   "background": {
     "color": "@background",
     "image": "assets/ui/wallpaper-dark.webp",
     "fit": "crop",
-    "dim": 0.0,
+    "dim": 0.18,
     "userWallpaper": "allowed"
   },
   "cardStyles": {
-    "banner": {
-      "aspect": "16:9",
+    "tile": {
+      "aspect": "1:1",
       "shape": {
         "kind": "rounded",
         "radius": 28
       },
       "fill": "@surface",
-      "border": {
-        "width": 1,
-        "color": "@outline"
-      },
       "artwork": {
         "source": "auto",
         "fit": "crop",
-        "iconSize": 110,
+        "iconSize": "58%",
         "placeholderFill": "@surfaceVariant",
         "themeArt": true
       },
       "label": {
-        "position": "none"
+        "position": "below",
+        "style": "label",
+        "gap": 14
       },
       "idle": {
         "scale": 1.0,
-        "alpha": 0.96
+        "alpha": 0.92
       },
       "focused": {
-        "scale": 1.09,
+        "scale": 1.1,
         "alpha": 1.0,
         "shadow": {
-          "color": "@primary/55",
-          "dy": 14,
-          "blur": 44
+          "color": "#80000000",
+          "dy": 18,
+          "blur": 40
         },
         "indicator": {
           "kind": "ring",
-          "color": "@primary",
-          "width": 4,
+          "color": "@custom.ring",
+          "width": 5,
           "gap": 5
         }
       },
       "moving": {
-        "scale": 1.13,
+        "scale": 1.14,
         "shadow": {
           "color": "#99000000",
-          "dy": 18,
-          "blur": 40
+          "dy": 20,
+          "blur": 44
         },
         "indicator": {
           "kind": "ring",
@@ -234,22 +281,36 @@
         "type": "stack",
         "children": [
           {
-            "type": "shape",
-            "id": "shelf",
-            "shape": {
-              "kind": "rounded",
-              "radius": 44
-            },
-            "fill": "@custom.glass",
-            "border": {
-              "width": 1,
-              "color": "@custom.glassEdge"
+            "type": "sections",
+            "id": "tabs",
+            "arrangement": "tabs",
+            "style": "tab",
+            "gap": 44,
+            "selectedIndicator": {
+              "kind": "underline",
+              "color": "@primary",
+              "width": 4,
+              "gap": 8
             },
             "frame": {
-              "x": "2.5%",
-              "y": "61.5%",
-              "w": "95%",
-              "h": "36.5%"
+              "x": "5%",
+              "y": "5.5%",
+              "w": "55%",
+              "h": "5%"
+            }
+          },
+          {
+            "type": "statusIcons",
+            "id": "status",
+            "showWhen": "statusBarEnabled",
+            "iconSize": 30,
+            "gap": 6,
+            "color": "@onSurface",
+            "focusFill": "@onSurface/20",
+            "frame": {
+              "x": "95%",
+              "y": "3%",
+              "anchor": "topEnd"
             }
           },
           {
@@ -258,8 +319,10 @@
             "style": "clock",
             "showWhen": "clockEnabled",
             "frame": {
-              "x": "5%",
-              "y": "6%"
+              "x": "95%",
+              "y": "9.5%",
+              "anchor": "topEnd",
+              "w": "35%"
             }
           },
           {
@@ -268,19 +331,10 @@
             "style": "date",
             "showWhen": "dateEnabled",
             "frame": {
-              "x": "5%",
-              "y": "19.5%"
-            }
-          },
-          {
-            "type": "text",
-            "id": "wordmark",
-            "text": "Wishy",
-            "style": "brand",
-            "frame": {
-              "x": "70%",
-              "y": "7%",
-              "w": "25%"
+              "x": "95%",
+              "y": "20%",
+              "anchor": "topEnd",
+              "w": "35%"
             }
           },
           {
@@ -290,42 +344,37 @@
             "showWhen": "hasFocusedApp",
             "frame": {
               "x": "5%",
-              "y": "42.5%"
+              "y": "27%",
+              "w": "90%"
             }
           },
           {
-            "type": "sections",
-            "id": "tabs",
-            "arrangement": "tabs",
-            "style": "tab",
-            "gap": 40,
-            "selectedIndicator": {
-              "kind": "underline",
-              "color": "@primary",
-              "width": 5,
-              "gap": 8
-            },
+            "type": "text",
+            "id": "position",
+            "bind": "focusedPosition",
+            "style": "count",
+            "showWhen": "hasFocusedApp",
             "frame": {
               "x": "5%",
-              "y": "53%",
-              "w": "90%",
-              "h": "6%"
+              "y": "45.5%",
+              "w": "40%"
             }
           },
           {
             "type": "apps",
             "id": "apps",
             "arrangement": "rail",
-            "card": "banner",
-            "itemWidth": 360,
-            "gap": 30,
+            "card": "tile",
+            "itemWidth": 250,
+            "gap": 34,
             "scroll": "edge",
+            "wrap": true,
             "focusScope": "section",
             "frame": {
               "x": 0,
-              "y": "64%",
+              "y": "52%",
               "w": "100%",
-              "h": "32%"
+              "h": "38%"
             },
             "padding": {
               "left": "5%",
@@ -343,7 +392,8 @@
       },
       "merge": {
         "background": {
-          "image": "assets/ui/wallpaper-light.webp"
+          "image": "assets/ui/wallpaper-light.webp",
+          "dim": 0.0
         }
       }
     },
@@ -358,5 +408,8 @@
         }
       }
     }
-  ]
+  ],
+  "chrome": {
+    "statusBar": "theme"
+  }
 }

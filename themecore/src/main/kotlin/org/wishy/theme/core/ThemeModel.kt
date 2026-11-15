@@ -106,8 +106,20 @@ object InsetsSerializer : KSerializer<Insets> {
 }
 @Serializable enum class ShowWhen {
     @SerialName("always") ALWAYS, @SerialName("clockEnabled") CLOCK_ENABLED,
-    @SerialName("dateEnabled") DATE_ENABLED, @SerialName("hasFocusedApp") HAS_FOCUSED_APP
+    @SerialName("dateEnabled") DATE_ENABLED, @SerialName("hasFocusedApp") HAS_FOCUSED_APP,
+    @SerialName("statusBarEnabled") STATUS_BAR_ENABLED, @SerialName("hasSections") HAS_SECTIONS,
+    @SerialName("online") ONLINE
 }
+/** Fixed pieces of live data a text node can show. A closed list, so a theme can never run an expression. */
+@Serializable enum class TextBind {
+    @SerialName("none") NONE, @SerialName("sectionName") SECTION_NAME, @SerialName("appCount") APP_COUNT,
+    @SerialName("focusedPackage") FOCUSED_PACKAGE, @SerialName("focusedPosition") FOCUSED_POSITION,
+    @SerialName("networkName") NETWORK_NAME
+}
+@Serializable enum class StatusItem { @SerialName("vpn") VPN, @SerialName("network") NETWORK, @SerialName("settings") SETTINGS }
+/** Who draws the strip of status icons: the launcher's own bar above the theme, or the theme itself. */
+@Serializable enum class StatusBarMode { @SerialName("launcher") LAUNCHER, @SerialName("theme") THEME }
+@Serializable data class Chrome(val statusBar: StatusBarMode = StatusBarMode.LAUNCHER)
 @Serializable enum class SectionsArrangement { @SerialName("tabs") TABS, @SerialName("dots") DOTS, @SerialName("list") LIST }
 @Serializable enum class AppsArrangement { @SerialName("rail") RAIL, @SerialName("grid") GRID, @SerialName("list") LIST, @SerialName("cross") CROSS }
 @Serializable enum class ScrollMode { @SerialName("edge") EDGE, @SerialName("centerFocused") CENTER_FOCUSED }
@@ -307,7 +319,17 @@ data class ImageNode(
 data class TextNode(
     override val id: String? = null, override val frame: Frame? = null, override val weight: Float? = null,
     override val padding: Insets? = null, override val visible: Boolean = true, override val showWhen: ShowWhen = ShowWhen.ALWAYS,
-    val text: String, val style: String? = null,
+    val text: String = "", val style: String? = null, val bind: TextBind = TextBind.NONE,
+) : Node()
+
+/** The VPN, network and settings buttons. The launcher still handles what they do and the show-VPN / show-status-bar settings. */
+@Serializable @SerialName("statusIcons")
+data class StatusIconsNode(
+    override val id: String? = null, override val frame: Frame? = null, override val weight: Float? = null,
+    override val padding: Insets? = null, override val visible: Boolean = true, override val showWhen: ShowWhen = ShowWhen.ALWAYS,
+    val items: List<StatusItem> = listOf(StatusItem.VPN, StatusItem.NETWORK, StatusItem.SETTINGS),
+    val iconSize: Float = 30f, val gap: Float = 8f, val color: String? = null, val inactiveColor: String? = null,
+    val focusFill: String? = null, val shape: Shape = Shape(ShapeKind.ROUNDED, 512f),
 ) : Node()
 
 @Serializable @SerialName("clock")
@@ -337,6 +359,8 @@ data class SectionsNode(
     override val padding: Insets? = null, override val visible: Boolean = true, override val showWhen: ShowWhen = ShowWhen.ALWAYS,
     val arrangement: SectionsArrangement = SectionsArrangement.TABS, val style: String? = null,
     val selectedIndicator: FocusIndicator? = null, val gap: Float = 16f,
+    /** True: the theme is built around sections, so they stay on and the "group apps into sections" switch is hidden. */
+    val always: Boolean = false,
 ) : Node()
 
 @Serializable @SerialName("apps")
@@ -379,6 +403,7 @@ data class ThemeDoc(
     val background: Background = Background(),
     val cardStyles: Map<String, CardStyle> = emptyMap(),
     val motion: Motion = Motion(),
+    val chrome: Chrome = Chrome(),
     val screens: Screens,
 ) {
     /** The scheme to draw with: the wanted one if the theme has it, otherwise the one it does have. */
@@ -396,7 +421,31 @@ data class ThemeDoc(
         get() = findApps(screens.home.root) ?: throw ThemeRejectedException("The theme has no apps node.")
 
     val hasSections: Boolean
-        get() = anySections(screens.home.root)
+        get() = anyNode { it is SectionsNode }
+
+    // What this theme can actually show. The settings screens use these to hide switches that would do nothing here.
+    val sectionsAlways: Boolean get() = anyNode { it is SectionsNode && it.always }
+    val hasClock: Boolean get() = anyNode { it is ClockNode }
+    val hasDate: Boolean get() = anyNode { it is DateNode }
+    val hasStatusIcons: Boolean get() = anyNode { it is StatusIconsNode }
+    val hasLabels: Boolean
+        get() = cardStyles.values.any { it.label.position != LabelPosition.NONE }
+    /** True if any shape in the theme has a corner the roundness setting can change. */
+    val hasCorners: Boolean
+        get() = cardStyles.values.any { it.shape.kind != ShapeKind.RECT && it.shape.radius > 0f } ||
+            anyNode { it is ShapeNode && it.shape.kind != ShapeKind.RECT && it.shape.radius > 0f }
+    /** True if the launcher's own status bar is hidden because the theme takes over. */
+    val ownsStatusBar: Boolean get() = chrome.statusBar == StatusBarMode.THEME
+
+    /** True if any node in the home screen tree satisfies [pred]. */
+    fun anyNode(pred: (Node) -> Boolean): Boolean = anyIn(screens.home.root, pred)
+
+    private fun anyIn(n: Node, pred: (Node) -> Boolean): Boolean = pred(n) || when (n) {
+        is StackNode -> n.children.any { anyIn(it, pred) }
+        is RowNode -> n.children.any { anyIn(it, pred) }
+        is ColumnNode -> n.children.any { anyIn(it, pred) }
+        else -> false
+    }
 
     private fun findApps(n: Node): AppsNode? = when (n) {
         is AppsNode -> n
@@ -404,14 +453,6 @@ data class ThemeDoc(
         is RowNode -> n.children.firstNotNullOfOrNull { findApps(it) }
         is ColumnNode -> n.children.firstNotNullOfOrNull { findApps(it) }
         else -> null
-    }
-
-    private fun anySections(n: Node): Boolean = when (n) {
-        is SectionsNode -> true
-        is StackNode -> n.children.any { anySections(it) }
-        is RowNode -> n.children.any { anySections(it) }
-        is ColumnNode -> n.children.any { anySections(it) }
-        else -> false
     }
 }
 

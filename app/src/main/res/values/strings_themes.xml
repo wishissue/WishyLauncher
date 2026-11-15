@@ -19,6 +19,16 @@
     <string name="anim_reduced">Reduced</string>
     <string name="anim_off">Off</string>
     <string name="themes_clock">Show clock</string>
+    <string name="app_labels_label">Show app names</string>
+    <string name="accent_label">Accent colour</string>
+    <string name="accent_default">Default</string>
+    <string name="accent_green">Green</string>
+    <string name="accent_yellow">Yellow</string>
+    <string name="accent_red">Red</string>
+    <string name="accent_purple">Purple</string>
+    <string name="accent_cyan">Cyan</string>
+    <string name="themes_sections">Group apps into sections</string>
+    <string name="themes_sections_sub">Off: one simple row of all your apps. On: tabs for Streaming, Games and so on.</string>
     <string name="themes_date">Date format</string>
     <string name="themes_date_off">Off</string>
     <string name="themes_network">Network</string>

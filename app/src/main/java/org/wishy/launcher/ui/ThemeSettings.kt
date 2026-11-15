@@ -73,6 +73,7 @@ internal fun ThemesScreen(
     val context = LocalContext.current
     val storage = remember { ThemeStorage.get(context) }
     val scope = rememberCoroutineScope()
+    val caps = rememberThemeCaps(config.themeId)
     fun update(transform: (LauncherConfig) -> LauncherConfig) { scope.launch { store.update(transform) } }
 
     var listTick by remember { mutableIntStateOf(0) }
@@ -160,13 +161,20 @@ internal fun ThemesScreen(
             current = config.animations.coerceIn(0, 2),
             onSelect = { v -> update { it.copy(animations = v) } },
         )
-        SettingsItem(
+        if (caps.clock) SettingsItem(
             selected = false,
             onClick = { update { it.copy(showClock = !it.showClock) } },
             headlineContent = { Text(stringResource(R.string.themes_clock)) },
             trailingContent = { SwitchPill(config.showClock) },
         )
-        SelectorRow(
+        if (caps.sectionsOptional) SettingsItem(
+            selected = false,
+            onClick = { update { it.copy(themeSections = !it.themeSections) } },
+            headlineContent = { Text(stringResource(R.string.themes_sections)) },
+            supportingContent = { Text(stringResource(R.string.themes_sections_sub)) },
+            trailingContent = { SwitchPill(config.themeSections) },
+        )
+        if (caps.date) SelectorRow(
             label = stringResource(R.string.themes_date),
             value = org.wishy.launcher.data.DATE_FORMATS.getOrElse(config.dateFormat) { "" }.ifEmpty { stringResource(R.string.themes_date_off) },
             steps = org.wishy.launcher.data.DATE_FORMATS.size,
@@ -361,4 +369,82 @@ private fun ThemeCard(item: CardItem, selected: Boolean, modifier: Modifier, onC
             }
         }
     }
+}
+
+
+/**
+ * What the active theme can actually show. Settings that would do nothing under it are hidden, so no switch on
+ * screen is ever a dead button. Read from the theme's own file; the classic layouts support everything.
+ */
+internal class ThemeCaps(
+    val clock: Boolean,
+    val date: Boolean,
+    val sections: Boolean,
+    /** Sections exist and the user may switch them on or off (false when the theme keeps them always on). */
+    val sectionsOptional: Boolean,
+    val statusIcons: Boolean,
+    /** The theme hides the launcher's status bar (and may draw its own icons). */
+    val ownsStatusBar: Boolean,
+    /** Some shape has a corner the roundness setting can change. */
+    val corners: Boolean,
+    val labels: Boolean,
+    /** "allowed", "ignored" or "required": whether the user's wallpaper choice shows. */
+    val wallpaper: String,
+) {
+    companion object {
+        val Classic = ThemeCaps(true, true, true, true, false, false, true, true, "allowed")
+    }
+}
+
+private fun roundedCorner(shape: org.json.JSONObject?): Boolean {
+    val kind = shape?.optString("kind", "rounded") ?: "rounded"
+    val radius = shape?.optDouble("radius", 12.0) ?: 12.0
+    return kind != "rect" && radius > 0.0
+}
+
+internal fun scanCaps(storage: ThemeStorage, id: String): ThemeCaps? = runCatching {
+    val dir = storage.dirFor(id) ?: return@runCatching null
+    val root = org.json.JSONObject(java.io.File(dir, "theme.json").readText())
+    val types = HashSet<String>()
+    var corners = false
+    var sectionsAlways = false
+    fun walk(n: org.json.JSONObject) {
+        val type = n.optString("type")
+        types += type
+        if (type == "sections" && n.optBoolean("always", false)) sectionsAlways = true
+        if (type == "shape" && roundedCorner(n.optJSONObject("shape"))) corners = true
+        val kids = n.optJSONArray("children") ?: return
+        for (i in 0 until kids.length()) walk(kids.getJSONObject(i))
+    }
+    walk(root.getJSONObject("screens").getJSONObject("home").getJSONObject("root"))
+    var labels = false
+    root.optJSONObject("cardStyles")?.let { cards ->
+        for (k in cards.keys()) {
+            val card = cards.getJSONObject(k)
+            if (roundedCorner(card.optJSONObject("shape"))) corners = true
+            if ((card.optJSONObject("label")?.optString("position", "below") ?: "below") != "none") labels = true
+        }
+    }
+    ThemeCaps(
+        clock = "clock" in types,
+        date = "date" in types,
+        sections = "sections" in types,
+        sectionsOptional = "sections" in types && !sectionsAlways,
+        statusIcons = "statusIcons" in types,
+        ownsStatusBar = root.optJSONObject("chrome")?.optString("statusBar", "launcher") == "theme",
+        corners = corners,
+        labels = labels,
+        wallpaper = root.optJSONObject("background")?.optString("userWallpaper", "allowed") ?: "allowed",
+    )
+}.getOrNull()
+
+@Composable
+internal fun rememberThemeCaps(themeId: String): ThemeCaps {
+    val context = LocalContext.current
+    val storage = remember { ThemeStorage.get(context) }
+    val caps by produceState(ThemeCaps.Classic, themeId) {
+        value = if (themeId == ThemeStorage.CLASSIC_ID) ThemeCaps.Classic
+        else withContext(Dispatchers.IO) { scanCaps(storage, themeId) } ?: ThemeCaps.Classic
+    }
+    return caps
 }

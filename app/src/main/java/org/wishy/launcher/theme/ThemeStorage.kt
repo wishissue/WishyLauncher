@@ -61,12 +61,20 @@ class ThemeStorage private constructor(private val context: Context) {
         prepared = true
     }
 
-    /** The folder for [id]: an installed copy wins over the bundled one. Null if neither exists. */
+    /** The folder for [id]: an installed copy wins over the bundled one unless the bundled one is newer. Null if neither exists. */
     fun dirFor(id: String): File? {
         if (!ThemeLimits.ID_REGEX.matches(id)) return null
         val installed = runCatching { installer.installedDir(id) }.getOrNull()
+        val bundled = File(bundledRoot, id).takeIf { File(it, "theme.json").isFile }
+        if (installed != null && bundled != null) {
+            val instSummary = ThemeLoader.readSummary(installed)
+            val bundSummary = ThemeLoader.readSummary(bundled)
+            if (instSummary != null && bundSummary != null && isVersionGreaterOrEqual(bundSummary.version, instSummary.version)) {
+                return bundled
+            }
+        }
         if (installed != null) return installed
-        return File(bundledRoot, id).takeIf { File(it, "theme.json").isFile }
+        return bundled
     }
 
     fun isInstalled(id: String): Boolean = runCatching { installer.installedDir(id) }.getOrNull() != null
@@ -121,7 +129,7 @@ class ThemeStorage private constructor(private val context: Context) {
 
     private fun syncBundled() {
         val am = context.assets
-        val version = runCatching {
+        val versionCode = runCatching {
             PackageInfoCompat.getLongVersionCode(context.packageManager.getPackageInfo(context.packageName, 0))
         }.getOrDefault(0L).toString()
         val names = am.list("") ?: return
@@ -130,11 +138,37 @@ class ThemeStorage private constructor(private val context: Context) {
             if ((am.list(name) ?: emptyArray()).none { it == "theme.json" }) continue
             val target = File(bundledRoot, name)
             val marker = File(target, MARKER)
-            if (File(target, "theme.json").isFile && marker.isFile && marker.readText().trim() == version) continue
+            val assetThemeText = runCatching { am.open("$name/theme.json").bufferedReader().use { it.readText() } }.getOrNull()
+            val assetHash = assetThemeText?.hashCode() ?: 0
+            val versionKey = "$versionCode:$assetHash"
+
+            if (File(target, "theme.json").isFile && marker.isFile && marker.readText().trim() == versionKey) continue
             target.deleteRecursively()
             copyAsset(name, target)
-            File(target, MARKER).writeText(version)
+            File(target, MARKER).writeText(versionKey)
+
+            val installedDir = runCatching { installer.installedDir(name) }.getOrNull()
+            if (installedDir != null) {
+                val bundSummary = ThemeLoader.readSummary(target)
+                val instSummary = ThemeLoader.readSummary(installedDir)
+                if (bundSummary != null && (instSummary == null || isVersionGreaterOrEqual(bundSummary.version, instSummary.version))) {
+                    remove(name)
+                }
+            }
         }
+    }
+
+    private fun isVersionGreaterOrEqual(v1: String, v2: String): Boolean {
+        val p1 = v1.split('.').mapNotNull { it.toIntOrNull() }
+        val p2 = v2.split('.').mapNotNull { it.toIntOrNull() }
+        val len = maxOf(p1.size, p2.size)
+        for (i in 0 until len) {
+            val n1 = p1.getOrElse(i) { 0 }
+            val n2 = p2.getOrElse(i) { 0 }
+            if (n1 > n2) return true
+            if (n1 < n2) return false
+        }
+        return true
     }
 
     private fun copyAsset(path: String, dest: File) {

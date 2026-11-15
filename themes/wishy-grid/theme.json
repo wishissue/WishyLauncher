@@ -1,0 +1,353 @@
+{
+  "$schema": "../../schema/wishy-theme.schema.v1.json",
+  "schemaVersion": 1,
+  "id": "wishy-grid",
+  "name": "Wishy Grid",
+  "version": "1.0.0",
+  "author": "Wishy Launcher contributors",
+  "description": "A different layout from the same engine: sections down the left, every app in a grid on the right, the clock on the left and the status icons drawn by the theme. Shows what a theme can restructure.",
+  "license": "GPL-3.0-only",
+  "defaultColorScheme": "system",
+  "credits": [
+    {
+      "file": "assets/fonts/PlusJakartaSans-Regular.ttf",
+      "title": "Plus Jakarta Sans Regular",
+      "author": "The Plus Jakarta Sans Project Authors",
+      "license": "OFL-1.1",
+      "source": "https://github.com/tokotype/PlusJakartaSans"
+    },
+    {
+      "file": "assets/fonts/PlusJakartaSans-SemiBold.ttf",
+      "title": "Plus Jakarta Sans SemiBold",
+      "author": "The Plus Jakarta Sans Project Authors",
+      "license": "OFL-1.1",
+      "source": "https://github.com/tokotype/PlusJakartaSans"
+    },
+    {
+      "file": "assets/fonts/PlusJakartaSans-Bold.ttf",
+      "title": "Plus Jakarta Sans Bold",
+      "author": "The Plus Jakarta Sans Project Authors",
+      "license": "OFL-1.1",
+      "source": "https://github.com/tokotype/PlusJakartaSans"
+    },
+    {
+      "file": "assets/ui/wallpaper-dark.webp",
+      "title": "Wishy wallpaper, dark",
+      "author": "Wishy Launcher contributors",
+      "license": "GPL-3.0-only",
+      "notes": "Same artwork as the Wishy theme, drawn from scratch by tools/gen-wallpapers.py."
+    },
+    {
+      "file": "assets/ui/wallpaper-light.webp",
+      "title": "Wishy wallpaper, light",
+      "author": "Wishy Launcher contributors",
+      "license": "GPL-3.0-only",
+      "notes": "Same artwork as the Wishy theme, drawn from scratch by tools/gen-wallpapers.py."
+    },
+    {
+      "file": "assets/art/default.png",
+      "title": "Placeholder cover",
+      "author": "Wishy Launcher contributors",
+      "license": "GPL-3.0-only",
+      "notes": "Same artwork as the Wishy theme, drawn from scratch by tools/gen-wallpapers.py."
+    }
+  ],
+  "colorSchemes": {
+    "light": {
+      "background": "#E6F1FF",
+      "surface": "#FFFFFF",
+      "surfaceVariant": "#DAE5F6",
+      "onSurface": "#101828",
+      "onSurfaceMuted": "#46556C",
+      "primary": "#0166FF",
+      "onPrimary": "#FFFFFF",
+      "accent": "#946200",
+      "outline": "#C3D4EE",
+      "scrim": "#660B1B33",
+      "custom": {
+        "glass": "#B8FFFFFF",
+        "glassEdge": "#99FFFFFF",
+        "ring": "#FFFFFF"
+      }
+    },
+    "dark": {
+      "background": "#080B12",
+      "surface": "#111725",
+      "surfaceVariant": "#182235",
+      "onSurface": "#F1F4FB",
+      "onSurfaceMuted": "#B0BCD0",
+      "primary": "#66A3FF",
+      "onPrimary": "#002266",
+      "accent": "#F4C66A",
+      "outline": "#303B4F",
+      "scrim": "#99000000",
+      "custom": {
+        "glass": "#80111725",
+        "glassEdge": "#26FFFFFF",
+        "ring": "#FFFFFF"
+      }
+    }
+  },
+  "fonts": {
+    "regular": {
+      "file": "assets/fonts/PlusJakartaSans-Regular.ttf"
+    },
+    "semibold": {
+      "file": "assets/fonts/PlusJakartaSans-SemiBold.ttf"
+    },
+    "bold": {
+      "file": "assets/fonts/PlusJakartaSans-Bold.ttf"
+    }
+  },
+  "textStyles": {
+    "clock": {
+      "font": "bold",
+      "size": 88,
+      "color": "@onSurface",
+      "letterSpacing": -2,
+      "maxLines": 1
+    },
+    "date": {
+      "font": "semibold",
+      "size": 26,
+      "color": "@onSurfaceMuted",
+      "maxLines": 1
+    },
+    "section": {
+      "font": "semibold",
+      "size": 32,
+      "color": "@onSurfaceMuted",
+      "maxLines": 1
+    },
+    "label": {
+      "font": "semibold",
+      "size": 22,
+      "color": "@onSurface",
+      "maxLines": 1
+    },
+    "name": {
+      "font": "bold",
+      "size": 40,
+      "color": "@onSurface",
+      "maxLines": 1
+    },
+    "meta": {
+      "font": "regular",
+      "size": 22,
+      "color": "@onSurfaceMuted",
+      "maxLines": 1
+    }
+  },
+  "background": {
+    "color": "@background",
+    "image": "assets/ui/wallpaper-dark.webp",
+    "fit": "crop",
+    "dim": 0.1,
+    "userWallpaper": "allowed"
+  },
+  "cardStyles": {
+    "tile": {
+      "aspect": "1:1",
+      "shape": {
+        "kind": "rounded",
+        "radius": 22
+      },
+      "fill": "@surface",
+      "artwork": {
+        "source": "auto",
+        "fit": "crop",
+        "iconSize": "58%",
+        "placeholderFill": "@surfaceVariant",
+        "themeArt": true
+      },
+      "label": {
+        "position": "focusedOnly",
+        "style": "label"
+      },
+      "idle": {
+        "scale": 1.0,
+        "alpha": 0.95
+      },
+      "focused": {
+        "scale": 1.06,
+        "alpha": 1.0,
+        "shadow": {
+          "color": "@primary/45",
+          "dy": 10,
+          "blur": 30
+        },
+        "indicator": {
+          "kind": "ring",
+          "color": "@primary",
+          "width": 4,
+          "gap": 4
+        }
+      },
+      "moving": {
+        "scale": 1.1,
+        "indicator": {
+          "kind": "ring",
+          "color": "@accent",
+          "width": 5,
+          "gap": 5,
+          "blink": true,
+          "blinkMillis": 500
+        }
+      }
+    }
+  },
+  "motion": {
+    "focusMillis": 60,
+    "scrollMillis": 100,
+    "easing": "decelerate",
+    "screenTransition": "none"
+  },
+  "chrome": {
+    "statusBar": "theme"
+  },
+  "screens": {
+    "home": {
+      "root": {
+        "type": "stack",
+        "children": [
+          {
+            "type": "shape",
+            "id": "panel",
+            "shape": {
+              "kind": "rounded",
+              "radius": 36
+            },
+            "fill": "@custom.glass",
+            "border": {
+              "width": 1,
+              "color": "@custom.glassEdge"
+            },
+            "frame": {
+              "x": "2%",
+              "y": "4%",
+              "w": "27%",
+              "h": "92%"
+            }
+          },
+          {
+            "type": "clock",
+            "id": "clock",
+            "style": "clock",
+            "showWhen": "clockEnabled",
+            "frame": {
+              "x": "4.5%",
+              "y": "8%"
+            }
+          },
+          {
+            "type": "date",
+            "id": "date",
+            "style": "date",
+            "showWhen": "dateEnabled",
+            "frame": {
+              "x": "4.5%",
+              "y": "23%"
+            }
+          },
+          {
+            "type": "sections",
+            "id": "sections",
+            "arrangement": "list",
+      "always": true,
+            "style": "section",
+            "gap": 18,
+            "selectedIndicator": {
+              "kind": "bar",
+              "color": "@primary",
+              "width": 6,
+              "gap": 14
+            },
+            "frame": {
+              "x": "4.5%",
+              "y": "40%",
+              "w": "22%",
+              "h": "34%"
+            }
+          },
+          {
+            "type": "statusIcons",
+            "id": "status",
+            "showWhen": "statusBarEnabled",
+            "iconSize": 28,
+            "gap": 6,
+            "color": "@onSurface",
+            "focusFill": "@onSurface/20",
+            "frame": {
+              "x": "4.5%",
+              "y": "88%",
+              "anchor": "bottomStart"
+            }
+          },
+          {
+            "type": "focusedAppName",
+            "id": "focusName",
+            "style": "name",
+            "showWhen": "hasFocusedApp",
+            "frame": {
+              "x": "33%",
+              "y": "6%",
+              "w": "50%"
+            }
+          },
+          {
+            "type": "text",
+            "id": "count",
+            "bind": "focusedPosition",
+            "style": "meta",
+            "showWhen": "hasFocusedApp",
+            "frame": {
+              "x": "97%",
+              "y": "7.5%",
+              "anchor": "topEnd",
+              "w": "15%"
+            }
+          },
+          {
+            "type": "apps",
+            "id": "apps",
+            "arrangement": "grid",
+            "card": "tile",
+            "itemWidth": 190,
+            "gap": 26,
+            "focusScope": "section",
+            "frame": {
+              "x": "31%",
+              "y": "14%",
+              "w": "67%",
+              "h": "84%"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "overrides": [
+    {
+      "when": {
+        "colorScheme": "light"
+      },
+      "merge": {
+        "background": {
+          "image": "assets/ui/wallpaper-light.webp",
+          "dim": 0.0
+        }
+      }
+    },
+    {
+      "when": {
+        "reducedMotion": true
+      },
+      "merge": {
+        "motion": {
+          "focusMillis": 0,
+          "scrollMillis": 0
+        }
+      }
+    }
+  ]
+}

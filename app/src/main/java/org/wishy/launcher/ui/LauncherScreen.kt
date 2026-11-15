@@ -665,6 +665,7 @@ fun LauncherApp(rescanTick: Int) {
             // its px-to-dp conversion matches the layout).
             val tEnv = if (themed) org.wishy.launcher.theme.rememberThemeEnv(
                 loadedTheme!!, themeDark, config.themeScalePct / 100f, config.animations,
+                org.wishy.launcher.theme.ThemeTweaks.from(config, ACCENTS),
             ) else null
             // Wallpaper + readability scrim.
             if (themed) {
@@ -737,7 +738,7 @@ fun LauncherApp(rescanTick: Int) {
                     targetValue = if (config.showStatusBar || statusBarFocused) 80.dp else 4.dp,
                     label = "statusBarHeight",
                 )
-                Box(
+                if (!(themed && loadedTheme!!.doc.ownsStatusBar)) Box(
                     Modifier
                         .fillMaxWidth()
                         .height(statusBarHeight)
@@ -779,6 +780,13 @@ fun LauncherApp(rescanTick: Int) {
                             onMenu = { app -> if (movePkg == null) menuFor = app },
                             onGridColumns = { themeCols = it },
                             modifier = Modifier.weight(1f).fillMaxWidth(),
+                            net = net,
+                            onVpn = {
+                                if (config.vpnApp.isNotEmpty()) Actions.launchApp(context, config.vpnApp)
+                                else Actions.openVpnSettings(context)
+                            },
+                            onNetwork = { Actions.openNetworkSettings(context) },
+                            onSettings = { showSettings = true },
                         )
                     }
                     else -> when (config.layout) {

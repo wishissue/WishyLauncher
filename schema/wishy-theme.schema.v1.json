@@ -48,6 +48,13 @@
       "additionalProperties": { "$ref": "#/$defs/cardStyle" }
     },
     "motion": { "$ref": "#/$defs/motion" },
+    "chrome": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "statusBar": { "enum": ["launcher", "theme"], "default": "launcher", "description": "launcher: the launcher draws its status bar above the theme. theme: it is hidden and the theme places a statusIcons node (or none). Menu always opens Settings." }
+      }
+    },
     "screens": {
       "type": "object",
       "required": ["home"],
@@ -337,7 +344,7 @@
         "weight": { "type": "number", "minimum": 0, "maximum": 100, "description": "Share of leftover space inside row and column." },
         "padding": { "$ref": "#/$defs/insets" },
         "visible": { "type": "boolean", "default": true },
-        "showWhen": { "enum": ["always", "clockEnabled", "dateEnabled", "hasFocusedApp"], "default": "always" }
+        "showWhen": { "enum": ["always", "clockEnabled", "dateEnabled", "hasFocusedApp", "statusBarEnabled", "hasSections", "online"], "default": "always" }
       }
     },
     "node": {
@@ -353,7 +360,8 @@
         { "$ref": "#/$defs/nodeFocusedApp" },
         { "$ref": "#/$defs/nodeSections" },
         { "$ref": "#/$defs/nodeApps" },
-        { "$ref": "#/$defs/nodeSpacer" }
+        { "$ref": "#/$defs/nodeSpacer" },
+        { "$ref": "#/$defs/nodeStatusIcons" }
       ]
     },
     "nodeStack": {
@@ -419,10 +427,11 @@
     },
     "nodeText": {
       "type": "object",
-      "required": ["type", "text"],
+      "required": ["type"],
       "properties": {
         "type": { "const": "text" },
-        "text": { "type": "string", "maxLength": 80, "description": "Literal text only. No interpolation." },
+        "text": { "type": "string", "maxLength": 80, "description": "Literal text only. No interpolation. Ignored when bind is set." },
+        "bind": { "enum": ["none", "sectionName", "appCount", "focusedPackage", "focusedPosition", "networkName"], "default": "none", "description": "Show a fixed piece of live data instead of the literal text." },
         "style": { "type": "string", "description": "Key in textStyles." }
       },
       "allOf": [{ "$ref": "#/$defs/nodeCommon" }],
@@ -467,7 +476,8 @@
         "arrangement": { "enum": ["tabs", "dots", "list"], "default": "tabs" },
         "style": { "type": "string", "description": "Key in textStyles for section names." },
         "selectedIndicator": { "$ref": "#/$defs/focusIndicator" },
-        "gap": { "type": "number", "minimum": 0, "maximum": 256 }
+        "gap": { "type": "number", "minimum": 0, "maximum": 256 },
+        "always": { "type": "boolean", "default": false, "description": "Keep sections on whatever the user's setting says (for a theme built around them)." }
       },
       "allOf": [{ "$ref": "#/$defs/nodeCommon" }],
       "unevaluatedProperties": false
@@ -487,6 +497,22 @@
         "scroll": { "enum": ["edge", "centerFocused"], "default": "edge" },
         "wrap": { "type": "boolean", "default": false },
         "focusScope": { "enum": ["section", "all"], "default": "section" }
+      },
+      "allOf": [{ "$ref": "#/$defs/nodeCommon" }],
+      "unevaluatedProperties": false
+    },
+    "nodeStatusIcons": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "statusIcons" },
+        "items": { "type": "array", "items": { "enum": ["vpn", "network", "settings"] }, "minItems": 1, "maxItems": 3, "uniqueItems": true },
+        "iconSize": { "type": "number", "minimum": 12, "maximum": 96 },
+        "gap": { "type": "number", "minimum": 0, "maximum": 256 },
+        "color": { "$ref": "#/$defs/colorRef" },
+        "inactiveColor": { "$ref": "#/$defs/colorRef" },
+        "focusFill": { "$ref": "#/$defs/colorRef" },
+        "shape": { "$ref": "#/$defs/shape" }
       },
       "allOf": [{ "$ref": "#/$defs/nodeCommon" }],
       "unevaluatedProperties": false

@@ -5,15 +5,28 @@
     {
       "id": "wishy",
       "name": "Wishy",
-      "version": "3.0.0",
+      "version": "4.1.0",
       "author": "Wishy Launcher contributors",
-      "description": "The Wishy Browser look on your TV. Brand blue, Plus Jakarta Sans, soft rounded shapes, a glass shelf for your apps and a blue glow on the focused banner. Light and dark wallpapers included, and you can swap them for your own.",
+      "description": "Clean, console-style home. A big title for the focused app, one calm row of square tiles, a bold clock, and hints along the bottom. Every Display setting (corners, size, spacing, labels, accent, wallpaper, clock, date) applies. Sections are off by default: just one row of all your apps.",
       "license": "GPL-3.0-only",
       "schemaVersion": 1,
       "minLauncherVersion": 1,
       "downloadUrl": "themes/wishy.zip",
-      "sha256": "3dc28e09a4e11975aa9627078c772998f32dec2da1aeeb7b0627d666a1f30a90",
-      "sizeBytes": 476586
+      "sha256": "d75b7412c191ab3a9a7924748b38fa8b112a2534ab7b10b27e33c3befd89db4a",
+      "sizeBytes": 503180
+    },
+    {
+      "id": "wishy-grid",
+      "name": "Wishy Grid",
+      "version": "1.0.0",
+      "author": "Wishy Launcher contributors",
+      "description": "A different layout from the same engine: sections down the left, every app in a grid on the right, the clock on the left and the status icons drawn by the theme. Shows what a theme can restructure.",
+      "license": "GPL-3.0-only",
+      "schemaVersion": 1,
+      "minLauncherVersion": 1,
+      "downloadUrl": "themes/wishy-grid.zip",
+      "sha256": "1a3d2d636e110387f2f9dc257368f6f516135f12f3acdf665e38ebd455f86f54",
+      "sizeBytes": 452149
     }
   ]
 }

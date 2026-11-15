@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -44,7 +45,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
@@ -79,6 +82,8 @@ import kotlinx.coroutines.delay
 import org.wishy.launcher.data.AppEntry
 import org.wishy.launcher.data.CategoryCfg
 import org.wishy.launcher.data.LauncherConfig
+import org.wishy.launcher.data.NetStatus
+import org.wishy.launcher.ui.AppIcons
 import org.wishy.theme.core.Anchor
 import org.wishy.theme.core.AppsArrangement
 import org.wishy.theme.core.AppsNode
@@ -103,6 +108,9 @@ import org.wishy.theme.core.ShapeNode
 import org.wishy.theme.core.ShowWhen
 import org.wishy.theme.core.SpacerNode
 import org.wishy.theme.core.StackNode
+import org.wishy.theme.core.StatusIconsNode
+import org.wishy.theme.core.StatusItem
+import org.wishy.theme.core.TextBind
 import org.wishy.theme.core.TextNode
 import org.wishy.theme.core.UserWallpaper
 import java.text.SimpleDateFormat
@@ -133,6 +141,10 @@ class HomeUi {
     var onLaunch: (AppEntry) -> Unit = {}
     var onMenu: (AppEntry) -> Unit = {}
     var onGridColumns: (Int) -> Unit = {}
+    var net by mutableStateOf(NetStatus())
+    var onVpn: () -> Unit = {}
+    var onNetwork: () -> Unit = {}
+    var onSettings: () -> Unit = {}
 
     val selectedIndex: Int get() = selected.coerceIn(0, max(0, sections.lastIndex))
 
@@ -200,10 +212,14 @@ fun ThemedHome(
     onMenu: (AppEntry) -> Unit,
     onGridColumns: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    net: NetStatus = NetStatus(),
+    onVpn: () -> Unit = {},
+    onNetwork: () -> Unit = {},
+    onSettings: () -> Unit = {},
 ) {
     val doc = env.doc
     val ui = remember { HomeUi() }
-    val flat = remember(doc) { !doc.hasSections || doc.appsNode.focusScope == FocusScope.ALL }
+    val flat = remember(doc, config.themeSections) { !doc.hasSections || doc.appsNode.focusScope == FocusScope.ALL || !(config.themeSections || doc.sectionsAlways) }
     // Written during composition, before any child reads it: children always see this frame's values.
     ui.sections = sections
     ui.flatApps = flatApps
@@ -216,6 +232,10 @@ fun ThemedHome(
     ui.onLaunch = onLaunch
     ui.onMenu = onMenu
     ui.onGridColumns = onGridColumns
+    ui.net = net
+    ui.onVpn = onVpn
+    ui.onNetwork = onNetwork
+    ui.onSettings = onSettings
 
     Box(
         modifier
@@ -343,6 +363,9 @@ private fun NodeView(node: Node, env: ThemeEnv, ui: HomeUi, modifier: Modifier =
         ShowWhen.CLOCK_ENABLED -> if (!ui.config.showClock) return
         ShowWhen.DATE_ENABLED -> if (ui.date.isEmpty()) return
         ShowWhen.HAS_FOCUSED_APP -> if (ui.focusedPkg == null) return
+        ShowWhen.STATUS_BAR_ENABLED -> if (!ui.config.showStatusBar) return
+        ShowWhen.HAS_SECTIONS -> if (ui.flat || ui.sections.size < 2) return
+        ShowWhen.ONLINE -> if (!ui.net.connected) return
         ShowWhen.ALWAYS -> {}
     }
     val pad = node.padding
@@ -354,7 +377,7 @@ private fun NodeView(node: Node, env: ThemeEnv, ui: HomeUi, modifier: Modifier =
         }
         is RowNode -> Row(
             m,
-            horizontalArrangement = Arrangement.spacedBy(env.dims.dp(node.gap)),
+            horizontalArrangement = Arrangement.spacedBy(env.dims.dp(node.gap * env.tweaks.gapScale)),
             verticalAlignment = alignV(node.align),
         ) {
             node.children.forEach { c ->
@@ -365,7 +388,7 @@ private fun NodeView(node: Node, env: ThemeEnv, ui: HomeUi, modifier: Modifier =
         }
         is ColumnNode -> Column(
             m,
-            verticalArrangement = Arrangement.spacedBy(env.dims.dp(node.gap)),
+            verticalArrangement = Arrangement.spacedBy(env.dims.dp(node.gap * env.tweaks.gapScale)),
             horizontalAlignment = alignH(node.align),
         ) {
             node.children.forEach { c ->
@@ -375,7 +398,7 @@ private fun NodeView(node: Node, env: ThemeEnv, ui: HomeUi, modifier: Modifier =
             }
         }
         is ShapeNode -> {
-            val shape = remember(node, env) { composeShape(node.shape, env.dims) }
+            val shape = remember(node, env) { composeShape(env.tweakShape(node.shape), env.dims) }
             val fill = env.colors.resolve(node.fill, Color.Transparent)
             val sh = node.shadow
             val shadowColor = env.colors.resolve(sh?.color, Color.Black.copy(alpha = 0.35f))
@@ -408,7 +431,8 @@ private fun NodeView(node: Node, env: ThemeEnv, ui: HomeUi, modifier: Modifier =
                 )
             }
         }
-        is TextNode -> ThemedText(node.text, node.style, env, m)
+        is TextNode -> ThemedText(boundText(node, ui), node.style, env, m)
+        is StatusIconsNode -> StatusIconsView(node, env, ui, m)
         is ClockNode -> ClockText(node.showSeconds, node.style, env, ui, m)
         is DateNode -> ThemedText(ui.date, node.style, env, m)
         is FocusedAppNameNode -> {
@@ -416,13 +440,98 @@ private fun NodeView(node: Node, env: ThemeEnv, ui: HomeUi, modifier: Modifier =
             val name = if (pkg == null) null else ui.flatApps.firstOrNull { it.pkg == pkg }?.label
             if (name != null) ThemedText(name, node.style, env, m)
         }
-        is SectionsNode -> SectionsView(node, env, ui, m)
+        is SectionsNode -> if (!ui.flat) SectionsView(node, env, ui, m)
         is AppsNode -> AppsView(node, env, ui, m)
         is SpacerNode -> {
             val size = node.size
             val dp = if (size == null || size.isPercent) Dp(0f) else env.dims.dp(size.value)
             Spacer(m.size(dp))
         }
+    }
+}
+
+/** The text a text node shows: its literal text, or one fixed piece of live data. */
+private fun boundText(n: TextNode, ui: HomeUi): String = when (n.bind) {
+    TextBind.NONE -> n.text
+    TextBind.SECTION_NAME -> if (ui.flat) "" else ui.sections.getOrNull(ui.selectedIndex)?.first?.name.orEmpty()
+    TextBind.APP_COUNT -> ui.shown.size.toString()
+    TextBind.FOCUSED_PACKAGE -> ui.focusedPkg.orEmpty()
+    TextBind.FOCUSED_POSITION -> {
+        val i = ui.shown.indexOfFirst { it.pkg == ui.focusedPkg }
+        if (i < 0) "" else "${i + 1} / ${ui.shown.size}"
+    }
+    TextBind.NETWORK_NAME -> when {
+        ui.net.ethernet -> "Ethernet"
+        ui.net.wifi -> "Wi-Fi"
+        else -> "Offline"
+    }
+}
+
+/** The VPN, network and settings buttons, drawn the way the theme says. What they do stays with the launcher. */
+@Composable
+private fun StatusIconsView(n: StatusIconsNode, env: ThemeEnv, ui: HomeUi, modifier: Modifier) {
+    val color = env.colors.resolve(n.color, env.colors.onSurface)
+    val dim = env.colors.resolve(n.inactiveColor, color.copy(alpha = 0.4f))
+    val fill = env.colors.resolve(n.focusFill, color.copy(alpha = 0.2f))
+    val shape = remember(n.shape, env) { composeShape(env.tweakShape(n.shape), env.dims) }
+    val size = env.dims.dp(n.iconSize)
+    Row(
+        modifier,
+        horizontalArrangement = Arrangement.spacedBy(env.dims.dp(n.gap * env.tweaks.gapScale)),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        n.items.forEach { item ->
+            when (item) {
+                StatusItem.VPN -> if (ui.config.showVpnButton) {
+                    StatusIconButton(AppIcons.Vpn, "VPN", ui.net.vpn, color, dim, fill, shape, size) { ui.onVpn() }
+                }
+                StatusItem.NETWORK -> {
+                    val icon = when {
+                        ui.net.ethernet -> AppIcons.Ethernet
+                        ui.net.wifi -> AppIcons.Wifi
+                        else -> AppIcons.WifiOff
+                    }
+                    StatusIconButton(icon, "Network", ui.net.connected, color, dim, fill, shape, size) { ui.onNetwork() }
+                }
+                StatusItem.SETTINGS -> StatusIconButton(AppIcons.Gear, "Settings", true, color, dim, fill, shape, size) { ui.onSettings() }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatusIconButton(
+    icon: ImageVector,
+    description: String,
+    active: Boolean,
+    color: Color,
+    dim: Color,
+    fill: Color,
+    shape: androidx.compose.ui.graphics.Shape,
+    size: Dp,
+    onClick: () -> Unit,
+) {
+    var focused by remember { mutableStateOf(false) }
+    Box(
+        Modifier
+            .onFocusChanged { focused = it.isFocused }
+            .clip(shape)
+            .background(if (focused) fill else Color.Transparent)
+            .onPreviewKeyEvent { e ->
+                val select = e.key == Key.DirectionCenter || e.key == Key.Enter || e.key == Key.NumPadEnter
+                if (select && e.type == KeyEventType.KeyUp) { onClick(); true } else select
+            }
+            .focusable()
+            .pointerInput(Unit) { detectTapGestures(onTap = { onClick() }) }
+            .padding(size * 0.35f),
+        contentAlignment = Alignment.Center,
+    ) {
+        Image(
+            imageVector = icon,
+            contentDescription = description,
+            colorFilter = ColorFilter.tint(if (active) color else dim),
+            modifier = Modifier.size(size),
+        )
     }
 }
 
@@ -462,7 +571,7 @@ private fun ClockText(showSeconds: Boolean, styleName: String?, env: ThemeEnv, u
 
 @Composable
 private fun SectionsView(n: SectionsNode, env: ThemeEnv, ui: HomeUi, modifier: Modifier) {
-    val gap = env.dims.dp(n.gap)
+    val gap = env.dims.dp(n.gap * env.tweaks.gapScale)
     val sections = ui.sections
     if (n.arrangement == SectionsArrangement.LIST) {
         Column(modifier, verticalArrangement = Arrangement.spacedBy(gap)) {
@@ -481,14 +590,39 @@ private fun SectionItem(index: Int, name: String, n: SectionsNode, env: ThemeEnv
     val selected = index == ui.selectedIndex
     val indicator = n.selectedIndicator
     val base = env.resolveText(n.style)
-    val color = if (selected || focused) env.colors.onSurface else base.style.color
+    val scaleS by androidx.compose.animation.core.animateFloatAsState(if (focused) 1.08f else 1f, env.focusSpec(), label = "secScale")
+    val textColor = when {
+        focused -> env.colors.primary
+        selected -> env.colors.onSurface
+        else -> base.style.color.copy(alpha = 0.7f)
+    }
+    val pillShape = remember(env) { org.wishy.launcher.ui.SmoothCornerShape(env.dims.dp(10f)) }
+
     Box(
         Modifier
+            .graphicsLayer {
+                scaleX = scaleS
+                scaleY = scaleS
+            }
             .onFocusChanged {
                 focused = it.isFocused
                 if (it.isFocused) ui.selected = index
             }
             .focusable()
+            .clip(pillShape)
+            .background(
+                when {
+                    focused -> env.colors.primary.copy(alpha = 0.25f)
+                    selected -> env.colors.surfaceVariant.copy(alpha = 0.4f)
+                    else -> Color.Transparent
+                }
+            )
+            .themeBorder(
+                if (focused) TBorder(color = "@primary", width = 2f) else null,
+                env,
+                pillShape
+            )
+            .padding(horizontal = env.dims.dp(14f), vertical = env.dims.dp(6f))
             .themeIndicator(if (selected) indicator else null, env, PlainRect, visible = true)
             .pointerInput(index) { detectTapGestures(onTap = { ui.selected = index }) },
     ) {
@@ -498,7 +632,10 @@ private fun SectionItem(index: Int, name: String, n: SectionsNode, env: ThemeEnv
         } else {
             BasicText(
                 text = if (base.uppercase) name.uppercase() else name,
-                style = base.style.copy(color = color),
+                style = base.style.copy(
+                    color = textColor,
+                    fontWeight = if (focused || selected) androidx.compose.ui.text.font.FontWeight.Bold else base.style.fontWeight
+                ),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -548,7 +685,8 @@ private fun rememberScrollSpec(env: ThemeEnv, mode: ScrollMode): BringIntoViewSp
 private fun AppsView(n: AppsNode, env: ThemeEnv, ui: HomeUi, modifier: Modifier) {
     val style = env.doc.cardStyles[n.card] ?: return
     val apps = ui.shown
-    val firstFocus = remember { FocusRequester() }
+    val focusRequesters = remember(apps) { List(apps.size) { FocusRequester() } }
+    val firstFocus = remember(focusRequesters) { focusRequesters.firstOrNull() ?: FocusRequester() }
     var focusedOnce by remember { mutableStateOf(false) }
     LaunchedEffect(apps.isNotEmpty()) {
         if (!focusedOnce && apps.isNotEmpty() && ui.movePkg == null) {
@@ -559,19 +697,22 @@ private fun AppsView(n: AppsNode, env: ThemeEnv, ui: HomeUi, modifier: Modifier)
     }
     val scrollMode = if (n.arrangement == AppsArrangement.CROSS) ScrollMode.CENTER_FOCUSED else n.scroll
     val spec = rememberScrollSpec(env, scrollMode)
-    val gap = env.dims.dp(n.gap)
+    val gap = env.dims.dp(n.gap * env.tweaks.gapScale)
     val headroom = env.dims.dp(24f)
     val sectionKey = if (ui.flat) -1 else ui.selectedIndex
+    val wrapEnabled = n.wrap || n.arrangement == AppsArrangement.RAIL || n.arrangement == AppsArrangement.CROSS
 
     BoxWithConstraints(modifier) {
         val availW = maxWidth
         val availH = maxHeight
-        val cardW: Dp = n.itemWidth?.let { env.dims.lengthDp(it, availW) }
+        val cardW0: Dp = n.itemWidth?.let { env.dims.lengthDp(it, availW) }
             ?: n.itemHeight?.let { env.dims.lengthDp(it, availH) * style.aspectRatio }
             ?: env.dims.dp(300f)
+        val cardW: Dp = cardW0 * env.tweaks.size
 
         val card: @Composable (AppEntry, Int, Dp?) -> Unit = { app, index, w ->
             val moving = app.pkg == ui.movePkg
+            val itemFocus = focusRequesters.getOrElse(index) { firstFocus }
             ThemedAppCard(
                 app = app,
                 style = style,
@@ -579,11 +720,27 @@ private fun AppsView(n: AppsNode, env: ThemeEnv, ui: HomeUi, modifier: Modifier)
                 width = w,
                 isMoving = moving,
                 isHidden = app.pkg in ui.config.hidden,
-                modifier = when {
-                    moving -> Modifier.focusRequester(ui.moveFocus)
-                    index == 0 -> Modifier.focusRequester(firstFocus)
-                    else -> Modifier
-                },
+                modifier = (if (moving) Modifier.focusRequester(ui.moveFocus)
+                           else Modifier.focusRequester(itemFocus))
+                    .onPreviewKeyEvent { e ->
+                        if (ui.movePkg != null || !wrapEnabled || apps.size <= 1) return@onPreviewKeyEvent false
+                        if (e.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                        when (e.key) {
+                            Key.DirectionRight -> {
+                                if (index == apps.lastIndex) {
+                                    runCatching { focusRequesters[0].requestFocus() }
+                                    true
+                                } else false
+                            }
+                            Key.DirectionLeft -> {
+                                if (index == 0) {
+                                    runCatching { focusRequesters[apps.lastIndex].requestFocus() }
+                                    true
+                                } else false
+                            }
+                            else -> false
+                        }
+                    },
                 onFocusChange = { f ->
                     if (f) ui.focusedPkg = app.pkg
                     else if (ui.focusedPkg == app.pkg) ui.focusedPkg = null
