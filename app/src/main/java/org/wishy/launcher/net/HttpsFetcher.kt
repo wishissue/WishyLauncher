@@ -28,14 +28,27 @@ object HttpsFetcher {
         return out.toString(Charsets.UTF_8.name())
     }
 
-    /** Downloads to [dest] (replaced). On any failure [dest] is deleted. [declaredBytes], if > 0, caps the size. */
-    fun download(url: String, dest: File, maxBytes: Long, declaredBytes: Long = 0) {
+    /**
+     * Downloads to [dest] (replaced). On any failure [dest] is deleted. [declaredBytes], if > 0, caps the size.
+     *
+     * [allowGithubRedirects] is for GitHub release files only: a release asset address answers with a redirect to
+     * GitHub's own storage hosts (`*.githubusercontent.com`), so redirects between GitHub hosts are accepted for it.
+     * Everything else stays https only. [onProgress] gets (bytes so far, total or -1) from the calling thread.
+     */
+    fun download(
+        url: String,
+        dest: File,
+        maxBytes: Long,
+        declaredBytes: Long = 0,
+        allowGithubRedirects: Boolean = false,
+        onProgress: ((Long, Long) -> Unit)? = null,
+    ) {
         val cap = if (declaredBytes in 1..maxBytes) declaredBytes else maxBytes
         dest.parentFile?.mkdirs()
         try {
-            dest.outputStream().use { out -> open(url) { input, len ->
+            dest.outputStream().use { out -> open(url, allowGithubRedirects) { input, len ->
                 if (len > cap) throw FetchException("File is larger than allowed.")
-                copyLimited(input, out, cap)
+                copyLimited(input, out, cap, len, onProgress)
             } }
         } catch (e: Exception) {
             dest.delete()
@@ -43,14 +56,22 @@ object HttpsFetcher {
         }
     }
 
-    private fun open(startUrl: String, read: (java.io.InputStream, Long) -> Unit) {
+    private fun isGithubHost(host: String): Boolean {
+        val h = host.lowercase()
+        return h == "github.com" || h == "api.github.com" || h.endsWith(".githubusercontent.com") || h == "githubusercontent.com"
+    }
+
+    private fun open(startUrl: String, allowGithubRedirects: Boolean = false, read: (java.io.InputStream, Long) -> Unit) {
         var url = startUrl
         val first = URL(startUrl)
         if (!first.protocol.equals("https", true)) throw FetchException("Only https is allowed.")
         for (hop in 0..MAX_REDIRECTS) {
             val u = URL(url)
             if (!u.protocol.equals("https", true)) throw FetchException("Only https is allowed.")
-            if (!u.host.equals(first.host, true) || u.port != first.port) throw FetchException("Redirect to another host refused.")
+            val sameHost = u.host.equals(first.host, true) && u.port == first.port
+            val githubToGithub = allowGithubRedirects && isGithubHost(first.host) && isGithubHost(u.host) &&
+                (u.port == -1 || u.port == 443)
+            if (!sameHost && !githubToGithub) throw FetchException("Redirect to another host refused.")
             val c = u.openConnection() as HttpURLConnection
             try {
                 c.instanceFollowRedirects = false
@@ -76,15 +97,25 @@ object HttpsFetcher {
         throw FetchException("Too many redirects.")
     }
 
-    private fun copyLimited(input: java.io.InputStream, out: java.io.OutputStream, cap: Long) {
+    private fun copyLimited(
+        input: java.io.InputStream,
+        out: java.io.OutputStream,
+        cap: Long,
+        length: Long = -1L,
+        onProgress: ((Long, Long) -> Unit)? = null,
+    ) {
         val buf = ByteArray(16 * 1024)
         var total = 0L
+        var lastReport = 0L
         while (true) {
             val n = input.read(buf)
             if (n < 0) break
             total += n
             if (total > cap) throw FetchException("File is larger than allowed.")
             out.write(buf, 0, n)
+            // Report about every 64 KB so the screen is not redrawn for each small read.
+            if (onProgress != null && total - lastReport >= 64 * 1024) { lastReport = total; onProgress(total, length) }
         }
+        onProgress?.invoke(total, length)
     }
 }

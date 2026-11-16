@@ -94,7 +94,6 @@ internal fun SettingsHome(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            WishyLogo(size = 34.dp, spinning = false)
             Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.headlineSmall, color = Wish.Text)
         }
         val first = initialFocus()
@@ -168,7 +167,7 @@ internal fun SettingsHome(
         SettingsItem(
             onClick = onLauncher,
             headlineContent = { Text(stringResource(R.string.item_launcher_settings)) },
-            leadingContent = { WishyLogo(size = 24.dp, spinning = false, houseColor = androidx.tv.material3.LocalContentColor.current) },
+            leadingContent = { Icon(AppIcons.Apps, contentDescription = null) },
         )
         SettingsItem(
             onClick = onAndroidSettings,

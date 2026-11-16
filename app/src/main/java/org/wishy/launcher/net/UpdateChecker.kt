@@ -7,7 +7,15 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 /** What the latest GitHub release says. */
-data class UpdateInfo(val version: String, val name: String, val notes: String, val pageUrl: String)
+data class UpdateInfo(
+    val version: String,
+    val name: String,
+    val notes: String,
+    val pageUrl: String,
+    /** Direct link to the release's APK, or empty when the release has none (then only the page can be opened). */
+    val apkUrl: String = "",
+    val apkBytes: Long = 0L,
+)
 
 /** The outcome of one check. */
 sealed class UpdateResult {
@@ -24,12 +32,20 @@ private data class ReleaseJson(
     val html_url: String? = null,
     val draft: Boolean = false,
     val prerelease: Boolean = false,
+    val assets: List<AssetJson> = emptyList(),
+)
+
+@Serializable
+private data class AssetJson(
+    val name: String = "",
+    val size: Long = 0L,
+    val browser_download_url: String = "",
 )
 
 /**
- * Asks GitHub for the latest release and compares it with the installed version.
- * Nothing is downloaded or installed: the launcher only tells the person a newer version exists and where
- * to get it. No identifying data is sent. Call from a background thread.
+ * Asks GitHub for the latest release and compares it with the installed version. Only the release list is read here;
+ * downloading and installing the APK is [UpdateInstaller]'s job and only happens when the person asks for it.
+ * No identifying data is sent. Call from a background thread.
  */
 object UpdateChecker {
     private const val MAX_BYTES = 256 * 1024
@@ -42,14 +58,23 @@ object UpdateChecker {
         val latest = r.tag_name.trim().removePrefix("v").removePrefix("V")
         when {
             r.draft || r.prerelease || latest.isEmpty() -> UpdateResult.UpToDate
-            isNewer(latest, installedVersion) -> UpdateResult.Available(
-                UpdateInfo(
-                    version = latest,
-                    name = r.name?.takeIf { it.isNotBlank() } ?: "Wishy Launcher $latest",
-                    notes = r.body.orEmpty().take(600),
-                    pageUrl = r.html_url?.takeIf { it.startsWith("https://github.com/") } ?: Repos.RELEASES_PAGE,
-                ),
-            )
+            isNewer(latest, installedVersion) -> {
+                // Only a file hosted by this project's own releases is ever offered for installing.
+                val apk = r.assets.firstOrNull {
+                    it.name.endsWith(".apk", ignoreCase = true) &&
+                        it.browser_download_url.startsWith(Repos.RELEASE_DOWNLOAD_PREFIX)
+                }
+                UpdateResult.Available(
+                    UpdateInfo(
+                        version = latest,
+                        name = r.name?.takeIf { it.isNotBlank() } ?: "Wishy Launcher $latest",
+                        notes = r.body.orEmpty().take(600),
+                        pageUrl = r.html_url?.takeIf { it.startsWith("https://github.com/") } ?: Repos.RELEASES_PAGE,
+                        apkUrl = apk?.browser_download_url.orEmpty(),
+                        apkBytes = apk?.size ?: 0L,
+                    ),
+                )
+            }
             else -> UpdateResult.UpToDate
         }
     } catch (e: Exception) {

@@ -13,8 +13,8 @@ android {
         applicationId = "org.wishy.launcher"
         minSdk = 21
         targetSdk = 34
-        versionCode = 8
-        versionName = "1.0.7"
+        versionCode = 9
+        versionName = "1.1.0"
     }
 
     // Release signing key, supplied by CI via environment variables (from GitHub

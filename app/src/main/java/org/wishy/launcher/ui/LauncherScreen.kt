@@ -316,11 +316,31 @@ fun LauncherApp(rescanTick: Int) {
         ConfirmDialog(
             title = stringResource(R.string.update_dialog_title),
             body = stringResource(R.string.update_dialog_body, info.version),
-            confirm = stringResource(R.string.update_open),
+            confirm = stringResource(if (info.apkUrl.isNotEmpty()) R.string.update_now else R.string.update_open),
             onConfirm = {
                 org.wishy.launcher.net.UpdateChecker.dismiss(context, info.version)
-                org.wishy.launcher.net.UpdateChecker.openPage(context, info.pageUrl)
                 updateInfo = null
+                if (info.apkUrl.isEmpty()) {
+                    org.wishy.launcher.net.UpdateChecker.openPage(context, info.pageUrl)
+                } else {
+                    // Download in the background, then hand the file to the system installer (which asks to confirm).
+                    android.widget.Toast.makeText(context, R.string.update_downloading_unknown, android.widget.Toast.LENGTH_SHORT).show()
+                    scope.launch {
+                        val failure = withContext(Dispatchers.IO) {
+                            runCatching {
+                                val f = org.wishy.launcher.net.UpdateInstaller.download(context, info) { _, _ -> }
+                                org.wishy.launcher.net.UpdateInstaller.install(context, f)
+                            }.exceptionOrNull()
+                        }
+                        if (failure != null) {
+                            android.widget.Toast.makeText(
+                                context,
+                                context.getString(R.string.update_download_failed, failure.message ?: failure.javaClass.simpleName),
+                                android.widget.Toast.LENGTH_LONG,
+                            ).show()
+                        }
+                    }
+                }
             },
             onDismiss = {
                 org.wishy.launcher.net.UpdateChecker.dismiss(context, info.version)
@@ -379,10 +399,12 @@ fun LauncherApp(rescanTick: Int) {
                 val added = current - cfg.knownApps
                 if (added.isEmpty() && current == cfg.knownApps) cfg
                 else {
-                    val first = cfg.categories.first().id
+                    // New installs go to the first real section. "All apps" fills itself, so it is never the target
+                    // (it used to be picked here, which filtered out to an empty set and hid new apps from every section).
+                    val first = cfg.categories.firstOrNull { it.id != AppRepository.ALL_APPS_ID }?.id
                     cfg.copy(
                         knownApps = current,
-                        sections = cfg.sections + added.associateWith { setOf(first) },
+                        sections = if (first == null) cfg.sections else cfg.sections + added.associateWith { setOf(first) },
                     )
                 }
             }
@@ -528,9 +550,9 @@ fun LauncherApp(rescanTick: Int) {
 
         val orderCats = config.categories.map { it.id }
         fun dockCatOf(p: String): String {
-            val app = apps.firstOrNull { it.pkg == p } ?: return orderCats.last()
+            val app = apps.firstOrNull { it.pkg == p } ?: return orderCats.lastOrNull() ?: AppRepository.ALL_APPS_ID
             val secs = AppRepository.sectionsOf(app, config)
-            return orderCats.firstOrNull { it in secs } ?: orderCats.last()
+            return orderCats.firstOrNull { it in secs } ?: (orderCats.lastOrNull() ?: AppRepository.ALL_APPS_ID)
         }
         val sourceCat = dockCatOf(pkg)
         val targetCat = flat.getOrNull(target - 1)?.let { dockCatOf(it) }

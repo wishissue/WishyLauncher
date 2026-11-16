@@ -136,12 +136,19 @@ class ConfigStore(private val context: Context) {
         CategoryCfg("apps", ctx.getString(R.string.cat_apps)),
     )
 
+    /**
+     * Keeps "All apps" first when it is switched on. When the person switched it off it stays off (this used to add it
+     * back on every read, so the switch in Settings did nothing). If no section is left at all, "All apps" is
+     * brought back, because apps need at least one section to live in.
+     */
     private fun ensureAllAppsFirst(cfg: LauncherConfig, ctx: Context): LauncherConfig {
-        val allAppsCat = CategoryCfg(AppRepository.ALL_APPS_ID, ctx.getString(R.string.cat_all_apps))
-        val currentCats = cfg.categories
-        if (currentCats.firstOrNull()?.id == AppRepository.ALL_APPS_ID) return cfg
-        val rest = currentCats.filter { it.id != AppRepository.ALL_APPS_ID }
-        return cfg.copy(categories = listOf(allAppsCat) + rest)
+        val cats = cfg.categories
+        if (cats.isEmpty()) {
+            return cfg.copy(categories = listOf(CategoryCfg(AppRepository.ALL_APPS_ID, ctx.getString(R.string.cat_all_apps))))
+        }
+        val at = cats.indexOfFirst { it.id == AppRepository.ALL_APPS_ID }
+        if (at <= 0) return cfg // already first, or switched off
+        return cfg.copy(categories = listOf(cats[at]) + cats.filterIndexed { i, _ -> i != at })
     }
 
     suspend fun update(transform: (LauncherConfig) -> LauncherConfig) {

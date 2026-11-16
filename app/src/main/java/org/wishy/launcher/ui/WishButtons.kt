@@ -3,7 +3,8 @@ package org.wishy.launcher.ui
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -36,7 +37,7 @@ internal fun WishButton(
 ) {
     Surface(
         onClick = onClick,
-        modifier = modifier.height(if (compact) 40.dp else 48.dp),
+        modifier = modifier.defaultMinSize(minWidth = if (compact) 72.dp else 96.dp).height(if (compact) 40.dp else 48.dp),
         shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(14.dp)),
         colors = ClickableSurfaceDefaults.colors(
             containerColor = if (filled) Wish.Primary else Wish.SurfaceHigh,
@@ -48,7 +49,7 @@ internal fun WishButton(
         border = ClickableSurfaceDefaults.border(focusedBorder = Border(BorderStroke(3.dp, Wish.Text))),
     ) {
         Row(
-            Modifier.fillMaxSize().padding(horizontal = if (compact) 16.dp else 20.dp),
+            Modifier.fillMaxHeight().padding(horizontal = if (compact) 16.dp else 20.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
         ) {
@@ -59,3 +60,22 @@ internal fun WishButton(
     }
 }
 
+
+/**
+ * A row of buttons that wraps onto the next line when they do not all fit, so buttons never sit on top of each other
+ * or run off the edge. Use it wherever two or more [WishButton]s share a line.
+ */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+internal fun ButtonRow(
+    modifier: Modifier = Modifier,
+    spacing: androidx.compose.ui.unit.Dp = 10.dp,
+    content: @Composable androidx.compose.foundation.layout.FlowRowScope.() -> Unit,
+) {
+    androidx.compose.foundation.layout.FlowRow(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(spacing),
+        verticalArrangement = Arrangement.spacedBy(spacing),
+        content = content,
+    )
+}

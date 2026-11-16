@@ -37,6 +37,8 @@ object Repos {
 
     /** Latest published release, as JSON. */
     const val LATEST_RELEASE_API = "https://api.github.com/repos/$OWNER_REPO/releases/latest"
+    /** Every release file of this project starts like this; the updater refuses to install anything else. */
+    const val RELEASE_DOWNLOAD_PREFIX = "https://github.com/$OWNER_REPO/releases/download/"
     /** Human-readable page for the latest release (downloads live here). */
     const val RELEASES_PAGE = "https://github.com/$OWNER_REPO/releases/latest"
 

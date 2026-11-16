@@ -428,7 +428,7 @@ internal fun TextEntryDialog(title: String, hint: String, initial: String, onSav
                         modifier = Modifier.fillMaxWidth().focusRequester(f),
                     )
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ButtonRow {
                     WishButton(stringResource(R.string.save), compact = true) { onSave(text) }
                     WishButton(stringResource(R.string.cancel), compact = true, filled = false, onClick = onDismiss)
                 }
@@ -444,7 +444,7 @@ internal fun ConfirmDialog(title: String, body: String, confirm: String, onConfi
             Column(Modifier.widthIn(max = 520.dp).fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 Text(title, style = MaterialTheme.typography.titleMedium)
                 Text(body, style = MaterialTheme.typography.bodyMedium)
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ButtonRow {
                     // Cancel is first so it holds the initial focus: the safe choice is the default.
                     val f = initialFocus()
                     WishButton(stringResource(R.string.cancel), compact = true, filled = false, modifier = Modifier.focusRequester(f), onClick = onDismiss)

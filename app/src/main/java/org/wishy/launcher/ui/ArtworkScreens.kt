@@ -469,7 +469,7 @@ private fun FindAppScreen(
                     Text(stringResource(originLabelRes(c.origin)) + " · " + c.title, style = MaterialTheme.typography.titleSmall)
                     if (c.credit.isNotBlank()) Text(c.credit, style = MaterialTheme.typography.bodySmall)
                     if (hasMine) Text(stringResource(R.string.art_replace_warn), style = MaterialTheme.typography.bodySmall)
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    ButtonRow {
                         val f = initialFocus()
                         // With a banner of the person's own already in place, the safe choice (Cancel) holds the focus.
                         if (hasMine) WishButton(stringResource(R.string.cancel), compact = true, filled = false, modifier = Modifier.focusRequester(f)) { chosen = null }

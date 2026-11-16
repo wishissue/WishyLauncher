@@ -317,13 +317,9 @@ internal val WishFont: FontFamily = FontFamily(
 
 /* ------------------------------ pieces ------------------------------ */
 
-/** The big picture on top of each step: the turning logo on the welcome step, a springy icon tile elsewhere. */
+/** The big picture on top of each step: a springy icon tile. */
 @Composable
 private fun Hero(step: Int) {
-    if (step == 0) {
-        WishyLogo(size = 100.dp, turnMillis = 5000)
-        return
-    }
     var shown by remember(step) { mutableStateOf(false) }
     LaunchedEffect(step) { shown = true }
     val scale by animateFloatAsState(

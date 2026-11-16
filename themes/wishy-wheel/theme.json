@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "id": "wishy-wheel",
   "name": "Wishy Wheel",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Wishy Launcher contributors",
   "description": "A ring of round app icons on the left where only the middle one is selected. Press up or down and the next app spins into the middle, fast, and the ring never ends. The name of the selected app sits big on the right.",
   "license": "GPL-3.0-only",
@@ -118,8 +118,8 @@
       },
       "fill": "@surface",
       "artwork": {
-        "source": "icon",
-        "fit": "fit",
+        "source": "auto",
+        "fit": "crop",
         "iconSize": "60%",
         "placeholderFill": "@surfaceVariant"
       },

@@ -331,6 +331,40 @@ fun SettingsSheet(
 
 /* ------------------------------ about ------------------------------ */
 
+/** One thing the launcher is built on or borrows from: shown on the About screen with a link that opens its page. */
+private data class CreditEntry(val name: String, val what: String, val licence: String, val url: String)
+
+private val Credits = listOf(
+    CreditEntry("Couchy Launcher", "The base this launcher was forked from", "GPL-3.0", "https://github.com/conreo/couchy-launcher"),
+    CreditEntry("Material 3 loading indicator", "Design of the start-up animation", "Material Design", "https://m3.material.io/components/loading-indicator/overview"),
+    CreditEntry("AndroidX graphics-shapes", "Shape morphing for the loading indicator and rounded corners", "Apache-2.0", "https://developer.android.com/jetpack/androidx/releases/graphics"),
+    CreditEntry("Jetpack Compose and TV Material", "The user interface toolkit", "Apache-2.0", "https://developer.android.com/jetpack/androidx"),
+    CreditEntry("Material Symbols", "Icons used across the launcher", "Apache-2.0", "https://github.com/google/material-design-icons"),
+    CreditEntry("Plus Jakarta Sans", "Main font", "SIL OFL 1.1", "https://github.com/tokotype/PlusJakartaSans"),
+    CreditEntry("Bagel Fat One", "Brand wordmark font", "SIL OFL 1.1", "https://github.com/JAMO-TYPEFACE/BagelFat"),
+    CreditEntry("Press Start 2P", "Font of the Wishy Bit theme", "SIL OFL 1.1", "https://github.com/codeman38/PressStart2P"),
+    CreditEntry("AndroidSVG", "Draws SVG logos into banners", "Apache-2.0", "https://github.com/BigBadaboom/androidsvg"),
+    CreditEntry("kotlinx.serialization", "Reads themes and settings", "Apache-2.0", "https://github.com/Kotlin/kotlinx.serialization"),
+    CreditEntry("CozyPixels", "Community wallpaper source", "MIT", "https://github.com/SleepyCatHey/CozyPixels"),
+    CreditEntry("GNOME Backgrounds", "Bundled and store wallpapers", "CC BY-SA 3.0", "https://github.com/GNOME/gnome-backgrounds"),
+    CreditEntry("KDE Plasma wallpapers", "Bundled and store wallpapers", "CC BY-SA 4.0 / LGPL-3.0", "https://github.com/KDE/plasma-workspace-wallpapers"),
+    CreditEntry("Simple Icons", "Brand logos for banners", "CC0-1.0", "https://github.com/simple-icons/simple-icons"),
+    CreditEntry("Arcticons", "Line icons for banners", "CC BY-SA 4.0", "https://github.com/Arcticons-Team/Arcticons"),
+    CreditEntry("SVGL", "Coloured brand logos for banners", "Per logo", "https://svgl.app"),
+)
+
+/** A row that opens [entry]'s page when chosen. With no browser (common on TV) the address is shown to type elsewhere. */
+@Composable
+private fun CreditRow(entry: CreditEntry, onOpen: (String) -> Unit) {
+    SettingsItem(
+        onClick = { onOpen(entry.url) },
+        headlineContent = { Text(entry.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+        supportingContent = {
+            Text(entry.what + "  ·  " + entry.licence + "  ·  " + entry.url.removePrefix("https://"), maxLines = 2, overflow = TextOverflow.Ellipsis)
+        },
+    )
+}
+
 @Composable
 private fun AboutScreen(
     config: LauncherConfig,
@@ -345,6 +379,12 @@ private fun AboutScreen(
     var checking by remember { mutableStateOf(false) }
     var result by remember { mutableStateOf<org.wishy.launcher.net.UpdateResult?>(null) }
     var linkHint by remember { mutableStateOf("") }
+    // Download state: -1 = not downloading, 0..100 = percent, 101 = size unknown, 102 = handed to the installer.
+    var downloadPct by remember { androidx.compose.runtime.mutableIntStateOf(-1) }
+    var downloadError by remember { mutableStateOf("") }
+    fun open(url: String) {
+        linkHint = if (org.wishy.launcher.net.UpdateChecker.openPage(context, url)) "" else context.getString(R.string.update_open_failed, url)
+    }
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -352,6 +392,7 @@ private fun AboutScreen(
         ScreenHeader(stringResource(R.string.item_about_updates), onBack = onBack)
         val updateFocus = initialFocus()
         OfflineNotice(config, store)
+        val busy = checking || (downloadPct in 0..101)
         val statusText = when (val r = result) {
             null -> if (checking) stringResource(R.string.update_checking) else stringResource(R.string.update_check_sub, installed)
             is org.wishy.launcher.net.UpdateResult.Available -> stringResource(R.string.update_available, r.info.version)
@@ -360,9 +401,9 @@ private fun AboutScreen(
         }
         SettingsItem(
             selected = false,
-            enabled = !config.offlineMode && !checking,
+            enabled = !config.offlineMode && !busy,
             onClick = {
-                checking = true; result = null; linkHint = ""
+                checking = true; result = null; linkHint = ""; downloadError = ""; downloadPct = -1
                 scope.launch {
                     result = withContext(Dispatchers.IO) { org.wishy.launcher.net.UpdateChecker.check(installed) }
                     checking = false
@@ -373,38 +414,78 @@ private fun AboutScreen(
             modifier = Modifier.focusRequester(updateFocus),
         )
         (result as? org.wishy.launcher.net.UpdateResult.Available)?.let { found ->
-            SettingsItem(
-                selected = false,
-                onClick = {
-                    if (!org.wishy.launcher.net.UpdateChecker.openPage(context, found.info.pageUrl)) {
-                        linkHint = context.getString(R.string.update_open_failed, found.info.pageUrl)
-                    }
-                },
-                headlineContent = { Text(stringResource(R.string.update_open)) },
-                supportingContent = { Text(if (linkHint.isNotEmpty()) linkHint else found.info.name) },
-            )
-        }
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.padding(start = 8.dp, top = 4.dp),
-        ) {
-            Image(
-                painter = androidx.compose.ui.res.painterResource(R.drawable.ic_wishy_mark),
-                contentDescription = null,
-                modifier = Modifier.size(44.dp),
-            )
-            Column {
+            val info = found.info
+            if (info.notes.isNotBlank()) {
                 Text(
-                    stringResource(R.string.app_name),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                Text(
-                    text = "v" + (runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrDefault("?")),
+                    info.notes,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 6,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp),
                 )
             }
+            if (info.apkUrl.isNotEmpty()) {
+                SettingsItem(
+                    selected = false,
+                    enabled = !config.offlineMode && downloadPct !in 0..101,
+                    onClick = {
+                        downloadError = ""; downloadPct = 0
+                        scope.launch {
+                            val failure = withContext(Dispatchers.IO) {
+                                runCatching {
+                                    val file = org.wishy.launcher.net.UpdateInstaller.download(context, info) { done, total ->
+                                        downloadPct = if (total > 0) ((done * 100) / total).toInt().coerceIn(0, 100) else 101
+                                    }
+                                    downloadPct = 102
+                                    org.wishy.launcher.net.UpdateInstaller.install(context, file)
+                                }.exceptionOrNull()
+                            }
+                            if (failure != null) {
+                                downloadPct = -1
+                                downloadError = failure.message ?: failure.javaClass.simpleName
+                            }
+                        }
+                    },
+                    headlineContent = { Text(stringResource(R.string.update_install, info.version)) },
+                    supportingContent = {
+                        Text(
+                            when {
+                                downloadError.isNotEmpty() -> stringResource(R.string.update_download_failed, downloadError)
+                                downloadPct == 102 -> stringResource(R.string.update_installing)
+                                downloadPct == 101 -> stringResource(R.string.update_downloading_unknown)
+                                downloadPct >= 0 -> stringResource(R.string.update_downloading, downloadPct)
+                                else -> stringResource(R.string.update_install_sub)
+                            },
+                        )
+                    },
+                    trailingContent = if (downloadPct in 0..100) {
+                        {
+                            Box(Modifier.width(120.dp).height(6.dp).clip(RoundedCornerShape(3.dp)).background(Wish.Outline)) {
+                                Box(Modifier.fillMaxHeight().fillMaxWidth(downloadPct / 100f).background(Wish.Primary))
+                            }
+                        }
+                    } else null,
+                )
+            }
+            SettingsItem(
+                selected = false,
+                onClick = { open(info.pageUrl) },
+                headlineContent = { Text(stringResource(R.string.update_open)) },
+                supportingContent = { Text(if (linkHint.isNotEmpty()) linkHint else info.name) },
+            )
+        }
+
+        Column(Modifier.padding(start = 8.dp, top = 12.dp)) {
+            Text(
+                stringResource(R.string.app_name),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Text(
+                text = "v$installed",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
         Text(
             stringResource(R.string.about_desc),
@@ -418,15 +499,29 @@ private fun AboutScreen(
             stringResource(R.string.about_license),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 8.dp),
+            modifier = Modifier.padding(start = 8.dp, bottom = 4.dp),
         )
-        // Source code
+        CreditRow(
+            CreditEntry(stringResource(R.string.about_source), "Wishy Launcher on GitHub", "GPL-3.0", stringResource(R.string.github_url)),
+            onOpen = ::open,
+        )
+
+        SectionLabel(stringResource(R.string.about_credits))
         Text(
-            stringResource(R.string.about_source) + "  ·  " + stringResource(R.string.github_url),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(start = 8.dp, top = 8.dp),
+            stringResource(R.string.about_credits_intro),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 8.dp, bottom = 4.dp),
         )
+        Credits.forEach { CreditRow(it, onOpen = ::open) }
+        if (linkHint.isNotEmpty()) {
+            Text(
+                linkHint,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(start = 8.dp, top = 8.dp),
+            )
+        }
 
         Text(
             stringResource(R.string.about_thirdparty),
@@ -1040,9 +1135,11 @@ private fun CategoriesScreen(
                     scope.launch {
                         store.update { cfg ->
                             val rest = cfg.categories.filter { it.id != AppRepository.ALL_APPS_ID }
-                            cfg.copy(
+                            // Never switch off the only section there is: apps need somewhere to live.
+                            if (hasAll && rest.isEmpty()) cfg
+                            else cfg.copy(
                                 categories = if (hasAll) rest
-                                else rest + CategoryCfg(AppRepository.ALL_APPS_ID, allName),
+                                else listOf(CategoryCfg(AppRepository.ALL_APPS_ID, allName)) + rest,
                             )
                         }
                     }
@@ -1192,7 +1289,7 @@ private fun RenameDialog(
                         modifier = Modifier.fillMaxWidth().focusRequester(f),
                     )
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ButtonRow {
                     WishButton(stringResource(R.string.save), compact = true) { if (name.isNotBlank()) onSave(name.trim()) }
                     WishButton(stringResource(R.string.cancel), compact = true, filled = false, onClick = onDismiss)
                 }

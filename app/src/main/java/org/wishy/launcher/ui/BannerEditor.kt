@@ -369,7 +369,7 @@ internal fun BannerEditorDialog(
                     if (p != null) Image(bitmap = p.asImageBitmap(), contentDescription = stringResource(R.string.ed_preview), modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
                 }
                 if (status.isNotEmpty()) Text(status, color = Wish.TextDim, fontSize = 13.sp)
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ButtonRow {
                     val doneFocus = initialFocus()
                     WishButton(stringResource(R.string.ed_done), modifier = Modifier.focusRequester(doneFocus)) { save() }
                     WishButton(stringResource(R.string.ed_auto), filled = false) {
@@ -382,7 +382,7 @@ internal fun BannerEditorDialog(
             }
             // ----- right: tabs and their content -----
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ButtonRow(spacing = 8.dp) {
                     WishButton(stringResource(R.string.ed_tab_logo), compact = true, filled = tab == 0) { tab = 0 }
                     WishButton(stringResource(R.string.ed_tab_bg), compact = true, filled = tab == 1) { tab = 1 }
                     WishButton(stringResource(R.string.ed_tab_adjust), compact = true, filled = tab == 2) { tab = 2 }
@@ -395,7 +395,7 @@ internal fun BannerEditorDialog(
                         modifier = Modifier.fillMaxSize(),
                     ) {
                         item(span = { GridItemSpan(maxLineSpan) }) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            ButtonRow(spacing = 8.dp) {
                                 WishButton(stringResource(R.string.ed_import_logo), compact = true, filled = false) {
                                     logoPicker.launch(arrayOf("image/svg+xml", "image/png", "image/jpeg", "image/webp", "text/xml"))
                                 }
@@ -433,7 +433,7 @@ internal fun BannerEditorDialog(
                             Swatch(bg, selected = spec.background == bg) { setBackground(bg) }
                         }
                         item(span = { GridItemSpan(maxLineSpan) }) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            ButtonRow(spacing = 8.dp) {
                                 WishButton(stringResource(R.string.ed_bg_custom), compact = true, filled = false) { showHex = true }
                                 WishButton(stringResource(R.string.ed_bg_picture), compact = true, filled = false) {
                                     bgPicker.launch(arrayOf("image/png", "image/jpeg", "image/webp"))
@@ -449,7 +449,7 @@ internal fun BannerEditorDialog(
                     else -> Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         val aspect = logo?.image?.aspect ?: 1f
                         fun change(f: (BannerSpec) -> BannerSpec) { spec = f(spec); dirty = true }
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ButtonRow(spacing = 8.dp) {
                             WishButton(stringResource(R.string.ed_bigger), compact = true, filled = false) {
                                 change {
                                     val max = if (it.mode == FitMode.FIT) BannerLayout.maxFitScale(1280f, 720f, aspect) else BannerLayout.MAX_SCALE
@@ -460,15 +460,15 @@ internal fun BannerEditorDialog(
                                 change { it.copy(scale = (it.scale / 1.1f).coerceAtLeast(if (it.mode == FitMode.FIT) BannerLayout.MIN_SCALE else 1f)) }
                             }
                         }
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ButtonRow(spacing = 8.dp) {
                             WishButton(stringResource(R.string.ed_left), compact = true, filled = false) { change { it.copy(dx = (it.dx - 0.02f).coerceAtLeast(-0.5f)) } }
                             WishButton(stringResource(R.string.ed_right), compact = true, filled = false) { change { it.copy(dx = (it.dx + 0.02f).coerceAtMost(0.5f)) } }
                         }
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ButtonRow(spacing = 8.dp) {
                             WishButton(stringResource(R.string.ed_up), compact = true, filled = false) { change { it.copy(dy = (it.dy - 0.02f).coerceAtLeast(-0.5f)) } }
                             WishButton(stringResource(R.string.ed_down), compact = true, filled = false) { change { it.copy(dy = (it.dy + 0.02f).coerceAtMost(0.5f)) } }
                         }
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ButtonRow(spacing = 8.dp) {
                             val modeName = stringResource(if (spec.mode == FitMode.FIT) R.string.ed_fit else R.string.ed_fill)
                             WishButton(stringResource(R.string.ed_fit_mode, modeName), compact = true, filled = false) {
                                 change { it.copy(mode = if (it.mode == FitMode.FIT) FitMode.COVER else FitMode.FIT, scale = 1f, dx = 0f, dy = 0f) }

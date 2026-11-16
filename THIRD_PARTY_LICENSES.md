@@ -57,3 +57,12 @@ All are licensed under the SIL Open Font License 1.1. The full licence text is i
 | Material Symbols Rounded icons in `ui/SymbolIcons.kt` | Google, https://github.com/google/material-design-icons | Apache-2.0 |
 | Bagel Fat One (`res/font/bagel_fat_one.ttf`), brand wordmark face | The Bagel Fat Project Authors, https://github.com/JAMO-TYPEFACE/BagelFat | SIL OFL 1.1 |
 | Plus Jakarta Sans, also copied to `res/font/` for screens outside the theme engine | The Plus Jakarta Sans Project Authors | SIL OFL 1.1 |
+
+## Added with the loading indicator and updater
+
+| Item | Author | Licence |
+|---|---|---|
+| Start-up loading indicator: the shape-morphing design of Material 3's loading indicator, https://m3.material.io/components/loading-indicator/overview, built in `ui/Splash.kt` with `androidx.graphics:graphics-shapes` (already listed above). No Material code or assets are copied. | Google (design); Wishy Launcher contributors (this implementation) | Design reference only; code GPL-3.0-only |
+| In-app updater (`net/UpdateChecker.kt`, `net/UpdateInstaller.kt`): reads GitHub Releases of this repository and installs the attached APK through Android's `PackageInstaller` | Wishy Launcher contributors | GPL-3.0-only |
+
+The About screen in the launcher lists every credit above with a link to the project's page.
