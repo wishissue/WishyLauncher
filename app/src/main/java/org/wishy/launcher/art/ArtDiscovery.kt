@@ -148,12 +148,12 @@ class ArtDiscovery private constructor(context: Context) {
         val out = LinkedHashMap<String, CatalogLogo>()
         catalogs?.logos?.filter { it.key.contains(q) }
             ?.sortedWith(compareBy({ it.key != q }, { it.key.length }))
-            ?.forEach { out.putIfAbsent(it.provider + it.url, it) }
+            ?.forEach { val k = it.provider + it.url; if (!out.containsKey(k)) out[k] = it }
         if (allowNetwork && out.size < limit) {
             runCatching {
                 val enc = URLEncoder.encode(query.trim().take(40), "UTF-8")
                 val text = HttpsFetcher.getText("https://api.iconify.design/search?query=$enc&prefixes=logos,simple-icons&limit=24", 256 * 1024)
-                ArtCatalogs.parseIconifySearch(text).forEach { out.putIfAbsent(it.provider + it.url, it) }
+                ArtCatalogs.parseIconifySearch(text).forEach { val k = it.provider + it.url; if (!out.containsKey(k)) out[k] = it }
             }
         }
         return out.values.take(limit)

@@ -4,7 +4,6 @@
 .kotlin/
 build/
 **/build/
-local.properties
 /captures
 .externalNativeBuild
 .cxx
@@ -26,6 +25,9 @@ Thumbs.db
 # Keystores & Secrets
 *.jks
 *.keystore
+keystore.properties
+.wishy-keys/
+local.properties
 !debug.keystore
 
 # Misc

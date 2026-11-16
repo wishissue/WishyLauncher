@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
 package org.wishy.launcher.ui
 
 import androidx.activity.compose.rememberLauncherForActivityResult

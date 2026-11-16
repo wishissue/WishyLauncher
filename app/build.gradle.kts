@@ -1,3 +1,6 @@
+import java.io.File
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -17,16 +20,39 @@ android {
         versionName = "1.1.0"
     }
 
-    // Release signing key, supplied by CI via environment variables (from GitHub
-    // secrets). Absent locally and on F-Droid, so this config stays inert there.
-    val ciKeystore = System.getenv("KEYSTORE_FILE")
+    val defaultKeystorePropsFile = File(System.getProperty("user.home"), ".wishy-keys/keystore.properties")
+    val keystorePropsEnv = System.getenv("WISHY_KEYSTORE_PROPS")
+    val keystorePropsFile = if (!keystorePropsEnv.isNullOrBlank()) {
+        if (keystorePropsEnv.startsWith("~")) {
+            File(System.getProperty("user.home") + keystorePropsEnv.substring(1))
+        } else {
+            File(keystorePropsEnv)
+        }
+    } else {
+        defaultKeystorePropsFile
+    }
+
+    val keystoreProps = Properties()
+    val hasReleaseKey = keystorePropsFile.exists()
+    if (hasReleaseKey) {
+        keystorePropsFile.inputStream().use { keystoreProps.load(it) }
+    }
+
     signingConfigs {
-        if (ciKeystore != null) {
-            create("ci") {
-                storeFile = file(ciKeystore)
-                storePassword = System.getenv("KEYSTORE_PASSWORD")
-                keyAlias = System.getenv("KEY_ALIAS")
-                keyPassword = System.getenv("KEY_PASSWORD")
+        if (hasReleaseKey) {
+            create("release") {
+                val storeFilePath = keystoreProps.getProperty("storeFile")
+                if (!storeFilePath.isNullOrBlank()) {
+                    val storeFileObj = if (storeFilePath.startsWith("~")) {
+                        File(System.getProperty("user.home") + storeFilePath.substring(1))
+                    } else {
+                        File(storeFilePath)
+                    }
+                    storeFile = storeFileObj
+                }
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
             }
         }
     }
@@ -37,11 +63,11 @@ android {
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             // Signing priority:
-            //  • CI (KEYSTORE_FILE env set)  → your real release key, from secrets.
-            //  • -PlocalSign                 → the auto-generated debug key (local test).
-            //  • otherwise (incl. F-Droid)   → UNSIGNED; F-Droid signs with its own key.
+            //  • Release keystore properties file present → signed release with offline key.
+            //  • -PlocalSign                               → the auto-generated debug key (local test).
+            //  • otherwise (incl. F-Droid / CI)            → UNSIGNED.
             signingConfig = when {
-                ciKeystore != null -> signingConfigs.getByName("ci")
+                hasReleaseKey -> signingConfigs.getByName("release")
                 project.hasProperty("localSign") -> signingConfigs.getByName("debug")
                 else -> null
             }

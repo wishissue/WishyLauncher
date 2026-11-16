@@ -30,14 +30,59 @@ An internet connection is needed for the first build to download Gradle and the 
    The file is `app/build/outputs/apk/debug/app-debug.apk`.
 4. Optional checks: `./gradlew :app:lintDebug`.
 
-## 3. Release builds
+## 3. Release builds and local signing
 
-`./gradlew :app:assembleRelease` produces an **unsigned** APK, with minification and resource shrinking on. Signing is deliberately not set up in this repository:
+Release builds use minification and resource shrinking (`isMinifyEnabled = true`, `isShrinkResources = true`).
+Because release builds use R8, test a release build on a device at least once. Keep rules for `kotlinx.serialization` are in `app/proguard-rules.pro`.
 
-- Add `-PlocalSign` to sign with the debug key, for testing only.
-- For a real release, create your own key store and either sign the APK with `apksigner`, or add a signing configuration of your own. Never commit a key store or its passwords.
+### Local release signing (offline key)
 
-Because release builds use R8, test a release build on a device at least once. The keep rules for `kotlinx.serialization` are in `app/proguard-rules.pro` and cover both `org.wishy.launcher` and `org.wishy.theme`. A theme that loads in a debug build but is rejected in a release build points at a missing keep rule.
+To protect release security, release signing keys NEVER leave your local machine and are NEVER stored in GitHub Secrets or CI workflows.
+
+1. Store your release keystore and configuration outside the repository, by default at `~/.wishy-keys/`:
+   - Keystore: `~/.wishy-keys/wishy-release.jks`
+   - Properties file: `~/.wishy-keys/keystore.properties` (or set `WISHY_KEYSTORE_PROPS` env var to point to your file).
+
+   `keystore.properties` format:
+   ```properties
+   storeFile=/home/<username>/.wishy-keys/wishy-release.jks
+   storePassword=<your-store-password>
+   keyAlias=<your-key-alias>
+   keyPassword=<your-key-password>
+   ```
+
+2. **CRITICAL KEY SECURITY RULES**:
+   - Back up your `.jks` file offline (USB drive or password manager).
+   - NEVER commit key files, keystore properties, or passwords to git.
+   - **If the `.jks` key is lost, existing users CANNOT update in place** (Android strictly enforces signature matching and will refuse installation of an APK signed with a different key). Users would have to uninstall the app first.
+
+3. If `keystore.properties` does not exist:
+   - `./gradlew :app:assembleRelease` produces an **unsigned** APK.
+   - `./gradlew :app:assembleRelease -PlocalSign` signs with the debug key for local testing only.
+
+### How to publish a release
+
+1. Bump `versionCode` and `versionName` in `app/build.gradle.kts` and commit the change.
+2. Run `scripts/release-local.sh` on your machine. This script:
+   - Checks that the keystore properties file exists.
+   - Runs `./gradlew :app:assembleRelease`.
+   - Copies the APK to `WishyLauncher-v<versionName>.apk`.
+   - Runs `apksigner verify --print-certs` on it and prints the SHA-256 of the signing certificate.
+3. Upload the signed APK by hand:
+   - On the GitHub Releases page, create a release tagged `v<versionName>` (e.g. `v1.1.1`) and attach `WishyLauncher-v<versionName>.apk`.
+   - Or run from your machine:
+     ```bash
+     gh release create v<versionName> WishyLauncher-v<versionName>.apk \
+       --title "Wishy Launcher <versionName>" --generate-notes
+     ```
+   - Note: The app's in-app updater only installs an `.apk` attached to the latest release whose tag is newer than the installed `versionName` (release tags must use the plain version format, e.g. `v1.1.1`). Only your locally signed APK should ever be attached to a release.
+
+### Debug builds warning
+
+> [!WARNING]
+> The debug APK built in CI or via `./gradlew :app:assembleDebug` is signed with a different, throwaway debug key.
+> It **cannot be installed over a release build** (or vice versa). Testers must uninstall the existing app first.
+> **NEVER attach debug APKs to releases.**
 
 ## 4. Project layout
 

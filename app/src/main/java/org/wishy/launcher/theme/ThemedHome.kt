@@ -86,6 +86,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.constrainWidth
@@ -376,14 +377,22 @@ private fun fitToScale(f: Fit): ContentScale = when (f) {
 @Composable
 private fun NodeView(node: Node, env: ThemeEnv, ui: HomeUi, modifier: Modifier = Modifier) {
     if (!node.visible) return
-    when (node.showWhen) {
-        ShowWhen.CLOCK_ENABLED -> if (!ui.config.showClock) return
-        ShowWhen.DATE_ENABLED -> if (ui.date.isEmpty()) return
-        ShowWhen.HAS_FOCUSED_APP -> if (ui.focusedPkg == null) return
-        ShowWhen.STATUS_BAR_ENABLED -> if (!ui.config.showStatusBar) return
-        ShowWhen.HAS_SECTIONS -> if (ui.flat || ui.sections.size < 2) return
-        ShowWhen.ONLINE -> if (!ui.net.connected) return
-        ShowWhen.ALWAYS -> {}
+    if (node !is StatusIconsNode) {
+        when (node.showWhen) {
+            ShowWhen.CLOCK_ENABLED -> if (!ui.config.showClock) return
+            ShowWhen.DATE_ENABLED -> if (ui.date.isEmpty()) return
+            ShowWhen.HAS_FOCUSED_APP -> if (ui.focusedPkg == null) return
+            ShowWhen.STATUS_BAR_ENABLED -> if (!ui.config.showStatusBar) return
+            ShowWhen.HAS_SECTIONS -> if (ui.flat || ui.sections.size < 2) return
+            ShowWhen.ONLINE -> if (!ui.net.connected) return
+            ShowWhen.ALWAYS -> {}
+        }
+    } else {
+        if (node.showWhen == ShowWhen.CLOCK_ENABLED && !ui.config.showClock) return
+        if (node.showWhen == ShowWhen.DATE_ENABLED && ui.date.isEmpty()) return
+        if (node.showWhen == ShowWhen.HAS_FOCUSED_APP && ui.focusedPkg == null) return
+        if (node.showWhen == ShowWhen.HAS_SECTIONS && (ui.flat || ui.sections.size < 2)) return
+        if (node.showWhen == ShowWhen.ONLINE && !ui.net.connected) return
     }
     val pad = node.padding
     val m = if (pad != null) modifier.themePadding(pad, env.dims) else modifier
@@ -497,12 +506,13 @@ private fun StatusIconsView(n: StatusIconsNode, env: ThemeEnv, ui: HomeUi, modif
         horizontalArrangement = Arrangement.spacedBy(env.dims.dp(n.gap * env.tweaks.gapScale)),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        n.items.forEach { item ->
+        val items = if (n.items.contains(StatusItem.SETTINGS)) n.items else n.items + StatusItem.SETTINGS
+        items.forEach { item ->
             when (item) {
                 StatusItem.VPN -> if (ui.config.showVpnButton) {
                     StatusIconButton(AppIcons.Vpn, "VPN", ui.net.vpn, color, dim, fill, shape, size) { ui.onVpn() }
                 }
-                StatusItem.NETWORK -> {
+                StatusItem.NETWORK -> if (ui.config.showStatusBar) {
                     val icon = when {
                         ui.net.ethernet -> AppIcons.Ethernet
                         ui.net.wifi -> AppIcons.Wifi
@@ -674,8 +684,8 @@ private const val REPEAT_WINDOW_MS = 160L
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun rememberScrollSpec(env: ThemeEnv, mode: ScrollMode): BringIntoViewSpec =
-    remember(env.scrollMs, env.easing, mode) {
+private fun rememberScrollSpec(env: ThemeEnv, mode: ScrollMode, marginPx: Float = 0f): BringIntoViewSpec =
+    remember(env.scrollMs, env.easing, mode, marginPx) {
         object : BringIntoViewSpec {
             // Adaptive: the first move after a pause animates briefly; while keys are repeating (a new request
             // arrives before the last one could finish) the list jumps, so it never lags behind the cursor.
@@ -690,13 +700,17 @@ private fun rememberScrollSpec(env: ThemeEnv, mode: ScrollMode): BringIntoViewSp
                 jumpNext = now - lastRequestAt < REPEAT_WINDOW_MS
                 lastRequestAt = now
                 if (mode == ScrollMode.CENTER_FOCUSED) return offset + size / 2f - containerSize / 2f
-                // Same as the default: scroll the least that brings the item fully into view.
+                // Scroll the least that brings the item fully into view, keeping [marginPx] free on both sides. The
+                // focused card is drawn bigger than its slot (scale, focus ring), so without the margin the
+                // selected card at the edge of the list had its outer side cropped by the list's bounds.
                 val trailing = offset + size
+                val lo = marginPx
+                val hi = containerSize - marginPx
                 return when {
-                    offset >= 0f && trailing <= containerSize -> 0f
-                    offset < 0f && trailing > containerSize -> 0f
-                    abs(offset) < abs(trailing - containerSize) -> offset
-                    else -> trailing - containerSize
+                    size + 2f * marginPx >= containerSize -> offset - lo // too big to inset: line up its start
+                    offset >= lo && trailing <= hi -> 0f
+                    offset < lo -> offset - lo
+                    else -> trailing - hi
                 }
             }
         }
@@ -722,9 +736,9 @@ private fun AppsView(n: AppsNode, env: ThemeEnv, ui: HomeUi, modifier: Modifier)
         }
     }
     val scrollMode = if (n.arrangement == AppsArrangement.CROSS) ScrollMode.CENTER_FOCUSED else n.scroll
-    val spec = rememberScrollSpec(env, scrollMode)
     val gap = env.dims.dp(n.gap * env.tweaks.gapScale)
-    val headroom = env.dims.dp(24f)
+    val baseHeadroom = env.dims.dp(24f)
+    val density = androidx.compose.ui.platform.LocalDensity.current
     val sectionKey = if (ui.flat) -1 else ui.selectedIndex
     val scope = rememberCoroutineScope()
     var railState by remember { mutableStateOf<androidx.compose.foundation.lazy.LazyListState?>(null) }
@@ -747,6 +761,17 @@ private fun AppsView(n: AppsNode, env: ThemeEnv, ui: HomeUi, modifier: Modifier)
             ?: n.itemHeight?.let { env.dims.lengthDp(it, availH) * style.aspectRatio }
             ?: env.dims.dp(300f)
         val cardW: Dp = cardW0 * env.tweaks.size
+
+        // How far the selected (or moving) card reaches beyond its slot: the extra size from scaling plus the focus
+        // ring and its gap. The list keeps this much room around the selected card so it is never cut off.
+        val maxScale = maxOf(style.focused.scale, style.moving.scale, 1f)
+        val ringReach = maxOf(
+            style.focused.indicator?.let { it.width + it.gap } ?: 8f,
+            style.moving.indicator?.let { it.width + it.gap } ?: 0f,
+        )
+        val overhang: Dp = cardW * ((maxScale - 1f) / 2f) + env.dims.dp(ringReach) + 4.dp
+        val headroom: Dp = maxOf(baseHeadroom, overhang)
+        val spec = rememberScrollSpec(env, scrollMode, with(density) { overhang.toPx() })
 
         val card: @Composable (AppEntry, Int, Dp?, CardStyle) -> Unit = { app, index, w, cardStyle ->
             val moving = app.pkg == ui.movePkg

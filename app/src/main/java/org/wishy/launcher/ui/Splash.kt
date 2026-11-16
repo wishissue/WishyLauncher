@@ -20,6 +20,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.graphics.shapes.CornerRounding
@@ -114,8 +116,8 @@ private fun DrawScope.drawIndicator(morphs: List<Morph>?, path: Path, t: Float) 
 
     val center = Offset(size.width / 2f, size.height / 2f)
     rotate(degrees = t * SPIN_DEGREES_PER_SECOND, pivot = center) {
-        androidx.compose.ui.graphics.drawscope.translate(center.x, center.y) {
-            androidx.compose.ui.graphics.drawscope.scale(radius, radius, pivot = Offset.Zero) {
+        translate(center.x, center.y) {
+            scale(radius, radius, pivot = Offset.Zero) {
                 drawPath(path, Indicator)
             }
         }

@@ -70,7 +70,7 @@
     },
     "row": {
       "font": "pixel",
-      "size": 32,
+      "size": 20,
       "color": "@onSurface",
       "maxLines": 1
     }
@@ -118,7 +118,6 @@
       "moving": {
         "scale": 1.0,
         "alpha": 1.0,
-        "fill": "@primary",
         "indicator": {
           "kind": "arrow",
           "color": "@primary",
