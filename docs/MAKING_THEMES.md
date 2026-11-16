@@ -180,7 +180,7 @@ Node types: `stack` (layers), `row`, `column`, `shape`, `image`, `text`, `clock`
 | `wheel` | A ring of round cards where only the middle one is selected and up/down spins the next app into the middle |
 | `bento` | A grid of wide and small tiles (`card` for small, `bigCard` for wide) |
 
-Three bundled themes show these off: `wishy-wheel` (the ring), `wishy-cozy` (bento) and `wishy-bit` (a text-only menu with `artwork.source: "none"` and a pixel font). Copy whichever is closest to what you want.
+Three bundled themes show these off: `wishy-wheel` (the ring), `wishy-home` (the default rail) and `wishy-bit` (a text-only menu with `artwork.source: "none"` and a pixel font). Copy whichever is closest to what you want.
 
 and `sections.arrangement`: `tabs` (a row), `dots` or `list` (a column).
 

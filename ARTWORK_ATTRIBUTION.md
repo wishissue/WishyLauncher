@@ -5,7 +5,7 @@
 | Item | Author | Licence |
 |---|---|---|
 | `app_icon.xml`, `app_banner.xml`, `ic_wishy_mark.xml` (placeholder launcher icon, banner and mark) | Wishy Launcher contributors | GPL-3.0-only |
-| Built-in theme `wishy` (colours, shapes, text styles, its wallpapers and placeholder cover) | Wishy Launcher contributors | GPL-3.0-only |
+| Built-in theme `wishy-home` (colours, shapes, text styles) | Wishy Launcher contributors | GPL-3.0-only |
 | Bundled wallpaper `wp_wishy_*.webp` (the Wishy Blue wallpaper, dark and light) | Wishy Launcher contributors | GPL-3.0-only |
 | Bundled wallpapers `wp_<name>_dark.webp` / `wp_<name>_light.webp` for sheet, fold, amber, glass_chip, adwaita, curvy, curvaturingster, dithered_sun, pills, symbolic | GNOME Backgrounds contributors, https://gitlab.gnome.org/GNOME/gnome-backgrounds (mirror: https://github.com/GNOME/gnome-backgrounds). Individual author credits are embedded in the original images. | CC BY-SA 3.0 US |
 | Bundled wallpapers `wp_flow.webp`, `wp_volna.webp`, `wp_milkyway.webp`, `wp_altai.webp` | Sandra Smukaste (Flow), Nikita Babin (Volna), ruvkr (Milky Way), Alesya Khoteeva (Altai); from KDE Plasma wallpapers, https://github.com/KDE/plasma-workspace-wallpapers | CC BY-SA 4.0 |
@@ -32,6 +32,21 @@ Rules for artwork in the repository:
 - Only pictures the contributor made, or that are licensed for redistribution (for example CC0, CC-BY, or the app owner's written permission), are accepted. The licence and source are recorded per file.
 - Logos and trademarks belong to their owners. Their appearance in an app's own banner, which the launcher shows from the app itself, is the app developer's decision. The launcher does not copy those banners into this repository.
 - A picture can be withdrawn at any time by deleting its entry. Launchers drop it on the next cache clear or refresh.
+
+## Artwork sources used by "Find artwork" and the banner editor
+
+The launcher does not bundle any of these. It downloads a catalogue (one whole file per source, never per app), matches it to installed apps on the device, and downloads a single logo only when the person opens that app's results or editor. Every banner made from a logo records the source, author and licence in its own `meta.json` and in exported artwork packs.
+
+| Source | What is used | Licence | Notes |
+|---|---|---|---|
+| Simple Icons, https://simpleicons.org (`simple-icons/simple-icons`, `data/simple-icons.json` and `icons/*.svg`) | Single-colour brand logos, drawn tinted on the banner | CC0-1.0 | The brands' logos are trademarks of their owners. CC0 covers the SVG files, not the trademarks. |
+| SVGL, https://svgl.app (`api.svgl.app`) | Coloured brand logos | Per logo; see svgl.app | Logos belong to their owners. The launcher stores them only on the device that downloaded them and shows the source. |
+| Arcticons, https://github.com/Arcticons-Team/Arcticons (`app/assets/appfilter.xml`, `icons/white/*.svg`) | Line icons that name the Android package they belong to | CC BY-SA 4.0 | Attribution and share-alike apply to the icons. Shown as "Arcticons contributors" next to the result. |
+| Iconify, https://iconify.design (`api.iconify.design`) | Only when the person types a search in the editor. The typed word is sent; nothing else. | Per icon set; the set name is shown | Limited to the `logos` and `simple-icons` sets. |
+| Wishy artwork repository (`repo/artwork/`) | Finished banners | Per entry in `artwork/index.json` | As described above. |
+| Generic icons (`GenericIcons` in `themecore`) | Eight small shapes (play, music, game, apps, TV, star, heart, bolt) | GPL-3.0-only (drawn by Wishy contributors from basic shapes) | Used when no logo exists anywhere. |
+
+Rules the code enforces: only the hosts `raw.githubusercontent.com`, `api.svgl.app`, `svgl.app` and `api.iconify.design` are contacted for pictures; SVGs are limited to 256 KB and are refused if they contain scripts, event handlers, external references, entities, animation or embedded foreign content; a logo is never redistributed by the launcher except inside an artwork pack the person exports themselves.
 
 ## Third-party themes
 

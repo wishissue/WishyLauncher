@@ -4,7 +4,7 @@ A theme is a folder (or a `.zip` of that folder) holding one `theme.json` and so
 
 The machine-readable definition is [`schema/wishy-theme.schema.v1.json`](schema/wishy-theme.schema.v1.json) (JSON Schema 2020-12). This page explains it. If the two ever disagree, the launcher's validator and the JSON Schema win.
 
-> Status: the schema is checked against its meta-schema and against a few accept/reject examples. The Kotlin loader and renderer are written (Milestone 3) but have not been compiled or run by me, so details may change before the first release. `schemaVersion` will be bumped on any incompatible change.
+> Status: the schema is checked against its meta-schema and against a few accept/reject examples. The Kotlin loader and renderer have been compiled and validated by the maintainer. `schemaVersion` will be bumped on any incompatible change.
 
 ## 1. Folder layout
 

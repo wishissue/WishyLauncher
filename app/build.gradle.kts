@@ -94,4 +94,7 @@ dependencies {
     // the big cold-start "screen shows but not smooth yet" win.
     implementation("androidx.profileinstaller:profileinstaller:1.4.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.1")
+    // Draws SVG logos into banners. Android has no SVG renderer of its own (VectorDrawable is a different format).
+    // Apache-2.0, about 200 KB, no network or other dependencies. Only text that passed SvgSanitizer is given to it.
+    implementation("com.caverock:androidsvg-aar:1.4")
 }

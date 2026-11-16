@@ -76,7 +76,7 @@ data class LauncherConfig(
     val layout: Int = 2, // Dock
     // ----- themes -----
     /** Installed theme id, or "classic" for the original layouts. */
-    val themeId: String = "wishy",
+    val themeId: String = org.wishy.launcher.theme.ThemeStorage.DEFAULT_ID,
     /** 0 = follow the theme's default, 1 = light, 2 = dark */
     val themeMode: Int = 0,
     /** Show the theme's clock (and the status-bar clock in classic mode). */
@@ -124,7 +124,8 @@ class ConfigStore(private val context: Context) {
         val cfg = prefs[KEY_CONFIG]?.let {
             runCatching { json.decodeFromString<LauncherConfig>(it) }.getOrNull()
         } ?: LauncherConfig(categories = defaultCategories(context))
-        ensureAllAppsFirst(cfg, context)
+        // A removed built-in theme (see ThemeStorage.REMOVED_IDS) is shown as the new default; the saved value is fixed on the next save.
+        ensureAllAppsFirst(cfg.copy(themeId = org.wishy.launcher.theme.ThemeStorage.migrateId(cfg.themeId)), context)
     }
 
     private fun defaultCategories(ctx: Context) = listOf(
@@ -148,7 +149,8 @@ class ConfigStore(private val context: Context) {
             val current = prefs[KEY_CONFIG]?.let {
                 runCatching { json.decodeFromString<LauncherConfig>(it) }.getOrNull()
             } ?: LauncherConfig()
-            prefs[KEY_CONFIG] = json.encodeToString(transform(current))
+            val next = transform(current)
+            prefs[KEY_CONFIG] = json.encodeToString(next.copy(themeId = org.wishy.launcher.theme.ThemeStorage.migrateId(next.themeId)))
         }
     }
 }

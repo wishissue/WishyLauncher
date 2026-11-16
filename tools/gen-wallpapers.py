@@ -10,8 +10,6 @@ Needs:                          pip install pillow numpy
 
 Writes
   app/src/main/res/drawable-nodpi/wp_<id>_dark.webp / wp_<id>_light.webp   the wallpaper catalog (see art/Wallpapers.kt)
-  themes/wishy/assets/ui/wallpaper-dark.webp / wallpaper-light.webp         the Wishy theme's own wallpaper
-  themes/wishy/assets/art/default.png                                       the Wishy theme's placeholder cover
 """
 import os
 import sys
@@ -190,16 +188,6 @@ def main():
                      format="WEBP", quality=QUALITY, method=6)
             total += n
             print(f"wp_{wid}_{tone}.webp  {n / 1024:.0f} KB")
-    ui = os.path.join(ROOT, "themes/wishy/assets/ui")
-    for dark in (True, False):
-        tone = "dark" if dark else "light"
-        n = save(render(CATALOG["wishy"], dark, 100), os.path.join(ui, f"wallpaper-{tone}.webp"),
-                 format="WEBP", quality=QUALITY, method=6)
-        total += n
-        print(f"theme wallpaper-{tone}.webp  {n / 1024:.0f} KB")
-    n = save(placeholder_cover(), os.path.join(ROOT, "themes/wishy/assets/art/default.png"), format="PNG", optimize=True)
-    total += n
-    print(f"theme default.png  {n / 1024:.0f} KB")
     print(f"total {total / 1024:.0f} KB")
 
 

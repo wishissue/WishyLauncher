@@ -8,3 +8,6 @@
 -keepclasseswithmembers class org.wishy.** {
     kotlinx.serialization.KSerializer serializer(...);
 }
+
+# AndroidSVG (draws SVG logos in banners)
+-dontwarn com.caverock.androidsvg.**

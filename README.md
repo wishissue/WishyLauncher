@@ -2,14 +2,14 @@
 
 A fast, private, open-source home launcher for Android TV and Google TV, with a theme system that can change the whole layout and install new themes without updating the app.
 
-> **Status: verified build.** The app compiles cleanly with Jetpack Compose for TV on Android 8.0+ (API 26+). See [`BUILD.md`](BUILD.md) section 5 and [`INSTALL.md`](INSTALL.md).
+> **Status:** the theme engine has been compiled and validated by the maintainer. The latest changes (artwork system, `wishy-home` theme, navigation, wallpaper and layout fixes) are source-reviewed only and still need a build and a real-device test. Minimum Android version: 5.0 (API 21). See [`BUILD.md`](BUILD.md) section 5 and [`INSTALL.md`](INSTALL.md).
 
 ## What it does
 
 - Remote-friendly home screen: D-pad focus, app launch, long-press menu, move/hide/organise apps, sections, clock and date, status bar, and wallpapers (eight bundled ones in a light and a dark tone, or your own photo).
 - **Built-in theme engine**: **Wishy** (blue and white, navy in dark mode) default theme, plus the original Couchy layouts available as **Classic**.
 - **Themes are data**: versioned JSON plus images, strictly validated, no scripts. New themes install without an APK update, and a broken theme falls back to Wishy, then to Classic.
-- **App banners**: your own picture per app, or optional artwork from the official repository for installed apps only. Falls back to the app's own banner, then its icon.
+- **Artwork**: find logos and banners for your apps, build a banner in a simple editor (logo, background, adjust), keep your banners safe, and export or import them as a ZIP pack. Falls back to the app's own banner, then its icon. See `ARCHITECTURE.md` section 6a.
 - Offline by default, no accounts, ads or analytics, and no system settings changed.
 
 ## Where things are

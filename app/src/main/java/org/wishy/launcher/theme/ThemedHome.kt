@@ -41,7 +41,10 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
@@ -723,6 +726,18 @@ private fun AppsView(n: AppsNode, env: ThemeEnv, ui: HomeUi, modifier: Modifier)
     val gap = env.dims.dp(n.gap * env.tweaks.gapScale)
     val headroom = env.dims.dp(24f)
     val sectionKey = if (ui.flat) -1 else ui.selectedIndex
+    val scope = rememberCoroutineScope()
+    var railState by remember { mutableStateOf<androidx.compose.foundation.lazy.LazyListState?>(null) }
+    // Loop to the other end: the target may not be composed yet, so scroll to it first, then retry focusing for a few frames.
+    val jumpTo: (Int) -> Unit = { target ->
+        scope.launch {
+            runCatching { railState?.scrollToItem(target) }
+            repeat(8) {
+                if (runCatching { focusRequesters[target].requestFocus() }.isSuccess) return@launch
+                androidx.compose.runtime.withFrameNanos { }
+            }
+        }
+    }
     val wrapEnabled = n.wrap || n.arrangement == AppsArrangement.RAIL || n.arrangement == AppsArrangement.CROSS
 
     BoxWithConstraints(modifier) {
@@ -751,13 +766,13 @@ private fun AppsView(n: AppsNode, env: ThemeEnv, ui: HomeUi, modifier: Modifier)
                         when (e.key) {
                             Key.DirectionRight -> {
                                 if (index == apps.lastIndex) {
-                                    runCatching { focusRequesters[0].requestFocus() }
+                                    jumpTo(0)
                                     true
                                 } else false
                             }
                             Key.DirectionLeft -> {
                                 if (index == 0) {
-                                    runCatching { focusRequesters[apps.lastIndex].requestFocus() }
+                                    jumpTo(apps.lastIndex)
                                     true
                                 } else false
                             }
@@ -778,6 +793,7 @@ private fun AppsView(n: AppsNode, env: ThemeEnv, ui: HomeUi, modifier: Modifier)
                 when (n.arrangement) {
                     AppsArrangement.RAIL, AppsArrangement.CROSS -> {
                         val state = rememberLazyListState()
+                        SideEffect { railState = state }
                         val side = if (n.arrangement == AppsArrangement.CROSS) max(0f, (availW.value - cardW.value) / 2f).let { Dp(it) } else headroom
                         LazyRow(
                             state = state,

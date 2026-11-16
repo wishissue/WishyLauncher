@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <!-- Artwork hub -->
+    <string name="art_find">Find artwork for my apps</string>
+    <string name="art_find_sub">Look for logos and banners for the apps you have installed.</string>
+    <string name="art_create">Create a banner</string>
+    <string name="art_create_sub">Pick an app and design its banner.</string>
+    <string name="art_mine">My artwork</string>
+    <string name="art_mine_sub">See, change, import and export your banners.</string>
+    <string name="art_versions">Banner versions and online lookup</string>
+    <string name="art_versions_sub">Choose between banner versions for an app, add sources, refresh and clear downloads.</string>
+    <string name="art_more">More options</string>
+    <string name="art_more_sub">Online lookup, updates and clearing downloads.</string>
+
+    <!-- Find artwork -->
+    <string name="art_searching">Looking for artwork…</string>
+    <string name="art_found_summary">Found artwork for %1$d of %2$d apps.</string>
+    <string name="art_app_official">Official banner available</string>
+    <string name="art_app_logos">%1$d logos found</string>
+    <string name="art_app_none">Nothing found. A banner can still be built from the app icon.</string>
+    <string name="art_none_found">No artwork was found for your apps. Wishy can still build a banner from each app\'s icon.</string>
+    <string name="art_offline_note">Offline: only artwork already saved on this device was searched.</string>
+    <string name="art_provider_down">Could not reach: %1$s</string>
+    <string name="art_online_off">Online artwork lookup is off. Turn it on to search the internet.</string>
+    <string name="art_turn_on">Turn on online lookup</string>
+    <string name="art_generate_missing">Create banners for apps without one</string>
+    <string name="art_generate_confirm_title">Create banners?</string>
+    <string name="art_generate_confirm_body">Wishy will make a banner for %1$d apps that only have an icon. Banners you chose are not touched.</string>
+    <string name="art_generate_done">Created %1$d banners.</string>
+    <string name="art_generate_none">Every app already has a banner.</string>
+    <string name="art_working_on">Working on %1$s…</string>
+
+    <!-- One app's results -->
+    <string name="art_use_this">Use this banner</string>
+    <string name="art_customize">Customize</string>
+    <string name="art_replace_warn">This replaces the banner you chose for this app.</string>
+    <string name="art_origin_official">Official</string>
+    <string name="art_origin_community">Community</string>
+    <string name="art_origin_generated">Generated</string>
+    <string name="art_origin_yours">Yours</string>
+    <string name="art_credit">%1$s · %2$s</string>
+    <string name="art_loading_options">Getting pictures…</string>
+    <string name="art_saved">Saved.</string>
+    <string name="art_save_failed">Could not save: %1$s</string>
+    <string name="art_current">Current: %1$s</string>
+    <string name="art_cand_official_title">Banner from the Wishy repository</string>
+    <string name="art_cand_logo_title">%1$s logo on a generated banner</string>
+    <string name="art_cand_icon_title">Made from the app icon</string>
+    <string name="art_cand_generic_title">Generic icon: %1$s</string>
+    <string name="art_logo_by">Logo: %1$s, %2$s</string>
+    <string name="art_made_by_wishy">Built by Wishy</string>
+    <string name="art_license_unknown">licence see source</string>
+
+    <!-- Status of an app's artwork -->
+    <string name="art_status_yours">Your banner</string>
+    <string name="art_status_official">Official banner</string>
+    <string name="art_status_app">The app\'s own banner</string>
+    <string name="art_status_icon">Icon only</string>
+    <string name="art_status_original">Original (your choice)</string>
+
+    <!-- App lists and details -->
+    <string name="art_pick_app">Choose an app</string>
+    <string name="art_edit">Edit banner</string>
+    <string name="art_edit_new">Create banner</string>
+    <string name="art_find_for_app">Find artwork for this app</string>
+    <string name="art_change_picture">Use a picture from a file</string>
+    <string name="art_restore">Restore original banner</string>
+    <string name="art_restore_sub">Goes back to the banner or icon the app came with.</string>
+    <string name="art_restore_confirm_title">Restore original?</string>
+    <string name="art_restore_confirm_body">Your banner for this app will be removed.</string>
+    <string name="art_restore_confirm">Restore</string>
+    <string name="art_export">Export artwork pack</string>
+    <string name="art_export_sub">Save your banners and logos as a ZIP file.</string>
+    <string name="art_import">Import artwork pack</string>
+    <string name="art_import_sub">Add banners from a ZIP file. Banners you already have are kept.</string>
+    <string name="art_exported">Exported %1$d banners.</string>
+    <string name="art_imported">Added %1$d. Kept your existing banners for %2$d. Skipped %3$d.</string>
+    <string name="art_nothing_to_export">You have no banners of your own yet.</string>
+    <string name="art_clear_search_cache">Clear search cache</string>
+    <string name="art_clear_search_cache_sub">Removes saved catalogs and previews. Your banners are kept.</string>
+
+    <!-- Banner editor -->
+    <string name="ed_title">Banner for %1$s</string>
+    <string name="ed_tab_logo">Logo</string>
+    <string name="ed_tab_bg">Background</string>
+    <string name="ed_tab_adjust">Adjust</string>
+    <string name="ed_done">Done</string>
+    <string name="ed_auto">Auto design</string>
+    <string name="ed_import_logo">Import SVG or PNG…</string>
+    <string name="ed_search">Search for icons…</string>
+    <string name="ed_search_title">Search for icons</string>
+    <string name="ed_search_hint">Type a name, for example: netflix. Searching online sends only this word.</string>
+    <string name="ed_searching">Searching…</string>
+    <string name="ed_no_results">No icons found.</string>
+    <string name="ed_sec_found">Found for this app</string>
+    <string name="ed_sec_yours">Your logo</string>
+    <string name="ed_sec_app">From the app</string>
+    <string name="ed_sec_search">Search results</string>
+    <string name="ed_sec_generic">Generic icons</string>
+    <string name="ed_app_icon">App icon</string>
+    <string name="ed_bg_looks">Quick looks</string>
+    <string name="ed_bg_colors">Colors</string>
+    <string name="ed_bg_gradients">Gradients</string>
+    <string name="ed_bg_custom">Any color (HEX)…</string>
+    <string name="ed_bg_picture">Background picture…</string>
+    <string name="ed_bg_clear">Transparent</string>
+    <string name="ed_hex_title">Background color</string>
+    <string name="ed_hex_hint">Type a color such as #FF8800.</string>
+    <string name="ed_hex_bad">That is not a color. Use six letters or digits, like #FF8800.</string>
+    <string name="ed_bigger">Bigger</string>
+    <string name="ed_smaller">Smaller</string>
+    <string name="ed_left">Left</string>
+    <string name="ed_right">Right</string>
+    <string name="ed_up">Up</string>
+    <string name="ed_down">Down</string>
+    <string name="ed_fit">Fit</string>
+    <string name="ed_fill">Fill</string>
+    <string name="ed_fit_mode">Size: %1$s</string>
+    <string name="ed_reset">Reset position</string>
+    <string name="ed_color">Logo color: %1$s</string>
+    <string name="ed_color_white">White</string>
+    <string name="ed_color_dark">Dark</string>
+    <string name="ed_color_asis">As it is</string>
+    <string name="ed_need_logo">Choose a logo first.</string>
+    <string name="ed_discard_title">Discard changes?</string>
+    <string name="ed_discard_body">Your changes to this banner will be lost.</string>
+    <string name="ed_discard">Discard</string>
+    <string name="ed_bad_file">That file could not be used: %1$s</string>
+    <string name="ed_preview">Preview</string>
+</resources>

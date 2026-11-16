@@ -58,6 +58,7 @@ class ThemeStorage private constructor(private val context: Context) {
         if (prepared) return
         runCatching { installer.recoverLeftovers() }
         runCatching { syncBundled() }
+        runCatching { dropRemovedThemes() }
         prepared = true
     }
 
@@ -100,8 +101,9 @@ class ThemeStorage private constructor(private val context: Context) {
      * Loads theme [id]. Any failure falls back to the bundled default theme and records the reason.
      * Never throws. Call off the main thread.
      */
-    fun resolve(id: String, ctx: LoadContext): ThemeResult {
+    fun resolve(requested: String, ctx: LoadContext): ThemeResult {
         prepare()
+        val id = migrateId(requested)
         var error: String? = null
         if (id.isNotEmpty() && id != CLASSIC_ID) {
             val dir = dirFor(id)
@@ -127,12 +129,25 @@ class ThemeStorage private constructor(private val context: Context) {
         }
     }
 
+    /**
+     * Themes that were shipped once and have been removed from the launcher. A copy left behind by an older version
+     * (bundled copy or one downloaded from the official list) is deleted so it no longer shows up in Settings.
+     */
+    private fun dropRemovedThemes() {
+        for (id in REMOVED_IDS) {
+            File(bundledRoot, id).deleteRecursively()
+            if (isInstalled(id)) remove(id)
+        }
+    }
+
     private fun syncBundled() {
         val am = context.assets
         val versionCode = runCatching {
             PackageInfoCompat.getLongVersionCode(context.packageManager.getPackageInfo(context.packageName, 0))
         }.getOrDefault(0L).toString()
         val names = am.list("") ?: return
+        // A bundled copy whose theme is no longer in the APK is stale (a theme removed in an update).
+        bundledRoot.listFiles()?.forEach { dir -> if (dir.isDirectory && dir.name !in names) dir.deleteRecursively() }
         for (name in names) {
             if (!ThemeLimits.ID_REGEX.matches(name)) continue
             if ((am.list(name) ?: emptyArray()).none { it == "theme.json" }) continue
@@ -185,7 +200,13 @@ class ThemeStorage private constructor(private val context: Context) {
     }
 
     companion object {
-        const val DEFAULT_ID = "wishy"
+        const val DEFAULT_ID = "wishy-home"
+
+        /** Old built-in ids that no longer exist. Anyone who had one selected gets [DEFAULT_ID]. */
+        val REMOVED_IDS: Set<String> = setOf("wishy", "wishy-cozy")
+
+        /** [id], or [DEFAULT_ID] when [id] is a theme that has been removed. */
+        fun migrateId(id: String): String = if (id in REMOVED_IDS) DEFAULT_ID else id
         /** Special id: use the original Couchy-style layouts instead of a theme. */
         const val CLASSIC_ID = "classic"
         private const val MARKER = ".app-version"

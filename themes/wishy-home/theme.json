@@ -1,11 +1,11 @@
 {
   "$schema": "../../schema/wishy-theme.schema.v1.json",
   "schemaVersion": 1,
-  "id": "wishy",
-  "name": "Wishy",
-  "version": "4.1.0",
+  "id": "wishy-home",
+  "name": "Wishy Home",
+  "version": "1.0.0",
   "author": "Wishy Launcher contributors",
-  "description": "Clean, console-style home. A big title for the focused app, one calm row of square tiles, a bold clock, and hints along the bottom. Every Display setting (corners, size, spacing, labels, accent, wallpaper, clock, date) applies. Sections are off by default: just one row of all your apps.",
+  "description": "The default look. Flat, calm and readable from the sofa: the same colours as Settings, one row of wide banner tiles, the name of the selected app, and a clock. Every Display setting applies (corners, size, spacing, labels, accent, wallpaper, clock, date, status bar, sections, app order).",
   "license": "GPL-3.0-only",
   "defaultColorScheme": "system",
   "credits": [
@@ -36,52 +36,22 @@
       "author": "The Plus Jakarta Sans Project Authors",
       "license": "OFL-1.1",
       "source": "https://github.com/tokotype/PlusJakartaSans"
-    },
-    {
-      "file": "assets/fonts/BagelFatOne-Regular.ttf",
-      "title": "Bagel Fat One",
-      "author": "The Bagel Fat Project Authors",
-      "license": "OFL-1.1",
-      "source": "https://github.com/JAMO-TYPEFACE/BagelFat"
-    },
-    {
-      "file": "assets/ui/wallpaper-dark.webp",
-      "title": "Wishy wallpaper, dark",
-      "author": "Wishy Launcher contributors",
-      "license": "GPL-3.0-only",
-      "notes": "Drawn from scratch by tools/gen-wallpapers.py in the launcher repository."
-    },
-    {
-      "file": "assets/ui/wallpaper-light.webp",
-      "title": "Wishy wallpaper, light",
-      "author": "Wishy Launcher contributors",
-      "license": "GPL-3.0-only",
-      "notes": "Drawn from scratch by tools/gen-wallpapers.py in the launcher repository."
-    },
-    {
-      "file": "assets/art/default.png",
-      "title": "Placeholder cover",
-      "author": "Wishy Launcher contributors",
-      "license": "GPL-3.0-only",
-      "notes": "Drawn from scratch by tools/gen-wallpapers.py in the launcher repository."
     }
   ],
   "colorSchemes": {
     "light": {
       "background": "#E6F1FF",
       "surface": "#FFFFFF",
-      "surfaceVariant": "#DAE5F6",
+      "surfaceVariant": "#DCE7F8",
       "onSurface": "#101828",
-      "onSurfaceMuted": "#46556C",
-      "primary": "#0166FF",
+      "onSurfaceMuted": "#536176",
+      "primary": "#1560D4",
       "onPrimary": "#FFFFFF",
       "accent": "#946200",
-      "outline": "#C3D4EE",
+      "outline": "#D4DEED",
       "scrim": "#660B1B33",
       "custom": {
-        "glass": "#B8FFFFFF",
-        "glassEdge": "#99FFFFFF",
-        "ring": "#FFFFFF"
+        "ring": "#1560D4"
       }
     },
     "dark": {
@@ -90,15 +60,13 @@
       "surfaceVariant": "#182235",
       "onSurface": "#F1F4FB",
       "onSurfaceMuted": "#B0BCD0",
-      "primary": "#66A3FF",
-      "onPrimary": "#002266",
+      "primary": "#A8C8FF",
+      "onPrimary": "#082C63",
       "accent": "#F4C66A",
       "outline": "#303B4F",
       "scrim": "#99000000",
       "custom": {
-        "glass": "#80111725",
-        "glassEdge": "#26FFFFFF",
-        "ring": "#FFFFFF"
+        "ring": "#A8C8FF"
       }
     }
   },
@@ -114,155 +82,106 @@
     },
     "bold": {
       "file": "assets/fonts/PlusJakartaSans-Bold.ttf"
-    },
-    "display": {
-      "file": "assets/fonts/BagelFatOne-Regular.ttf"
     }
   },
   "textStyles": {
     "clock": {
-      "font": "display",
-      "size": 72,
+      "font": "bold",
+      "size": 56,
       "color": "@onSurface",
-      "letterSpacing": 1,
       "align": "end",
-      "maxLines": 1,
-      "shadow": {
-        "color": "@background/55",
-        "dy": 2,
-        "blur": 16
-      }
+      "maxLines": 1
     },
     "date": {
-      "font": "semibold",
-      "size": 26,
+      "font": "medium",
+      "size": 24,
       "color": "@onSurfaceMuted",
       "align": "end",
-      "maxLines": 1,
-      "shadow": {
-        "color": "@background/55",
-        "dy": 1,
-        "blur": 10
-      }
+      "maxLines": 1
     },
     "title": {
-      "font": "display",
-      "size": 104,
+      "font": "bold",
+      "size": 72,
       "color": "@onSurface",
-      "maxLines": 1,
-      "letterSpacing": 0,
-      "shadow": {
-        "color": "@background/55",
-        "dy": 3,
-        "blur": 20
-      }
+      "maxLines": 1
     },
     "tab": {
       "font": "semibold",
       "size": 24,
       "color": "@onSurfaceMuted",
-      "uppercase": true,
-      "letterSpacing": 1.5,
       "maxLines": 1
     },
     "label": {
       "font": "semibold",
-      "size": 24,
+      "size": 22,
       "color": "@onSurface",
-      "maxLines": 1,
-      "shadow": {
-        "color": "@background/55",
-        "dy": 1,
-        "blur": 8
-      }
-    },
-    "hint": {
-      "font": "semibold",
-      "size": 22,
-      "color": "@onSurfaceMuted",
-      "uppercase": true,
-      "letterSpacing": 1,
-      "maxLines": 1
-    },
-    "hintKey": {
-      "font": "bold",
-      "size": 22,
-      "color": "@primary",
-      "uppercase": true,
-      "letterSpacing": 1,
       "maxLines": 1
     },
     "count": {
-      "font": "semibold",
-      "size": 24,
+      "font": "medium",
+      "size": 22,
       "color": "@onSurfaceMuted",
-      "letterSpacing": 1,
-      "maxLines": 1,
-      "shadow": {
-        "color": "@background/55",
-        "dy": 1,
-        "blur": 8
-      }
+      "maxLines": 1
     }
   },
   "background": {
     "color": "@background",
-    "image": "assets/ui/wallpaper-dark.webp",
-    "fit": "crop",
-    "dim": 0.18,
     "userWallpaper": "allowed"
   },
   "cardStyles": {
     "tile": {
-      "aspect": "1:1",
+      "aspect": "16:9",
       "shape": {
         "kind": "rounded",
-        "radius": 28
+        "radius": 20
       },
       "fill": "@surface",
+      "border": {
+        "width": 1,
+        "color": "@outline"
+      },
       "artwork": {
         "source": "auto",
         "fit": "crop",
-        "iconSize": "58%",
-        "placeholderFill": "@surfaceVariant",
-        "themeArt": true
+        "iconSize": "46%",
+        "placeholderFill": "@surfaceVariant"
       },
       "label": {
         "position": "below",
         "style": "label",
-        "gap": 14
+        "gap": 12
       },
       "idle": {
         "scale": 1.0,
-        "alpha": 0.92
+        "alpha": 0.94
       },
       "focused": {
-        "scale": 1.1,
+        "scale": 1.07,
         "alpha": 1.0,
         "shadow": {
-          "color": "#80000000",
-          "dy": 18,
-          "blur": 40
+          "color": "#66000000",
+          "dy": 12,
+          "blur": 28
         },
         "indicator": {
           "kind": "ring",
-          "color": "@custom.ring",
-          "width": 5,
-          "gap": 5
+          "color": "@primary",
+          "width": 4,
+          "gap": 4
         }
       },
       "moving": {
-        "scale": 1.14,
+        "scale": 1.1,
         "shadow": {
-          "color": "#99000000",
-          "dy": 20,
-          "blur": 44
+          "color": "#80000000",
+          "dy": 14,
+          "blur": 32
         },
         "indicator": {
           "kind": "ring",
           "color": "@accent",
-          "width": 6,
-          "gap": 6,
+          "width": 5,
+          "gap": 5,
           "blink": true,
           "blinkMillis": 500
         }
@@ -285,7 +204,7 @@
             "id": "tabs",
             "arrangement": "tabs",
             "style": "tab",
-            "gap": 44,
+            "gap": 40,
             "selectedIndicator": {
               "kind": "underline",
               "color": "@primary",
@@ -332,7 +251,7 @@
             "showWhen": "dateEnabled",
             "frame": {
               "x": "95%",
-              "y": "20%",
+              "y": "19%",
               "anchor": "topEnd",
               "w": "35%"
             }
@@ -344,7 +263,7 @@
             "showWhen": "hasFocusedApp",
             "frame": {
               "x": "5%",
-              "y": "27%",
+              "y": "30%",
               "w": "90%"
             }
           },
@@ -356,7 +275,7 @@
             "showWhen": "hasFocusedApp",
             "frame": {
               "x": "5%",
-              "y": "45.5%",
+              "y": "43%",
               "w": "40%"
             }
           },
@@ -365,16 +284,16 @@
             "id": "apps",
             "arrangement": "rail",
             "card": "tile",
-            "itemWidth": 250,
-            "gap": 34,
+            "itemWidth": 340,
+            "gap": 30,
             "scroll": "edge",
             "wrap": true,
             "focusScope": "section",
             "frame": {
               "x": 0,
-              "y": "52%",
+              "y": "54%",
               "w": "100%",
-              "h": "38%"
+              "h": "36%"
             },
             "padding": {
               "left": "5%",
@@ -386,17 +305,6 @@
     }
   },
   "overrides": [
-    {
-      "when": {
-        "colorScheme": "light"
-      },
-      "merge": {
-        "background": {
-          "image": "assets/ui/wallpaper-light.webp",
-          "dim": 0.0
-        }
-      }
-    },
     {
       "when": {
         "reducedMotion": true

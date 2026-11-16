@@ -58,7 +58,7 @@ The JSON Schema in `schema/` is the public description for theme authors and too
 |---|---|---|
 | `org.wishy.launcher.data` | from Couchy | `AppRepository` (app discovery and cache), `LauncherConfig` and `ConfigStore` (DataStore, one JSON blob), `Status` (network and clock state). |
 | `org.wishy.launcher.ui` | from Couchy | Home screen, settings sheet, wizard, cards. Will be split. |
-| `org.wishy.launcher.theme` | written (storage, environment, shapes, card, home renderer); not compiled | Loads installed themes, resolves colour tokens, and renders a theme tree as Compose. |
+| `org.wishy.launcher.theme` | compiled and validated by the maintainer (storage, environment, shapes, card, home renderer) | Loads installed themes, resolves colour tokens, and renders a theme tree as Compose. |
 | `org.wishy.launcher.art` | written | Banner manager. |
 | `org.wishy.launcher.net` | written | The one HTTPS client. |
 
@@ -114,7 +114,7 @@ Reduced motion (a Settings toggle) forces zero-duration focus and scroll animati
 
 None of this has been measured. Startup and memory targets need testing on a low-end TV, which only you can do.
 
-## 6. Application banner manager (written, not compiled)
+## 6. Application banner manager (written, not compiled; extended by section 6a)
 
 Code: `art/BannerManager.kt`. The home screen takes the user's picture or downloaded artwork over the app's own banner by decoding it off the main thread (`withArtwork`), then redraws when it is ready. Settings, App banners lets the user pick a picture per app, refresh, and clear downloaded artwork. Online lookup is off by default, runs at most once a day, five seconds after start, and asks for a picture only when the package is installed and listed in the index.
 
@@ -134,6 +134,58 @@ Rules:
 - **Offline.** Cached files are used with no network. A failed index fetch is retried later with backoff and never shown as an error on the home screen.
 - **Manual choice** uses the system document picker. The chosen image goes through the same validation (but may be any aspect, cropped on display), is copied into the user folder, and the permission grant is not kept.
 - **Cache management** in Settings shows sizes and can clear downloaded artwork without touching user choices.
+
+## 6a. Artwork system: discover, create, store, share (written, not compiled)
+
+Entry point: **Settings, Artwork** (`ui/ArtworkScreens.kt`). Three actions: *Find artwork for my apps*, *Create a banner*, *My artwork*. Rarely used switches live under *More options*. Back always goes one step back (`ArtNav`); at the hub it leaves Artwork.
+
+### Parts
+
+| Part | Where | Job |
+|---|---|---|
+| `ArtSvg` (`SvgSanitizer`) | `themecore` | Decides whether an SVG may be kept and drawn. Rejects scripts, event handlers, `foreignObject`, animation, entities, DOCTYPE subsets, processing instructions, any reference outside the file, oversize and deep files. Reports aspect ratio and whether the picture is single-colour (so it can be tinted). |
+| `ArtLayout` | `themecore` | The 1280 x 720 canvas, fit and cover maths (`BannerLayout`), colour helpers, background and banner specs, the eight design presets, and `AutoDesign` (picks a good-looking banner for a logo without asking). Pure maths, unit tested. |
+| `ArtSources` | `themecore` | Parsers for the Simple Icons, SVGL, Arcticons and Iconify answers; the allowed-host list; `ArtMatcher` (matches installed apps to catalogue logos by package, label and a small brand table); eight generic icons. |
+| `ArtPack` | `themecore` | The portable pack format and its strict reader and writer. |
+| `BannerRenderer`, `SvgRender` | `art/` | Draws a banner from a spec, a logo and a background. The same code makes the editor preview (640 x 360) and the saved file (1280 x 720). SVG drawing uses AndroidSVG, fed only text that passed `SvgSanitizer`. |
+| `ArtLibrary` | `art/` | The person's own artwork: banner plus originals; export and import of packs; restoring the original banner. |
+| `ArtDiscovery` | `art/` | Downloads and caches catalogues, fetches one logo or official banner on demand, searches. |
+| `BannerManager` | `art/` | Unchanged lookup order; gained `installUserFile`, `userPackages`, "use original" marker, and scales decoded banners to the size drawn. |
+
+### Lookup order for an app (unchanged, plus one rule)
+
+1. the person's banner (`art/user/<pkg>.img`)
+2. downloaded official banner (`art/repo/<pkg>.img`), used only when the person has not picked the app's own banner (the "own banner" choice is stored by the banner-version picker as `PICK_APP`)
+3. the app's own banner
+4. the app's icon
+
+### Storage
+
+```
+filesDir/art/user/<pkg>.img            finished banner, WebP, 1280 x 720 (or the picture the person picked as it is)
+filesDir/art/originals/<pkg>/          logo.svg | logo.png, background.img, meta.json (spec, source, author, licence)
+filesDir/art/repo/<pkg>.img            downloaded official banners (clearable)
+cache/art-discovery/                   catalogues, logos, official banners (clearable)
+cache/art-staging/                     temporary files, always removed
+```
+
+Everything is keyed by package name only, so an app update never touches it. "Clear downloaded artwork" removes only `art/repo/`; "Clear search cache" removes only `cache/art-discovery/`. An original SVG is stored exactly as the person or the source supplied it; the rendered banner is a separate file.
+
+### Discovery and privacy
+
+- Catalogues are downloaded **whole** and matched on the device. No installed-app list, app name or package is sent to anyone.
+- One logo is requested only after the person opens that app's results or its editor. The only text ever sent is a word the person typed in "Search for icons" (Iconify) and the file name of the logo they opened.
+- Network is used only when online artwork lookup is on and offline mode is off. Otherwise cached catalogues are searched and a plain notice explains why.
+- Results are labelled **Official** (a finished banner from the Wishy repository), **Community** (a logo from a public source, banner built by Wishy) or **Generated** (built from the app's icon or a generic icon).
+- Nothing replaces a banner the person chose. Choosing a result while one exists shows a warning with Cancel focused.
+
+### Artwork packs
+
+A pack is a zip: `manifest.json`, `banners/<package>.<webp|png|jpg>`, optional `logos/<package>.<svg|png>`. The manifest (`format: "wishy-artwork-pack"`, `version: 1`) lists each package with banner and logo paths, width and height, the banner spec, origin, source, author, licence and source URL. Import accepts only those names, caps every file and the total, checks the compression ratio, validates every picture, re-checks every SVG, **keeps** banners the person already has, and skips bad entries one by one.
+
+### Not verified here
+
+The provider URLs and answer formats above were written from documentation and memory. This build environment could not reach those hosts, so the parsers have unit tests against sample data only. If a provider changes its format its parser returns nothing, the screen says that source could not be reached, and the other sources still work.
 
 ## 7. Theme repository and installer (client written, not compiled)
 

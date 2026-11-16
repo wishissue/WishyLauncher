@@ -75,7 +75,13 @@ class BannerManager private constructor(context: Context) {
         var sample = 1
         while (b.outWidth / (sample * 2) >= maxWidth) sample *= 2
         val o = BitmapFactory.Options().apply { inSampleSize = sample; inPreferredConfig = Bitmap.Config.ARGB_8888 }
-        BitmapFactory.decodeFile(f.path, o)?.asImageBitmap()
+        val bmp = BitmapFactory.decodeFile(f.path, o) ?: return null
+        // A 1280 px banner is far more than a TV card needs: keep memory low by scaling to the size that is drawn.
+        val out = if (bmp.width > maxWidth * 5 / 4) {
+            Bitmap.createScaledBitmap(bmp, maxWidth, (bmp.height.toLong() * maxWidth / bmp.width).toInt().coerceAtLeast(1), true)
+                .also { if (it !== bmp) bmp.recycle() }
+        } else bmp
+        out.asImageBitmap()
     }.getOrNull()
 
     // ----- user choice -----
@@ -105,6 +111,36 @@ class BannerManager private constructor(context: Context) {
     }
 
     fun clearUserArt(pkg: String) { if (RepoUrls.isPackageName(pkg)) File(userDir, "$pkg.img").delete() }
+
+
+    /** Packages that have a banner of the user's own, for export and listing. */
+    fun userPackages(): List<String> =
+        userDir.listFiles { f -> f.name.endsWith(".img") }.orEmpty().map { it.name.removeSuffix(".img") }.filter { RepoUrls.isPackageName(it) }.sorted()
+
+    /** Checks the picture in [file] (PNG, JPEG or WebP, readable, not huge) and returns its width and height. */
+    fun validateImage(file: File): Pair<Int, Int> = checkImage(file, requireBannerShape = false)
+
+    /**
+     * Makes the picture in [file] the user's banner for [pkg]. The file is moved, not copied. The old banner stays
+     * in place if the picture is not acceptable. Also ends "use the app's original banner" for this app.
+     */
+    fun installUserFile(pkg: String, file: File) {
+        requirePkg(pkg)
+        checkImage(file, requireBannerShape = false)
+        if (file.length() > ThemeLimits.MAX_IMAGE_BYTES) throw ArtException("That picture is larger than 5 MB.")
+        replace(file, File(userDir, "$pkg.img"))
+        clearOwnPick(pkg)
+    }
+
+    /** True when the person chose "the app's own banner" for [pkg] (the same pick the versions screen offers). */
+    fun prefersOriginal(pkg: String): Boolean = RepoUrls.isPackageName(pkg) && pick(pkg) == PICK_APP
+
+    /** Ends "the app's own banner" for [pkg] (called when the person puts a banner of their own in place). */
+    fun clearOwnPick(pkg: String) {
+        if (RepoUrls.isPackageName(pkg) && pick(pkg) == PICK_APP) prefs.edit().remove("pick_$pkg").apply()
+    }
+
+    fun userStamp(pkg: String): Long = userFile(pkg)?.lastModified() ?: 0L
 
     // ----- repository artwork -----
 

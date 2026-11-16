@@ -110,6 +110,7 @@ fun SettingsSheet(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var screen by remember { mutableStateOf(SettingsScreen.Main) }
+    val artNav = remember { ArtNav() }
 
     // Same document-picker flow as videos: opens the system file manager,
     // works with USB drives and network storage providers.
@@ -145,7 +146,7 @@ fun SettingsSheet(
 
     Dialog(
         onDismissRequest = {
-            if (screen == SettingsScreen.ThemeCredits || screen == SettingsScreen.OnlineThemes) screen = SettingsScreen.Themes else if (screen == SettingsScreen.WallpaperStore) screen = SettingsScreen.Wallpaper else if (screen != SettingsScreen.Main) screen = SettingsScreen.Main else onDismiss()
+            if (screen == SettingsScreen.Banners && artNav.back()) { /* one step back inside Artwork */ } else if (screen == SettingsScreen.ThemeCredits || screen == SettingsScreen.OnlineThemes) screen = SettingsScreen.Themes else if (screen == SettingsScreen.WallpaperStore) screen = SettingsScreen.Wallpaper else if (screen != SettingsScreen.Main) screen = SettingsScreen.Main else onDismiss()
         },
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
@@ -213,10 +214,10 @@ fun SettingsSheet(
                         config = config, store = store,
                         onBack = { screen = SettingsScreen.Themes },
                     )
-                    SettingsScreen.Banners -> BannersScreen(
-                        config = config, store = store, apps = apps,
+                    SettingsScreen.Banners -> ArtworkFlow(
+                        config = config, store = store, apps = apps, nav = artNav,
                         onArtChanged = onArtChanged,
-                        onBack = { screen = SettingsScreen.Main },
+                        onExit = { screen = SettingsScreen.Main },
                     )
                     SettingsScreen.ThemeCredits -> ThemeCreditsScreen(
                         config = config,

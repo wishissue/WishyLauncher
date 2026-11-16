@@ -74,7 +74,7 @@ import java.net.NetworkInterface
 private class Look(val id: String, val name: String, val bg: Color, val tile: Color, val accent: Color, val corner: Int)
 
 private val LOOKS = listOf(
-    Look("wishy", "Wishy", Color(0xFF0B1B33), Color(0xFF0166FF), Color(0xFF66A3FF), 10),
+    Look("wishy-home", "Wishy", Color(0xFF080B12), Color(0xFF111725), Color(0xFFA8C8FF), 10),
     Look("classic", "Classic", Color(0xFF111827), Color(0xFF374151), Color(0xFF8AB4F8), 4),
 )
 
@@ -93,7 +93,7 @@ private val StepIcons: List<() -> ImageVector> = listOf(
 fun SetupWizard(
     onDone: () -> Unit,
     onVpnChosen: (String?) -> Unit,
-    currentThemeId: String = "wishy",
+    currentThemeId: String = org.wishy.launcher.theme.ThemeStorage.DEFAULT_ID,
     onThemeChosen: (String) -> Unit = {},
     onOnlineChosen: (Boolean) -> Unit = {},
 ) {
@@ -518,13 +518,13 @@ private fun NavRow(
         }
     }
     Row(
-        Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 10.dp),
+        Modifier.fillMaxWidth().widthIn(max = 720.dp).padding(top = 10.dp, bottom = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (backAction != null) {
-            WishButton(stringResource(R.string.back), modifier = Modifier.weight(1f), filled = false, icon = Sym.ArrowBack, onClick = backAction)
-            WishButton(nextLabel, modifier = Modifier.weight(1f).focusRequester(nextFocus), trailingIcon = Sym.ArrowForward, onClick = nextAction)
+            WishButton(stringResource(R.string.back), modifier = Modifier.weight(1f).widthIn(min = 120.dp), filled = false, icon = Sym.ArrowBack, onClick = backAction)
+            WishButton(nextLabel, modifier = Modifier.weight(1.4f).widthIn(min = 160.dp).focusRequester(nextFocus), trailingIcon = Sym.ArrowForward, onClick = nextAction)
         } else {
             WishButton(nextLabel, modifier = Modifier.widthIn(min = 200.dp, max = 320.dp).focusRequester(nextFocus), trailingIcon = Sym.ArrowForward, onClick = nextAction)
         }

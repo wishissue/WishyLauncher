@@ -11,8 +11,8 @@ class ThemeCapsTest {
     private fun load(id: String): ThemeDoc =
         ThemeLoader.load(File("../themes/$id"), LoadContext(16f / 9f, 1080, ColorSchemeName.DARK, false)).doc
 
-    @Test fun wishyDrawsStatusIconsAndOptionalSections() {
-        val d = load("wishy")
+    @Test fun wishyHomeDrawsStatusIconsAndOptionalSections() {
+        val d = load("wishy-home")
         assertTrue(d.hasClock && d.hasDate && d.hasSections && d.hasStatusIcons && d.hasCorners)
         assertTrue(d.ownsStatusBar)
         assertFalse(d.sectionsAlways)
@@ -25,7 +25,7 @@ class ThemeCapsTest {
     }
 
     @Test fun textBindingAndStatusIconsParse() {
-        val d = load("wishy")
+        val d = load("wishy-home")
         assertTrue(d.anyNode { it is TextNode && it.bind == TextBind.FOCUSED_POSITION })
     }
 }

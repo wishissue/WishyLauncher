@@ -4,10 +4,9 @@ This folder is packed into the launcher as assets and copied to the app's storag
 
 | Folder | Idea | Layout | Navigation feel |
 |---|---|---|---|
+| `wishy-home` | **Default.** Clean and simple, in the look of Wishy Files and the launcher settings. Plus Jakarta Sans, launcher blue, dark and light. | Section tabs, clock, date, focused-app name and position, then one row of 16:9 banners. | Quick focus, loops at both ends. Your wallpaper is used when you set one. |
 | `wishy-wheel` | A turning ring of round icons. | Ring on the left where only the middle app is selected, big app name on the right, clock top right. | Up and down spin the ring, fast, and it never ends. |
-| `wishy-cozy` | Warm, soft and rounded, with a greeting card. | Greeting, clock and focused-app cards on top; a bento of wide banner tiles and small icons below. | Normal grid focus, 100 ms eased scroll. |
 | `wishy-bit` | Four flat colours and the Press Start 2P pixel font. | A plain text menu: title, clock, one row per app, a blinking arrow on the focused one. | No animation at all: focus and scroll snap. |
-| `wishy` | The Wishy Browser look. Plus Jakarta Sans, brand blue, a glass shelf under the banners, a blue glow on the focused one, light and dark wallpapers. | Clock and date top left, section tabs, one row of wide 16:9 banners on a shelf. | Instant focus, 100 ms eased scroll. |
 
 It contains no third-party artwork or logos. Its wallpapers are drawn by `tools/gen-wallpapers.py`. Fonts are open-licensed (SIL OFL 1.1); see `CREDITS.md`. No theme may animate focus or scrolling for more than 80 ms and 120 ms respectively; the launcher caps longer values.
 
@@ -21,3 +20,10 @@ The built-in theme sets `artwork.themeArt` and ships its own covers in `assets/a
 - `assets/art/default.png` is the placeholder used when an app has neither its own banner nor a cover of its own.
 
 Order of choice: the theme's cover for that app, then the app's own banner, then `default.png`, then the app icon on a plain tile.
+
+
+## Changes
+
+- **Removed:** `wishy-cozy`, `wishy`. A device that used either is switched to `wishy-home` automatically.
+- **Retained, unchanged:** `wishy-wheel`, `wishy-bit` (and `wishy-grid`).
+- **Added:** `wishy-home`, the new default.

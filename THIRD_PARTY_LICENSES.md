@@ -15,6 +15,7 @@ This file lists every third-party component in the source tree and in the built 
 | AndroidX: `core-ktx`, `annotation`, `activity-compose`, `lifecycle-runtime-compose`, `datastore-preferences`, `profileinstaller` | Apache-2.0 |
 | Jetpack Compose (BOM 2024.09.03: `ui`, `foundation`), `androidx.tv:tv-material` 1.0.0, `androidx.graphics:graphics-shapes` 1.0.1 | Apache-2.0 |
 | `kotlinx-serialization-json` 1.7.1 (app and themecore) | Apache-2.0 |
+| **AndroidSVG** 1.4 (`com.caverock:androidsvg-aar`, https://github.com/BigBadaboom/androidsvg) | Apache-2.0 |
 | Kotlin standard library (pulled in by the above) | Apache-2.0 |
 
 Build and test tools, **not** shipped in the APK: Android Gradle Plugin, Kotlin Gradle plugin and Gradle (Apache-2.0), JUnit 4.13.2 (EPL-1.0, tests only). In the theme repository's CI only: `jsonschema` (MIT) and Pillow (MIT-CMU), installed from PyPI and not distributed.

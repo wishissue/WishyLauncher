@@ -185,7 +185,12 @@ object CommunityWallpapers {
             val bmp = decode(src, MAX_EDGE, requireMin = MIN_EDGE) ?: error("not a picture, or smaller than $MIN_EDGE px")
             try {
                 val scaled = limitEdge(bmp, MAX_EDGE)
-                darkTmp.outputStream().use { scaled.compress(webp(), 90, it) }
+                if (scaled === bmp && maxOf(bmp.width, bmp.height) == srcLongEdge(src)) {
+                    // Already within the size limit: keep the downloaded file byte-for-byte, no second lossy pass.
+                    src.copyTo(darkTmp, overwrite = true)
+                } else {
+                    darkTmp.outputStream().use { scaled.compress(webp(), 100, it) }
+                }
                 if (scaled !== bmp) scaled.recycle()
             } finally {
                 bmp.recycle()
@@ -272,6 +277,12 @@ object CommunityWallpapers {
             inSampleSize = sample
             inPreferredConfig = Bitmap.Config.ARGB_8888
         })
+    }
+
+    private fun srcLongEdge(file: File): Int {
+        val o = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(file.path, o)
+        return maxOf(o.outWidth, o.outHeight)
     }
 
     private fun limitEdge(b: Bitmap, edge: Int): Bitmap {

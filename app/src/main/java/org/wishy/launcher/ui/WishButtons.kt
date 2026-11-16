@@ -53,7 +53,7 @@ internal fun WishButton(
             horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
         ) {
             if (icon != null) Icon(icon, null, modifier = Modifier.size(22.dp))
-            Text(label, fontSize = if (compact) 15.sp else 17.sp, fontWeight = FontWeight.SemiBold, fontFamily = WishFont, maxLines = 1)
+            Text(label, fontSize = if (compact) 15.sp else 17.sp, fontWeight = FontWeight.SemiBold, fontFamily = WishFont, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
             if (trailingIcon != null) Icon(trailingIcon, null, modifier = Modifier.size(22.dp))
         }
     }
