@@ -12,8 +12,8 @@
       "schemaVersion": 1,
       "minLauncherVersion": 1,
       "downloadUrl": "themes/wishy-bit.zip",
-      "sha256": "fba7350652bc2ab9581c2b839ce901f4c7d4fb699bd978f9229f46f8d179e60c",
-      "sizeBytes": 42128
+      "sha256": "a5606df36cfc2ad121d29928b5180ef4fb0e17e3d030ab267f6bee8b44a6ad62",
+      "sizeBytes": 42125
     },
     {
       "id": "wishy-grid",
@@ -44,15 +44,15 @@
     {
       "id": "wishy-wheel",
       "name": "Wishy Wheel",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": "Wishy Launcher contributors",
       "description": "A ring of round app icons on the left where only the middle one is selected. Press up or down and the next app spins into the middle, fast, and the ring never ends. The name of the selected app sits big on the right.",
       "license": "GPL-3.0-only",
       "schemaVersion": 1,
       "minLauncherVersion": 1,
       "downloadUrl": "themes/wishy-wheel.zip",
-      "sha256": "5036d38219fa84b46e51f393b1aab5606de65befcceb11b906b256b76e1a0563",
-      "sizeBytes": 72782
+      "sha256": "bb434fc080f80e1ea19900ce386d242b1233212404ec9a5117e1ba2179d77681",
+      "sizeBytes": 72784
     }
   ]
 }
