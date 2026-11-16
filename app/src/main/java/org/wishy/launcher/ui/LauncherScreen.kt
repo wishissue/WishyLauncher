@@ -1024,7 +1024,7 @@ private fun CarouselSection(
     ) {
         LazyRow(
             state = state,
-            contentPadding = PaddingValues(horizontal = 44.dp, vertical = 8.dp),
+            contentPadding = PaddingValues(horizontal = 44.dp, vertical = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(gap),
         ) {
             items(catApps.size, key = { catApps[it].pkg }) { i ->

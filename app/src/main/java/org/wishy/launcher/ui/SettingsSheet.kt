@@ -16,9 +16,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -171,7 +174,7 @@ fun SettingsSheet(
             Surface(
                 shape = if (fullScreen) RoundedCornerShape(0.dp) else RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp),
                 colors = SurfaceDefaults.colors(containerColor = Wish.Bg),
-                modifier = (if (fullScreen) Modifier.fillMaxWidth() else Modifier.width(440.dp))
+                modifier = (if (fullScreen) Modifier.fillMaxWidth() else Modifier.widthIn(max = 440.dp).fillMaxWidth())
                     .fillMaxHeight(),
             ) {
                 // Slide left when entering a sub-screen, right when going back
@@ -680,7 +683,7 @@ private fun SectionAppsDialog(
         Surface(
             shape = RoundedCornerShape(16.dp),
             colors = SurfaceDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
-            modifier = Modifier.width(720.dp).height(520.dp),
+            modifier = Modifier.widthIn(max = 720.dp).fillMaxWidth(0.95f).heightIn(max = 520.dp).fillMaxHeight(0.9f),
         ) {
             Column(Modifier.fillMaxSize().padding(20.dp)) {
                 Text(cat.name, style = MaterialTheme.typography.titleMedium)
@@ -966,7 +969,7 @@ private fun StatusBarScreen(
             Surface(
                 shape = RoundedCornerShape(16.dp),
                 colors = SurfaceDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
-                modifier = Modifier.width(380.dp).height(480.dp),
+                modifier = Modifier.widthIn(max = 380.dp).fillMaxWidth(0.9f).heightIn(max = 480.dp).fillMaxHeight(0.85f),
             ) {
                 Column(Modifier.fillMaxSize().padding(16.dp)) {
                     Text(

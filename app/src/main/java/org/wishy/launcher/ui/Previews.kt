@@ -20,9 +20,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.ClickableSurfaceDefaults
 import androidx.tv.material3.Icon
+import org.wishy.launcher.R
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
@@ -51,7 +53,7 @@ internal fun ScreenHeader(title: String, onBack: (() -> Unit)? = null) {
             scale = ClickableSurfaceDefaults.scale(focusedScale = 1.08f),
         ) {
             Box(Modifier.size(36.dp), contentAlignment = Alignment.Center) {
-                Icon(Sym.ArrowBack, null, tint = Wish.OnPrimaryContainer, modifier = Modifier.size(20.dp))
+                Icon(Sym.ArrowBack, stringResource(R.string.back), tint = Wish.OnPrimaryContainer, modifier = Modifier.size(20.dp))
             }
         }
         Text(title, style = MaterialTheme.typography.headlineSmall, color = Wish.Text, maxLines = 1)

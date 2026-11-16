@@ -20,7 +20,9 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -360,7 +362,7 @@ internal fun BannerEditorDialog(
         }
         Row(Modifier.fillMaxSize().background(Wish.Bg).padding(24.dp), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
             // ----- left: preview and the two main buttons -----
-            Column(Modifier.weight(1.15f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(Modifier.weight(1.15f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(stringResource(R.string.ed_title, app.label), color = Wish.Text, fontSize = 20.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f).clip(RoundedCornerShape(12.dp)).background(Wish.Surface)) {
                     val p = preview

@@ -1,8 +1,10 @@
 package org.wishy.launcher.ui
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -86,7 +88,7 @@ private fun MenuDialog(
                 }
             },
         ) {
-            Column(Modifier.width(320.dp).padding(12.dp)) {
+            Column(Modifier.widthIn(max = 320.dp).fillMaxWidth().padding(12.dp)) {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.headlineSmall,

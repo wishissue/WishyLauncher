@@ -449,6 +449,7 @@ private fun LookCard(look: Look, selected: Boolean, modifier: Modifier = Modifie
                 fontFamily = WishFont,
                 modifier = Modifier.padding(start = 4.dp, bottom = 2.dp),
                 maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             )
         }
     }
@@ -498,7 +499,7 @@ private fun CodeLine(text: String) {
             .background(Wish.Surface, RoundedCornerShape(8.dp))
             .padding(horizontal = 12.dp, vertical = 8.dp)
     ) {
-        Text(text, fontSize = 13.sp, fontFamily = FontFamily.Monospace, color = Wish.Primary)
+        Text(text, fontSize = 13.sp, fontFamily = FontFamily.Monospace, color = Wish.Primary, softWrap = true)
     }
 }
 

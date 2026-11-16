@@ -86,7 +86,7 @@ internal fun SettingsHome(
     }
 
     Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 14.dp, vertical = 20.dp),
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 14.dp, end = 14.dp, top = 20.dp, bottom = 40.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         Row(
@@ -208,8 +208,8 @@ private fun Banner(
         Column(Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Box(Modifier.fillMaxWidth().height(92.dp).clip(RoundedCornerShape(14.dp))) { picture() }
             Column(Modifier.padding(horizontal = 6.dp, vertical = 2.dp)) {
-                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1)
-                Text(sub, style = MaterialTheme.typography.bodySmall, color = Wish.TextDim, maxLines = 1)
+                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                Text(sub, style = MaterialTheme.typography.bodySmall, color = Wish.TextDim, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
             }
         }
     }
