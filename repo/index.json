@@ -3,20 +3,6 @@
   "name": "Wishy Launcher official themes",
   "themes": [
     {
-<<<<<<< Updated upstream
-      "id": "wishy",
-      "name": "Wishy",
-      "version": "4.1.0",
-      "author": "Wishy Launcher contributors",
-      "description": "Clean, console-style home. A big title for the focused app, one calm row of square tiles, a bold clock, and hints along the bottom. Every Display setting (corners, size, spacing, labels, accent, wallpaper, clock, date) applies. Sections are off by default: just one row of all your apps.",
-      "license": "GPL-3.0-only",
-      "schemaVersion": 1,
-      "minLauncherVersion": 1,
-      "downloadUrl": "themes/wishy.zip",
-      "sha256": "36b2225bfadbe2b3d02bb6166d11e24469a84cc66414b855d15ff0b5a2819641",
-      "sizeBytes": 501758
-    },
-    {
       "id": "wishy-bit",
       "name": "Wishy 2-Bit",
       "version": "1.0.0",
@@ -30,21 +16,6 @@
       "sizeBytes": 42128
     },
     {
-      "id": "wishy-cozy",
-      "name": "Wishy Cozy",
-      "version": "1.0.0",
-      "author": "Wishy Launcher contributors",
-      "description": "A warm, soft bento home: a greeting and clock card on the left, the focused app on the right, and your apps below as a mix of big banner tiles and small square icons.",
-      "license": "GPL-3.0-only",
-      "schemaVersion": 1,
-      "minLauncherVersion": 1,
-      "downloadUrl": "themes/wishy-cozy.zip",
-      "sha256": "532c854b3342fc180a3f4bb3ea10dd1ed62c0a252d5e08a2eac3887ccd3b8d56",
-      "sizeBytes": 112411
-    },
-    {
-=======
->>>>>>> Stashed changes
       "id": "wishy-grid",
       "name": "Wishy Grid",
       "version": "1.0.0",
@@ -58,7 +29,19 @@
       "sizeBytes": 451277
     },
     {
-<<<<<<< Updated upstream
+      "id": "wishy-home",
+      "name": "Wishy Home",
+      "version": "1.0.0",
+      "author": "Wishy Launcher contributors",
+      "description": "The default look. Flat, calm and readable from the sofa: the same colours as Settings, one row of wide banner tiles, the name of the selected app, and a clock. Every Display setting applies (corners, size, spacing, labels, accent, wallpaper, clock, date, status bar, sections, app order).",
+      "license": "GPL-3.0-only",
+      "schemaVersion": 1,
+      "minLauncherVersion": 1,
+      "downloadUrl": "themes/wishy-home.zip",
+      "sha256": "8014d638019f3fc5c2b6c096ad019ec384865fa3f43c66f266479dad52fa565e",
+      "sizeBytes": 96923
+    },
+    {
       "id": "wishy-wheel",
       "name": "Wishy Wheel",
       "version": "1.0.0",
@@ -70,19 +53,6 @@
       "downloadUrl": "themes/wishy-wheel.zip",
       "sha256": "5036d38219fa84b46e51f393b1aab5606de65befcceb11b906b256b76e1a0563",
       "sizeBytes": 72782
-=======
-      "id": "wishy-home",
-      "name": "Wishy Home",
-      "version": "1.0.0",
-      "author": "Wishy Launcher contributors",
-      "description": "The default look. Flat, calm and readable from the sofa: the same colours as Settings, one row of wide banner tiles, the name of the selected app, and a clock. Every Display setting applies (corners, size, spacing, labels, accent, wallpaper, clock, date, status bar, sections, app order).",
-      "license": "GPL-3.0-only",
-      "schemaVersion": 1,
-      "minLauncherVersion": 1,
-      "downloadUrl": "themes/wishy-home.zip",
-      "sha256": "94c9c9c2cb108837e434cc1e1ba5f549aa90582a32dd27152f1f2e9fffc1d828",
-      "sizeBytes": 98102
->>>>>>> Stashed changes
     }
   ]
 }
