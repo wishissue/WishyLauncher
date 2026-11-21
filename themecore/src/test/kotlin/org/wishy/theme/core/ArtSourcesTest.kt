@@ -116,4 +116,31 @@ class ArtSourcesTest {
         assertEquals("apps", GenericIcons.forCategory("whatever").id)
         assertNotNull(GenericIcons.byId("star"))
     }
+
+    @Test fun iconifySearchFilesSetsUnderTheirOwnProviders() {
+        val l = ArtCatalogs.parseIconifySearch("""{"icons":["simple-icons:netflix","material-symbols:movie","mdi:movie","logos:netflix"],"total":99}""")
+        assertEquals(4, l.size)
+        assertEquals(ArtProviders.SIMPLE_ICONS, l[0].provider)
+        assertEquals(ArtProviders.MATERIAL_SYMBOLS, l[1].provider)
+        assertTrue(l[1].monochrome && l[2].monochrome)
+        assertFalse(l[3].monochrome)
+        assertTrue(l.all { ArtProviders.isAllowedUrl(it.url) && it.isSvg })
+        assertEquals(99, ArtCatalogs.parseIconifyTotal("""{"icons":[],"total":99}"""))
+        assertEquals(0, ArtCatalogs.parseIconifyTotal("not json"))
+    }
+
+    @Test fun catalogAndSearchHitsOfTheSameLogoAreOne() {
+        val si = ArtCatalogs.parseSimpleIcons("""[{"title":"Netflix","slug":"netflix","hex":"E50914"}]""")[0]
+        val viaSearch = ArtCatalogs.parseIconifySearch("""{"icons":["simple-icons:netflix"]}""")[0]
+        assertEquals(ArtCatalogs.dedupeKey(si), ArtCatalogs.dedupeKey(viaSearch))
+    }
+
+    @Test fun synonymsExpandAndKeepTheTypedWordFirst() {
+        val t = ArtSynonyms.expand("Movies")
+        assertEquals("movies", t[0])
+        assertTrue("film" in t)
+        assertEquals(listOf("netflix"), ArtSynonyms.expand("netflix"))
+        assertTrue(ArtSynonyms.expand("   ").isEmpty())
+        assertTrue(ArtSynonyms.expand("settings", max = 2).size == 2)
+    }
 }

@@ -60,6 +60,7 @@ internal fun SettingsHome(
     onApps: () -> Unit,
     onCategories: () -> Unit,
     onLauncher: () -> Unit,
+    onDefaultLauncher: () -> Unit,
     onAndroidSettings: () -> Unit,
     onAbout: () -> Unit,
 ) {
@@ -168,6 +169,11 @@ internal fun SettingsHome(
             onClick = onLauncher,
             headlineContent = { Text(stringResource(R.string.item_launcher_settings)) },
             leadingContent = { Icon(AppIcons.Apps, contentDescription = null) },
+        )
+        SettingsItem(
+            onClick = onDefaultLauncher,
+            headlineContent = { Text(stringResource(R.string.item_default_launcher)) },
+            leadingContent = { Icon(Sym.Home, contentDescription = null) },
         )
         SettingsItem(
             onClick = onAndroidSettings,

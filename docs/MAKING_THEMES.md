@@ -163,7 +163,7 @@ It has a clock, section tabs and one row of banners. Everything else in this gui
 
 - **`colorSchemes`**: a `dark` and/or `light` set. Everything else refers to colours by name, like `@primary` or `@surface`. Add `/60` for transparency, like `@surface/60`.
 - **`textStyles`**: named text looks (font, size, colour, spacing, shadow). Nodes refer to them by name.
-- **`cardStyles`**: how one app tile looks: shape, fill, border, how it looks idle, focused, or while being moved.
+- **`cardStyles`**: how one app tile looks: shape, fill, border, how it looks idle or focused. (The old "moving" state is still accepted in theme files but is no longer used, because apps are now reordered in Settings › Apps.)
 - **`screens.home.root`**: a tree of nodes that places everything on the screen. Exactly one `apps` node is required.
 
 Node types: `stack` (layers), `row`, `column`, `shape`, `image`, `text`, `clock`, `date`, `focusedAppName`, `sections`, `apps`, `spacer`.

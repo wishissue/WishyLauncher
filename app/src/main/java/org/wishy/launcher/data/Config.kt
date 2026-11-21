@@ -32,6 +32,11 @@ data class LauncherConfig(
     val sections: Map<String, Set<String>> = emptyMap(),
     /** category id -> explicit package order */
     val order: Map<String, List<String>> = emptyMap(),
+    /**
+     * The one order of all apps, set in Settings > Apps (move up / down). Every section and the All-apps section follow it.
+     * Empty until the person first reorders; apps missing from it (new installs) come after the listed ones.
+     */
+    val appOrder: List<String> = emptyList(),
     val hidden: Set<String> = emptySet(),
     /** packages seen on the last scan — new installs are auto-added to the first section */
     val knownApps: Set<String> = emptySet(),

@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.Configuration
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
@@ -20,6 +21,12 @@ class MainActivity : ComponentActivity() {
     /** Bumped whenever a package is installed/removed so the app grid rescans. */
     var rescanTick by mutableIntStateOf(0)
         private set
+
+    /** Bumped whenever the system delivers a HOME intent to the already running launcher (the Home button). */
+    var homeTick by mutableIntStateOf(0)
+        private set
+
+    private var receiverRegistered = false
 
     private val packageReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -48,36 +55,60 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        org.wishy.launcher.art.Wallpapers.refreshDownloads(this)
+        Log.i(TAG, "onCreate action=${intent?.action} categories=${intent?.categories} saved=${savedInstanceState != null}")
+        if (intent?.hasCategory(Intent.CATEGORY_HOME) == true) HomeLauncher.recordHomePress(this)
+        // The home screen must never fail to start: a problem reading downloaded wallpapers must not take it down.
+        runCatching { org.wishy.launcher.art.Wallpapers.refreshDownloads(this) }
 
         // A home screen never exits on Back
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() { /* no-op */ }
         })
 
-        androidx.core.content.ContextCompat.registerReceiver(
-            this,
-            packageReceiver,
-            IntentFilter().apply {
-                addAction(Intent.ACTION_PACKAGE_ADDED)
-                addAction(Intent.ACTION_PACKAGE_REMOVED)
-                addAction(Intent.ACTION_PACKAGE_CHANGED)
-                addDataScheme("package")
-            },
-            androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED,
-        )
+        // Package changes only refresh the grid; if the system refuses the receiver the launcher still has to start.
+        receiverRegistered = runCatching {
+            androidx.core.content.ContextCompat.registerReceiver(
+                this,
+                packageReceiver,
+                IntentFilter().apply {
+                    addAction(Intent.ACTION_PACKAGE_ADDED)
+                    addAction(Intent.ACTION_PACKAGE_REMOVED)
+                    addAction(Intent.ACTION_PACKAGE_CHANGED)
+                    addDataScheme("package")
+                },
+                androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED,
+            )
+        }.onFailure { Log.w(TAG, "package receiver not registered", it) }.isSuccess
 
         setContent {
-            LauncherApp(rescanTick)
+            LauncherApp(rescanTick, homeTick)
+        }
+    }
+
+    /**
+     * singleTask: a Home press while Wishy is running arrives here, not in onCreate. Record it (so Settings can show
+     * that Home really reaches Wishy) and let the UI fall back to the plain home screen.
+     */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val home = intent.hasCategory(Intent.CATEGORY_HOME)
+        Log.i(TAG, "onNewIntent action=${intent.action} home=$home")
+        if (home) {
+            HomeLauncher.recordHomePress(this)
+            homeTick++
         }
     }
 
     override fun onDestroy() {
-        unregisterReceiver(packageReceiver)
+        Log.i(TAG, "onDestroy finishing=$isFinishing changingConfig=$isChangingConfigurations")
+        if (receiverRegistered) runCatching { unregisterReceiver(packageReceiver) }
+        receiverRegistered = false
         super.onDestroy()
     }
 
     companion object {
+        private const val TAG = "WishyHome"
         private const val LOCALE_PREFS = "locale"
         private const val LOCALE_KEY = "lang"
 

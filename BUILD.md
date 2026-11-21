@@ -1,6 +1,6 @@
 # Building Wishy Launcher
 
-**Status: Verified build.** The project compiles cleanly and passes all unit tests and lint checks.
+**Status:** the last tagged release compiled cleanly and passed all unit tests and lint. The changes listed under "Recent changes" in the README (default launcher, wallpaper decoding, artwork search, Surprise me, app reordering) were made by reading and tracing code only and have not been compiled yet. Run the commands below before releasing.
 
 ## 1. What you need
 

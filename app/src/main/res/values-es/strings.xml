@@ -31,7 +31,6 @@
 
     <!-- Menú de pulsación larga -->
     <string name="menu_open">Abrir</string>
-    <string name="menu_move">Mover</string>
     <string name="menu_hide">Ocultar del launcher</string>
     <string name="menu_unhide">Mostrar</string>
     <string name="menu_close">Cerrar</string>

@@ -89,7 +89,6 @@ fun ThemedAppCard(
     style: CardStyle,
     env: ThemeEnv,
     width: Dp?,
-    isMoving: Boolean,
     isHidden: Boolean,
     modifier: Modifier = Modifier,
     onFocusChange: (Boolean) -> Unit,
@@ -102,16 +101,13 @@ fun ThemedAppCard(
 ) {
     var ownFocus by remember { mutableStateOf(false) }
     val focused = if (passive) passiveFocused else ownFocus
-    val defaultState = remember { CardState() }
     val state: CardState = when {
-        // A theme that styles no "moving" state still gets a clear lifted look while rearranging.
-        isMoving -> if (style.moving == defaultState) style.focused else style.moving
         focused -> style.focused
         else -> style.idle
     }
 
     val spec = env.focusSpec<Float>()
-    val active = focused || isMoving
+    val active = focused
     // A text-only row (art "none") keeps its size: growing a menu row would look wrong.
     val textOnly = style.artwork.source == ArtSource.NONE
     val targetScale = if (active && !textOnly) state.scale else state.scale
@@ -158,7 +154,7 @@ fun ThemedAppCard(
     val label = style.label
     val showLabel = if (!env.tweaks.labels) false else when (label.position) {
         LabelPosition.NONE -> false
-        LabelPosition.FOCUSED_ONLY -> focused || isMoving
+        LabelPosition.FOCUSED_ONLY -> focused
         else -> true
     }
 
@@ -304,7 +300,7 @@ private fun CardArtwork(app: AppEntry, style: CardStyle, env: ThemeEnv, state: C
     if (art.source == ArtSource.NONE) return
     val quality = if (art.sampling == Sampling.NEAREST) FilterQuality.None else FilterQuality.Medium
     val scale = when (art.fit) {
-        Fit.CROP -> ContentScale.Crop
+        Fit.CROP -> SmartCrop
         Fit.FIT -> ContentScale.Fit
         Fit.STRETCH -> ContentScale.FillBounds
     }

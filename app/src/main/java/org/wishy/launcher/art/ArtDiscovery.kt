@@ -9,6 +9,7 @@ import org.wishy.theme.core.ArtCatalogs
 import org.wishy.theme.core.ArtEntry
 import org.wishy.theme.core.ArtIndex
 import org.wishy.theme.core.ArtProviders
+import org.wishy.theme.core.ArtSynonyms
 import org.wishy.theme.core.CatalogLogo
 import org.wishy.theme.core.FileHash
 import org.wishy.theme.core.RepoChecker
@@ -139,25 +140,82 @@ class ArtDiscovery private constructor(context: Context) {
     }.getOrNull()
 
     /**
-     * Search by a word the person typed. The catalogs are searched on the device; Iconify is asked only when
-     * [allowNetwork] is true, and then receives just that word.
+     * A search by a word the person typed, read one page at a time ("Fetch more"). The catalogs are searched on the
+     * device. Iconify (Simple Icons, Material Symbols, logos and general icon sets) is asked only when network is
+     * allowed, and then receives just the typed word and up to two of its synonyms (see [ArtSynonyms]).
+     * Duplicates (same provider and name, whether from a catalog or from Iconify) are never returned twice.
      */
-    fun search(query: String, catalogs: Catalogs?, allowNetwork: Boolean, limit: Int = 12): List<CatalogLogo> {
-        val q = ArtCatalogs.key(query)
-        if (q.length < 2) return emptyList()
-        val out = LinkedHashMap<String, CatalogLogo>()
-        catalogs?.logos?.filter { it.key.contains(q) }
-            ?.sortedWith(compareBy({ it.key != q }, { it.key.length }))
-            ?.forEach { val k = it.provider + it.url; if (!out.containsKey(k)) out[k] = it }
-        if (allowNetwork && out.size < limit) {
-            runCatching {
-                val enc = URLEncoder.encode(query.trim().take(40), "UTF-8")
-                val text = HttpsFetcher.getText("https://api.iconify.design/search?query=$enc&prefixes=logos,simple-icons&limit=24", 256 * 1024)
-                ArtCatalogs.parseIconifySearch(text).forEach { val k = it.provider + it.url; if (!out.containsKey(k)) out[k] = it }
+    inner class SearchSession(val query: String, private val catalogs: Catalogs?) {
+        private val terms = ArtSynonyms.expand(query)
+        private val seen = HashSet<String>()
+        private var pool: List<CatalogLogo>? = null
+        private var poolPos = 0
+        private var netPage = 0
+        private val netDone = BooleanArray(terms.size)
+
+        /** More results may exist. True until every source ran dry. */
+        var hasMore: Boolean = terms.isNotEmpty()
+            private set
+
+        private fun buildPool(): List<CatalogLogo> {
+            val logos = catalogs?.logos ?: return emptyList()
+            val rank = HashMap<CatalogLogo, Int>()
+            for ((ti, t) in terms.withIndex()) {
+                val q = ArtCatalogs.key(t)
+                if (q.length < 2) continue
+                for (l in logos) if (l.key.contains(q)) {
+                    // exact name first, then names that start with the word, then the rest; earlier terms before synonyms
+                    val r = ti * 1000 + (if (l.key == q) 0 else if (l.key.startsWith(q)) 200 else 500) + minOf(l.key.length, 99)
+                    val old = rank[l]
+                    if (old == null || r < old) rank[l] = r
+                }
             }
+            return rank.entries.sortedWith(compareBy({ it.value }, { !it.key.isSvg })).map { it.key }
         }
-        return out.values.take(limit)
+
+        /** The next page of results (empty when there is nothing more). Never call on the main thread. */
+        fun next(allowNetwork: Boolean): List<CatalogLogo> {
+            val out = ArrayList<CatalogLogo>()
+            var guard = 0
+            while (out.isEmpty() && hasMore && guard++ < 4) {
+                val p = pool ?: buildPool().also { pool = it }
+                while (poolPos < p.size && out.size < PAGE_LOCAL) {
+                    val l = p[poolPos++]
+                    if (seen.add(ArtCatalogs.dedupeKey(l))) out += l
+                }
+                var netMore = false
+                if (allowNetwork) {
+                    val prefixes = ArtProviders.ICONIFY_PREFIXES.joinToString(",")
+                    for ((ti, t) in terms.take(MAX_NET_TERMS).withIndex()) {
+                        if (netDone[ti]) continue
+                        val start = netPage * PAGE_NET
+                        val text = runCatching {
+                            val enc = URLEncoder.encode(t.take(40), "UTF-8")
+                            HttpsFetcher.getText("https://api.iconify.design/search?query=$enc&prefixes=$prefixes&limit=$PAGE_NET&start=$start", 256 * 1024)
+                        }.getOrNull()
+                        if (text == null) { netDone[ti] = true; continue }
+                        val got = ArtCatalogs.parseIconifySearch(text)
+                        val total = ArtCatalogs.parseIconifyTotal(text)
+                        for (l in got) if (ArtProviders.isAllowedUrl(l.url) && seen.add(ArtCatalogs.dedupeKey(l))) out += l
+                        if (got.isEmpty() || start + PAGE_NET >= total) netDone[ti] = true else netMore = true
+                    }
+                    netPage++
+                } else {
+                    netMore = false
+                }
+                val localMore = poolPos < p.size
+                hasMore = localMore || netMore
+            }
+            if (out.isEmpty()) hasMore = false
+            return out
+        }
     }
+
+    fun startSearch(query: String, catalogs: Catalogs?): SearchSession = SearchSession(query.trim(), catalogs)
+
+    /** The first page of a search. Kept for callers that do not page. */
+    fun search(query: String, catalogs: Catalogs?, allowNetwork: Boolean): List<CatalogLogo> =
+        startSearch(query, catalogs).next(allowNetwork)
 
     /** Removes everything this class cached. User artwork is elsewhere and is not touched. */
     fun clearCache() { dir.deleteRecursively() }
@@ -166,6 +224,9 @@ class ArtDiscovery private constructor(context: Context) {
         MessageDigest.getInstance("SHA-1").digest(s.toByteArray()).joinToString("") { "%02x".format(it) }.take(24)
 
     companion object {
+        private const val PAGE_LOCAL = 24
+        private const val PAGE_NET = 24
+        private const val MAX_NET_TERMS = 3
         @Volatile private var instance: ArtDiscovery? = null
         fun get(context: Context): ArtDiscovery =
             instance ?: synchronized(this) { instance ?: ArtDiscovery(context).also { instance = it } }

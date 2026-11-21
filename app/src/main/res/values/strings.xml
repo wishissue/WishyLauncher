@@ -31,7 +31,6 @@
 
     <!-- Long-press menu -->
     <string name="menu_open">Open</string>
-    <string name="menu_move">Move</string>
     <string name="menu_hide">Hide from launcher</string>
     <string name="menu_unhide">Unhide</string>
     <string name="menu_close">Close</string>
@@ -101,7 +100,7 @@
     <string name="size_xl">XL</string>
 
     <!-- Settings: app list -->
-    <string name="app_hint">OK launches · ⓘ app info · bin uninstalls</string>
+    <string name="app_hint">▲ ▼ move an app (hold to jump to the top or bottom) · OK launches · ⓘ app info · bin uninstalls</string>
     <string name="no_section">no section</string>
     <string name="hidden_tag">hidden</string>
 

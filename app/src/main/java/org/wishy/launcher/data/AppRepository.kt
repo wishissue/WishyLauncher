@@ -278,6 +278,33 @@ object AppRepository {
         return setOf(if (app.autoCategory in validIds) app.autoCategory else fallback)
     }
 
+    /** Orders apps by their place in [LauncherConfig.appOrder]; apps not in it sort after the ones that are. */
+    fun launcherComparator(config: LauncherConfig): Comparator<AppEntry> {
+        val index = HashMap<String, Int>(config.appOrder.size * 2)
+        config.appOrder.forEachIndexed { i, pkg -> if (!index.containsKey(pkg)) index[pkg] = i }
+        return compareBy { index[it.pkg] ?: Int.MAX_VALUE }
+    }
+
+    /**
+     * Every app in the order the Apps screen shows and the launcher uses. Before the first reorder this is install
+     * order, which is what the sections already used, so opening the screen never changes the home screen.
+     */
+    fun launcherOrder(apps: List<AppEntry>, config: LauncherConfig): List<AppEntry> =
+        apps.sortedWith(launcherComparator(config).thenBy { it.firstInstall }.thenBy { it.label.lowercase() })
+
+    /**
+     * Moves [pkg] to [target] (a position in [current], clamped) and returns the new full order. Everything between
+     * the old and new position shifts by one, so there is never a need to clear a slot first. Unknown pkg: unchanged.
+     */
+    fun moveTo(current: List<String>, pkg: String, target: Int): List<String> {
+        val from = current.indexOf(pkg)
+        if (from < 0) return current
+        val list = current.toMutableList()
+        list.removeAt(from)
+        list.add(target.coerceIn(0, list.size), pkg)
+        return list
+    }
+
     /**
      * Groups scanned apps into the configured categories. An app may appear
      * in several sections; explicit ordering and the hidden flag are applied.
@@ -298,14 +325,16 @@ object AppRepository {
             if (cat.id == ALL_APPS_ID) {
                 val all = if (config.showHidden) apps
                 else apps.filter { it.pkg !in config.hidden }
-                return@map cat to all.sortedBy { it.label.lowercase() }
+                return@map cat to if (config.appOrder.isEmpty()) all.sortedBy { it.label.lowercase() }
+                else all.sortedWith(launcherComparator(config).thenBy { it.label.lowercase() })
             }
             val list = byCat[cat.id].orEmpty()
             val explicit = config.order[cat.id].orEmpty()
             // Pinned apps keep their explicit order; the rest follow install time
             // (stable sort → same-time preloaded apps stay put, a new install lands last).
+            // The Settings > Apps order wins; the older per-section order and install time only break ties.
             val ordered = list.sortedWith(
-                compareBy<AppEntry> {
+                launcherComparator(config).thenBy {
                     val i = explicit.indexOf(it.pkg)
                     if (i >= 0) i else Int.MAX_VALUE
                 }.thenBy { it.firstInstall }

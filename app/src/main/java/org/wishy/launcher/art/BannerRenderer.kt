@@ -7,6 +7,7 @@ import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
+import android.graphics.RadialGradient
 import android.graphics.RectF
 import android.graphics.Shader
 import com.caverock.androidsvg.SVG
@@ -14,9 +15,11 @@ import org.wishy.theme.core.ArtColor
 import org.wishy.theme.core.BannerLayout
 import org.wishy.theme.core.BannerSpec
 import org.wishy.theme.core.BgKind
+import org.wishy.theme.core.DecorKind
 import org.wishy.theme.core.FitMode
 import org.wishy.theme.core.SvgInfo
 import kotlin.math.roundToInt
+import kotlin.random.Random
 
 /** A logo ready to draw: either checked SVG text or a bitmap. [mono] SVGs can be recoloured. */
 class LogoImage private constructor(val svgText: String?, val bitmap: Bitmap?, val aspect: Float, val mono: Boolean) {
@@ -71,6 +74,7 @@ object BannerRenderer {
                 } else c.drawColor(0xFF1F2937.toInt())
             }
         }
+        drawDecor(c, spec, fw, fh)
         if (logo == null) return out
         val r = BannerLayout.logoRect(fw, fh, logo.aspect, spec.mode, spec.scale, spec.dx, spec.dy)
         val dst = RectF(r.left, r.top, r.right, r.bottom)
@@ -87,6 +91,51 @@ object BannerRenderer {
             c.drawBitmap(logo.bitmap, null, dst, paint)
         }
         return out
+    }
+
+    /**
+     * The faint pattern of a "Surprise me" banner. Deterministic from [BannerSpec.decorSeed] and sized from the canvas,
+     * so the small preview and the saved picture show the same pattern. Light or dark depending on the background so it
+     * never competes with the logo.
+     */
+    private fun drawDecor(c: Canvas, spec: BannerSpec, w: Float, h: Float) {
+        if (spec.decor == DecorKind.NONE || spec.background.kind == BgKind.TRANSPARENT || spec.background.kind == BgKind.IMAGE) return
+        val base = ArtColor.parseHex(spec.background.a) ?: return
+        val ink = if (ArtColor.luminance(base) > 0.45f) 0x000000 else 0xFFFFFF
+        val rnd = Random(spec.decorSeed)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        fun col(alpha: Int) = (alpha shl 24) or ink
+        when (spec.decor) {
+            DecorKind.CIRCLES -> repeat(4 + rnd.nextInt(3)) {
+                paint.style = Paint.Style.FILL; paint.color = col(18 + rnd.nextInt(18))
+                c.drawCircle(rnd.nextFloat() * w, rnd.nextFloat() * h, h * (0.15f + rnd.nextFloat() * 0.4f), paint)
+            }
+            DecorKind.RINGS -> repeat(3 + rnd.nextInt(3)) {
+                paint.style = Paint.Style.STROKE; paint.strokeWidth = h * 0.02f; paint.color = col(28 + rnd.nextInt(20))
+                c.drawCircle(rnd.nextFloat() * w, rnd.nextFloat() * h, h * (0.2f + rnd.nextFloat() * 0.5f), paint)
+            }
+            DecorKind.STRIPES -> {
+                paint.style = Paint.Style.STROKE; paint.strokeWidth = h * (0.04f + rnd.nextFloat() * 0.05f); paint.color = col(20)
+                val gap = h * (0.14f + rnd.nextFloat() * 0.1f)
+                var x = -h
+                while (x < w + h) { c.drawLine(x, h, x + h, 0f, paint); x += gap }
+            }
+            DecorKind.DOTS -> {
+                paint.style = Paint.Style.FILL; paint.color = col(26)
+                val gap = h * (0.09f + rnd.nextFloat() * 0.05f); val rad = gap * 0.16f
+                var y = gap / 2
+                while (y < h) { var x = gap / 2; while (x < w) { c.drawCircle(x, y, rad, paint); x += gap }; y += gap }
+            }
+            DecorKind.GLOW -> {
+                val cx = w * (0.2f + rnd.nextFloat() * 0.6f); val cy = h * (0.2f + rnd.nextFloat() * 0.6f)
+                val rad = h * (0.7f + rnd.nextFloat() * 0.5f)
+                paint.style = Paint.Style.FILL
+                paint.shader = RadialGradient(cx, cy, rad, (60 shl 24) or ink, ink, Shader.TileMode.CLAMP)
+                c.drawRect(0f, 0f, w, h, paint)
+                paint.shader = null
+            }
+            DecorKind.NONE -> Unit
+        }
     }
 
     /** Decodes a picture file or bytes to at most [maxSide] pixels on the long side. Null if it is not an image. */

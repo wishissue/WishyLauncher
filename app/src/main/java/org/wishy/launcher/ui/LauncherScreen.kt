@@ -201,7 +201,7 @@ private fun android.content.Context.findActivity(): android.app.Activity? {
     androidx.compose.ui.ExperimentalComposeUiApi::class,
 )
 @Composable
-fun LauncherApp(rescanTick: Int) {
+fun LauncherApp(rescanTick: Int, homeTick: Int = 0) {
     val context = LocalContext.current
     val store = remember { ConfigStore(context.applicationContext) }
     val scope = rememberCoroutineScope()
@@ -412,7 +412,6 @@ fun LauncherApp(rescanTick: Int) {
     }
 
     var menuFor by remember { mutableStateOf<AppEntry?>(null) }
-    var movePkg by remember { mutableStateOf<String?>(null) }
     var showSettings by remember { mutableStateOf(false) }
     var wallpaperVersion by remember { mutableIntStateOf(0) }
 
@@ -437,11 +436,19 @@ fun LauncherApp(rescanTick: Int) {
     // Columns as laid out on screen (mirrors the padding used by GridSection /
     // DockArea) — move mode needs them to shift an icon up/down by a full row.
     val screenW: Dp = LocalConfiguration.current.screenWidthDp.dp
-    val gridCols = fitRow(screenW - 88.dp, cardWidth, gap).first
-    val dockCols = fitRow(screenW - 116.dp, cardWidth, gap).first
 
     var dockExpanded by remember { mutableStateOf(false) }
     LaunchedEffect(config.layout) { if (config.layout != LAYOUT_DOCK) dockExpanded = false }
+
+    // The Home button while Wishy is already showing: close whatever is open and show the plain home screen,
+    // like every launcher does. (homeTick only changes when the system delivers a HOME intent.)
+    LaunchedEffect(homeTick) {
+        if (homeTick > 0) {
+            showSettings = false
+            menuFor = null
+            dockExpanded = false
+        }
+    }
 
     // ----- theme: resolved off the main thread; null theme = classic layouts -----
     val themeStorage = remember { org.wishy.launcher.theme.ThemeStorage.get(context) }
@@ -463,147 +470,6 @@ fun LauncherApp(rescanTick: Int) {
     val themed = loadedTheme != null && config.themeId != org.wishy.launcher.theme.ThemeStorage.CLASSIC_ID
     var themeCols by remember { mutableIntStateOf(1) }
 
-    // ----- move-mode helpers -----
-    fun findMoving(): Triple<Int, List<AppEntry>, Int>? {
-        val pkg = movePkg ?: return null
-        categorized.forEachIndexed { catIndex, (_, list) ->
-            val i = list.indexOfFirst { it.pkg == pkg }
-            if (i >= 0) return Triple(catIndex, list, i)
-        }
-        return null
-    }
-
-    fun moveWithinRow(delta: Int) {
-        val (catIndex, list, i) = findMoving() ?: return
-        val j = i + delta
-        if (j < 0 || j >= list.size) return
-        val catId = categorized[catIndex].first.id
-        val newOrder = list.map { it.pkg }.toMutableList().also { l ->
-            val tmp = l[i]; l[i] = l[j]; l[j] = tmp
-        }
-        scope.launch { store.update { it.copy(order = it.order + (catId to newOrder)) } }
-    }
-
-    fun moveAcrossRows(delta: Int) {
-        val (catIndex, list, i) = findMoving() ?: return
-        val target = catIndex + delta
-        if (target < 0 || target >= categorized.size) return
-        val pkg = movePkg ?: return
-        val app = apps.firstOrNull { it.pkg == pkg } ?: return
-        val sourceId = categorized[catIndex].first.id
-        val targetId = categorized[target].first.id
-        val targetList = categorized[target].second
-        if (targetList.any { it.pkg == pkg }) return // already in target section
-        val insertAt = i.coerceAtMost(targetList.size)
-        val newTargetOrder = targetList.map { it.pkg }.toMutableList().also { it.add(insertAt, pkg) }
-        val newSourceOrder = list.map { it.pkg }.filter { it != pkg }
-        scope.launch {
-            store.update { cfg ->
-                val effective = AppRepository.sectionsOf(app, cfg)
-                cfg.copy(
-                    sections = cfg.sections + (pkg to (effective - sourceId + targetId)),
-                    order = cfg.order + (sourceId to newSourceOrder) + (targetId to newTargetOrder),
-                )
-            }
-        }
-    }
-
-    // Reorder the moving app within its own section to a new index.
-    fun reorderWithin(catIndex: Int, list: List<AppEntry>, from: Int, to: Int) {
-        if (from == to) return
-        val catId = categorized[catIndex].first.id
-        val seq = list.map { it.pkg }.toMutableList()
-        val p = seq.removeAt(from)
-        seq.add(to.coerceIn(0, seq.size), p)
-        scope.launch { store.update { it.copy(order = it.order + (catId to seq)) } }
-    }
-
-    // Grid: up/down move by a full row (±cols) inside the section; past the
-    // top/bottom edge it hops to the neighbouring section.
-    fun moveGridVertical(delta: Int, cols: Int) {
-        val (catIndex, list, i) = findMoving() ?: return
-        val size = list.size
-        if (delta < 0) {
-            if (i < cols) moveAcrossRows(-1) else reorderWithin(catIndex, list, i, i - cols)
-        } else {
-            val lastRowStart = ((size - 1) / cols) * cols
-            if (i >= lastRowStart) moveAcrossRows(1)
-            else reorderWithin(catIndex, list, i, minOf(i + cols, size - 1))
-        }
-    }
-
-    // Dock: one flat sequence (all sections concatenated). Moving by [delta]
-    // positions may cross a section block, so the moved app is re-homed into
-    // its new neighbour's section and every affected order list is rebuilt from
-    // the resulting sequence.
-    // ponytail: a multi-section app (shown once in the dock) is re-homed only
-    // for its displayed section; its other memberships are left as-is.
-    fun moveDock(delta: Int) {
-        val pkg = movePkg ?: return
-        val fi = dockApps.indexOfFirst { it.pkg == pkg }
-        if (fi < 0) return
-        val target = fi + delta
-        if (target < 0 || target >= dockApps.size) return
-        val flat = dockApps.map { it.pkg }.toMutableList()
-        flat.removeAt(fi)
-        flat.add(target, pkg)
-
-        val orderCats = config.categories.map { it.id }
-        fun dockCatOf(p: String): String {
-            val app = apps.firstOrNull { it.pkg == p } ?: return orderCats.lastOrNull() ?: AppRepository.ALL_APPS_ID
-            val secs = AppRepository.sectionsOf(app, config)
-            return orderCats.firstOrNull { it in secs } ?: (orderCats.lastOrNull() ?: AppRepository.ALL_APPS_ID)
-        }
-        val sourceCat = dockCatOf(pkg)
-        val targetCat = flat.getOrNull(target - 1)?.let { dockCatOf(it) }
-            ?: flat.getOrNull(target + 1)?.let { dockCatOf(it) }
-            ?: sourceCat
-        val movedApp = apps.firstOrNull { it.pkg == pkg }
-
-        scope.launch {
-            store.update { cfg ->
-                val newSections = if (movedApp != null && sourceCat != targetCat) {
-                    val eff = AppRepository.sectionsOf(movedApp, cfg)
-                    cfg.sections + (pkg to (eff - sourceCat + targetCat))
-                } else cfg.sections
-                val catOf = { p: String -> if (p == pkg) targetCat else dockCatOf(p) }
-                val newOrder = cfg.order.toMutableMap()
-                for (cid in orderCats) {
-                    val seq = flat.filter { catOf(it) == cid }
-                    if (seq.isEmpty()) continue
-                    // keep any stored (e.g. hidden) packages not on screen
-                    val extras = cfg.order[cid].orEmpty().filter { it !in seq }
-                    newOrder[cid] = seq + extras
-                }
-                cfg.copy(sections = newSections, order = newOrder)
-            }
-        }
-    }
-
-    fun moveHorizontal(delta: Int) =
-        if (themed) {
-            val d = loadedTheme!!.doc
-            if (d.hasSections && d.appsNode.focusScope != org.wishy.theme.core.FocusScope.ALL) moveWithinRow(delta) else moveDock(delta)
-        }
-        else if (config.layout == LAYOUT_DOCK) moveDock(delta) else moveWithinRow(delta)
-
-    fun moveVertical(delta: Int) {
-        if (themed) {
-            // The wheel is one endless column: up and down step one app, like the keys that turn it.
-            if (loadedTheme!!.doc.appsNode.arrangement == org.wishy.theme.core.AppsArrangement.WHEEL) moveDock(delta)
-            else if (themeCols > 1) moveDock(if (delta < 0) -themeCols else themeCols)
-        } else when (config.layout) {
-            LAYOUT_GRID -> moveGridVertical(delta, gridCols)
-            LAYOUT_DOCK -> moveDock(if (delta < 0) -dockCols else dockCols)
-            else -> moveAcrossRows(delta)
-        }
-    }
-
-    val moveFocus = remember { FocusRequester() }
-    LaunchedEffect(categorized, movePkg) {
-        if (movePkg != null) runCatching { moveFocus.requestFocus() }
-    }
-
     // ----- wallpaper: decoded off the main thread, downsampled, cached.
     // A ~100px copy is decoded alongside: upscaled by the GPU it looks
     // blurred, and crossfading it in costs one texture blend per frame
@@ -619,7 +485,7 @@ fun LauncherApp(rescanTick: Int) {
             if (bundledWallpaper == null) null to null
             else withContext(Dispatchers.IO) {
                 runCatching {
-                    val sharp = org.wishy.launcher.art.Wallpapers.decode(context, bundledWallpaper, wallpaperDark, maxWidth = 1280)
+                    val sharp = org.wishy.launcher.art.Wallpapers.decodeForDisplay(context, bundledWallpaper, wallpaperDark)
                         ?.also { it.prepareToDraw() }?.asImageBitmap()
                     val blurred = org.wishy.launcher.art.Wallpapers.decode(context, bundledWallpaper, wallpaperDark, maxWidth = 96)
                         ?.also { it.prepareToDraw() }?.asImageBitmap()
@@ -631,11 +497,9 @@ fun LauncherApp(rescanTick: Int) {
             val f = File(context.filesDir, "wallpaper.jpg")
             if (!f.exists()) null to null
             else runCatching {
-                // 1280px is indistinguishable as a scrimmed background but the
-                // texture is ~2.3× smaller than 1920 — TV GPUs choke on the
-                // first upload of full-res textures. prepareToDraw() moves the
-                // upload off the first visible frame.
-                val sharp = decodeDownsampled(f, maxWidth = 1280)
+                // Decoded for the real screen size in full colour (never smaller than the panel, never above the
+                // 4096 px texture limit of TV GPUs). prepareToDraw() moves the texture upload off the first frame.
+                val sharp = org.wishy.launcher.art.Wallpapers.decodeFileForDisplay(context, f)
                     ?.also { it.prepareToDraw() }?.asImageBitmap()
                 val blurred = decodeDownsampled(f, maxWidth = 96)
                     ?.also { it.prepareToDraw() }?.asImageBitmap()
@@ -663,26 +527,7 @@ fun LauncherApp(rescanTick: Int) {
                         showSettings = true
                         return@onPreviewKeyEvent true
                     }
-                    if (movePkg == null) return@onPreviewKeyEvent false
-                    // Move mode owns EVERY key event. Ending it must happen on
-                    // the KEY-UP: ending on key-down let the release fall
-                    // through to the card underneath as a click → app launch.
-                    if (event.type == KeyEventType.KeyUp) {
-                        when (event.key) {
-                            Key.DirectionCenter, Key.Enter, Key.NumPadEnter,
-                            Key.Back, Key.Escape,
-                            -> movePkg = null // drop (or cancel) on release
-                            else -> {}
-                        }
-                        return@onPreviewKeyEvent true
-                    }
-                    when (event.key) {
-                        Key.DirectionLeft -> { moveHorizontal(-1); true }
-                        Key.DirectionRight -> { moveHorizontal(1); true }
-                        Key.DirectionUp -> { moveVertical(-1); true }
-                        Key.DirectionDown -> { moveVertical(1); true }
-                        else -> true // swallow select/cancel key-downs too
-                    }
+                    false
                 }
         ) {
             // One theme environment for the background and the home screen (built inside ScaledUi so
@@ -704,6 +549,9 @@ fun LauncherApp(rescanTick: Int) {
                     bitmap = wallpaperSharp,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
+                    // Medium = mipmapped bilinear: a picture a little larger than the screen is shrunk cleanly
+                    // instead of the aliased, soft result of the default Low setting.
+                    filterQuality = androidx.compose.ui.graphics.FilterQuality.Medium,
                     modifier = Modifier.fillMaxSize(),
                 )
             } else {
@@ -798,10 +646,8 @@ fun LauncherApp(rescanTick: Int) {
                             config = config,
                             time = if (config.showClock) time else "",
                             date = date,
-                            movePkg = movePkg,
-                            moveFocus = moveFocus,
-                            onLaunch = { app -> if (movePkg == null) Actions.launchApp(context, app.pkg) },
-                            onMenu = { app -> if (movePkg == null) menuFor = app },
+                            onLaunch = { app -> Actions.launchApp(context, app.pkg) },
+                            onMenu = { app -> menuFor = app },
                             onGridColumns = { themeCols = it },
                             modifier = Modifier.weight(1f).fillMaxWidth(),
                             net = net,
@@ -819,15 +665,13 @@ fun LauncherApp(rescanTick: Int) {
                         apps = dockApps,
                         config = config,
                         accent = accent,
-                        movePkg = movePkg,
-                        moveFocus = moveFocus,
                         cardWidth = cardWidth,
                         gap = gap,
                         intro = introShown,
                         expanded = dockExpanded,
                         onExpandChange = { dockExpanded = it },
-                        onLaunch = { app -> if (movePkg == null) Actions.launchApp(context, app.pkg) },
-                        onMenu = { app -> if (movePkg == null) menuFor = app },
+                        onLaunch = { app -> Actions.launchApp(context, app.pkg) },
+                        onMenu = { app -> menuFor = app },
                     )
                     else -> {
                         // Magnetic vertical scroll: the focused row is pinned to a
@@ -928,17 +772,17 @@ fun LauncherApp(rescanTick: Int) {
                                 }
                                 if (isGrid) {
                                     GridSection(
-                                        catApps, config, accent, movePkg, moveFocus,
+                                        catApps, config, accent,
                                         cardWidth, gap, introShown,
-                                        onLaunch = { app -> if (movePkg == null) Actions.launchApp(context, app.pkg) },
-                                        onMenu = { app -> if (movePkg == null) menuFor = app },
+                                        onLaunch = { app -> Actions.launchApp(context, app.pkg) },
+                                        onMenu = { app -> menuFor = app },
                                     )
                                 } else {
                                     CarouselSection(
-                                        catApps, config, accent, movePkg, moveFocus,
+                                        catApps, config, accent,
                                         cardWidth, gap,
-                                        onLaunch = { app -> if (movePkg == null) Actions.launchApp(context, app.pkg) },
-                                        onMenu = { app -> if (movePkg == null) menuFor = app },
+                                        onLaunch = { app -> Actions.launchApp(context, app.pkg) },
+                                        onMenu = { app -> menuFor = app },
                                     )
                                 }
                             }
@@ -957,7 +801,6 @@ fun LauncherApp(rescanTick: Int) {
                     isHidden = app.pkg in config.hidden,
                     onDismiss = { menuFor = null },
                     onOpen = { menuFor = null; Actions.launchApp(context, app.pkg) },
-                    onMove = { menuFor = null; movePkg = app.pkg },
                     onToggleHide = {
                         menuFor = null
                         scope.launch {
@@ -1018,8 +861,6 @@ private fun CarouselSection(
     catApps: List<AppEntry>,
     config: LauncherConfig,
     accent: Color,
-    movePkg: String?,
-    moveFocus: FocusRequester,
     cardWidth: Dp,
     gap: Dp,
     onLaunch: (AppEntry) -> Unit,
@@ -1051,15 +892,12 @@ private fun CarouselSection(
         ) {
             items(catApps.size, key = { catApps[it].pkg }) { i ->
                 val app = catApps[i]
-                val moving = app.pkg == movePkg
                 AppCard(
                     app = app,
-                    isMoving = moving,
                     isHidden = app.pkg in config.hidden,
                     accent = accent,
                     cardWidth = cardWidth,
                     showLabel = config.showAppLabels,
-                    modifier = if (moving) Modifier.focusRequester(moveFocus) else Modifier,
                     onLaunch = { onLaunch(app) },
                     onLongPress = { onMenu(app) },
                 )
@@ -1077,8 +915,6 @@ private fun GridSection(
     catApps: List<AppEntry>,
     config: LauncherConfig,
     accent: Color,
-    movePkg: String?,
-    moveFocus: FocusRequester,
     cardWidth: Dp,
     gap: Dp,
     intro: Boolean,
@@ -1110,7 +946,6 @@ private fun GridSection(
             rows.forEachIndexed { r, rowApps ->
                 Row(horizontalArrangement = Arrangement.spacedBy(gapUsed)) {
                     rowApps.forEachIndexed { c, app ->
-                        val moving = app.pkg == movePkg
                         val dist = kotlin.math.hypot((c - centerC).toDouble(), (r - centerR).toDouble()).toFloat()
                         val bloom by animateFloatAsState(
                             targetValue = if (intro) 1f else 0f,
@@ -1123,12 +958,11 @@ private fun GridSection(
                         )
                         AppCard(
                             app = app,
-                            isMoving = moving,
                             isHidden = app.pkg in config.hidden,
                             accent = accent,
                             cardWidth = cardWidth,
                             showLabel = config.showAppLabels,
-                            modifier = (if (moving) Modifier.focusRequester(moveFocus) else Modifier)
+                            modifier = Modifier
                                 .graphicsLayer {
                                     alpha = bloom
                                     val s = 0.8f + 0.2f * bloom
@@ -1153,8 +987,6 @@ private fun DockArea(
     apps: List<AppEntry>,
     config: LauncherConfig,
     accent: Color,
-    movePkg: String?,
-    moveFocus: FocusRequester,
     cardWidth: Dp,
     gap: Dp,
     intro: Boolean,
@@ -1229,8 +1061,6 @@ private fun DockArea(
                     rowApps = rows.firstOrNull().orEmpty(),
                     config = config,
                     accent = accent,
-                    movePkg = movePkg,
-                    moveFocus = moveFocus,
                     dockFocus = dockFocus,
                     cardWidth = cardWidth,
                     gapUsed = gapUsed,
@@ -1284,10 +1114,8 @@ private fun DockArea(
                         Box(Modifier.width(blockWidth)) {
                             Row(horizontalArrangement = Arrangement.spacedBy(gapUsed)) {
                                 rows[r].forEachIndexed { c, app ->
-                                    val moving = app.pkg == movePkg
                                     AppCard(
                                         app = app,
-                                        isMoving = moving,
                                         isHidden = app.pkg in config.hidden,
                                         accent = accent,
                                         cardWidth = cardWidth,
@@ -1295,7 +1123,6 @@ private fun DockArea(
                                         // No Up handler: Up from row 0 falls through to
                                         // the status bar. The grid closes with Back.
                                         modifier = when {
-                                            moving -> Modifier.focusRequester(moveFocus)
                                             r == targetRow && c == targetCol -> Modifier.focusRequester(gridFocus)
                                             else -> Modifier
                                         },
@@ -1325,8 +1152,6 @@ private fun DockGlassPanel(
     rowApps: List<AppEntry>,
     config: LauncherConfig,
     accent: Color,
-    movePkg: String?,
-    moveFocus: FocusRequester,
     dockFocus: FocusRequester,
     cardWidth: Dp,
     gapUsed: Dp,
@@ -1367,21 +1192,17 @@ private fun DockGlassPanel(
                 horizontalArrangement = Arrangement.spacedBy(gapUsed),
             ) {
                 rowApps.forEachIndexed { i, app ->
-                    val moving = app.pkg == movePkg
                     AppCard(
                         app = app,
-                        isMoving = moving,
                         isHidden = app.pkg in config.hidden,
                         accent = accent,
                         cardWidth = cardWidth,
                         showLabel = config.showAppLabels,
                         modifier = (when {
-                            moving -> Modifier.focusRequester(moveFocus)
                             i == 0 -> Modifier.focusRequester(dockFocus)
                             else -> Modifier
                         }).onPreviewKeyEvent { e ->
-                            if (movePkg == null &&
-                                e.type == KeyEventType.KeyDown &&
+                            if (e.type == KeyEventType.KeyDown &&
                                 e.key == Key.DirectionDown
                             ) { onExpandFrom(i); true } else false
                         },
@@ -1428,7 +1249,7 @@ private fun LoadingScreen() {
     WishySplash()
 }
 
-/** Decodes a bitmap with an inSampleSize so its width stays near [maxWidth]. */
+/** Decodes a tiny copy for the dock's pseudo-blur only (never shown sharp), so 16-bit colour is fine here. */
 private fun decodeDownsampled(file: File, maxWidth: Int): android.graphics.Bitmap? {
     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
     BitmapFactory.decodeFile(file.absolutePath, bounds)

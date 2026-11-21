@@ -14,6 +14,8 @@
     <uses-permission
         android:name="android.permission.QUERY_ALL_PACKAGES"
         tools:ignore="QueryAllPackagesPermission" />
+    <!-- Open Wishy first when the TV finishes booting. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Used only by the theme and artwork repository client (HTTPS only, added in a later milestone). -->
     <uses-permission android:name="android.permission.INTERNET" />
@@ -33,14 +35,23 @@
         android:theme="@style/Theme.LiteTV"
         android:supportsRtl="true">
 
+        <!--
+            Launcher activity. The attributes below are what every real launcher (AOSP Launcher3, FLauncher) uses so
+            the system can treat it as a HOME screen:
+              singleTask      one instance; a Home press brings it back (onNewIntent) instead of stacking copies.
+              taskAffinity="" its own task, so apps started from it never get pulled into (or pull in) its task.
+              stateNotNeeded  the system may drop its saved state; it always rebuilds from the stored config.
+        -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
+            android:taskAffinity=""
+            android:stateNotNeeded="true"
             android:screenOrientation="landscape"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|density|uiMode">
 
-            <!-- Home-screen replacement -->
+            <!-- Home-screen replacement. DEFAULT is required: without it the system's HOME resolution skips this filter. -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.HOME" />
@@ -59,6 +70,29 @@
         </activity>
 
         <!-- Receives the system installer's answer for an in-app update (opens its confirmation, reports failures). -->
+        <receiver
+            android:name=".BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Optional Home button override (Settings > Default launcher). Does nothing until the person turns it on in Android's Accessibility settings. -->
+        <service
+            android:name=".HomeKeyService"
+            android:exported="true"
+            android:label="@string/hk_service_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/home_key_service" />
+        </service>
+
         <receiver
             android:name=".net.InstallResultReceiver"
             android:exported="false" />

@@ -41,7 +41,6 @@ import org.wishy.launcher.data.AppEntry
 @Composable
 fun AppCard(
     app: AppEntry,
-    isMoving: Boolean,
     isHidden: Boolean,
     accent: Color,
     cardWidth: androidx.compose.ui.unit.Dp = 190.dp,
@@ -107,9 +106,9 @@ fun AppCard(
             focusedGlow = Glow(accent.copy(alpha = 0.5f), 16.dp)
         ),
         border = ClickableSurfaceDefaults.border(
-            // Prominent accent ring on focus (thicker while dragging in move mode).
+            // Prominent accent ring on focus.
             focusedBorder = Border(
-                BorderStroke(if (isMoving) 5.dp else 4.dp, accent),
+                BorderStroke(4.dp, accent),
                 shape = cardShape,
             )
         ),

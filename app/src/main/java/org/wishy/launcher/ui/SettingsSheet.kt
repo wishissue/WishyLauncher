@@ -95,7 +95,7 @@ import kotlinx.serialization.json.Json
 
 private val format = Json { ignoreUnknownKeys = true; prettyPrint = true; encodeDefaults = true }
 
-private enum class SettingsScreen { Main, Themes, ThemeCredits, OnlineThemes, Banners, Wallpaper, WallpaperStore, Display, StatusBar, Apps, Categories, Launcher, About }
+private enum class SettingsScreen { Main, Themes, ThemeCredits, OnlineThemes, Banners, Wallpaper, WallpaperStore, Display, StatusBar, Apps, Categories, Launcher, DefaultLauncher, About }
 
 /**
  * Settings panel built entirely from focusable rows and buttons — every
@@ -205,6 +205,7 @@ fun SettingsSheet(
                         onApps = { screen = SettingsScreen.Apps },
                         onCategories = { screen = SettingsScreen.Categories },
                         onLauncher = { screen = SettingsScreen.Launcher },
+                        onDefaultLauncher = { screen = SettingsScreen.DefaultLauncher },
                         onAndroidSettings = { Actions.openSystemSettings(context) },
                         onAbout = { screen = SettingsScreen.About },
                     )
@@ -305,11 +306,16 @@ fun SettingsSheet(
                                 }
                             }
                         },
+                        onReorder = { newOrder -> scope.launch { store.update { c -> c.copy(appOrder = newOrder) } } },
                     )
                     SettingsScreen.Categories -> CategoriesScreen(
                         config = config,
                         apps = apps,
                         store = store,
+                        onBack = { screen = SettingsScreen.Main },
+                    )
+                    SettingsScreen.DefaultLauncher -> DefaultLauncherScreen(
+                        onGuide = onRerunWizard,
                         onBack = { screen = SettingsScreen.Main },
                     )
                     SettingsScreen.About -> AboutScreen(
@@ -687,8 +693,40 @@ private fun AppsScreen(
     onAppInfo: (String) -> Unit,
     onUninstall: (String) -> Unit,
     onToggleHide: (String) -> Unit,
+    onReorder: (List<String>) -> Unit,
 ) {
     val catNames = remember(config.categories) { config.categories.associate { it.id to it.name } }
+    // The list is shown in the order the launcher uses, so what you see here is what the home screen follows.
+    val ordered = remember(apps, config.appOrder) { AppRepository.launcherOrder(apps, config) }
+    val orderedPkgs = ordered.map { it.pkg }
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+
+    // After a move, focus goes back to the same button of the same app, wherever it landed.
+    var focusTarget by remember { mutableStateOf<Pair<String, Boolean>?>(null) } // (pkg, wasUpButton)
+    val upFocus = remember { FocusRequester() }
+    val downFocus = remember { FocusRequester() }
+
+    fun moveApp(pkg: String, target: Int, up: Boolean) {
+        focusTarget = pkg to up
+        val next = AppRepository.moveTo(orderedPkgs, pkg, target)
+        // Save the full order even when nothing moved (top of the list): the first press also pins the current order.
+        onReorder(next)
+    }
+
+    androidx.compose.runtime.LaunchedEffect(focusTarget, orderedPkgs) {
+        val (pkg, up) = focusTarget ?: return@LaunchedEffect
+        val index = orderedPkgs.indexOf(pkg)
+        if (index < 0) return@LaunchedEffect
+        val visible = listState.layoutInfo.visibleItemsInfo
+        if (visible.isEmpty() || index < visible.first().index || index > visible.last().index) {
+            listState.animateScrollToItem((index - 2).coerceAtLeast(0))
+        }
+        // The row may need a frame or two to exist after a long jump.
+        repeat(6) {
+            if (runCatching { (if (up) upFocus else downFocus).requestFocus() }.isSuccess) return@LaunchedEffect
+            androidx.compose.runtime.withFrameNanos { }
+        }
+    }
 
     Column(Modifier.fillMaxSize().padding(20.dp)) {
         ScreenHeader(stringResource(R.string.item_app), onBack = onBack)
@@ -696,15 +734,25 @@ private fun AppsScreen(
             stringResource(R.string.app_hint),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 12.dp, start = 8.dp),
+            modifier = Modifier.padding(bottom = 8.dp, start = 8.dp),
         )
+        Row(Modifier.padding(bottom = 8.dp, start = 8.dp)) {
+            WishButton(
+                stringResource(R.string.apps_sort_az),
+                compact = true,
+                filled = false,
+                onClick = { onReorder(apps.sortedBy { it.label.lowercase() }.map { it.pkg }) },
+            )
+        }
         val f = initialFocus()
         LazyColumn(
             Modifier.fillMaxSize(),
+            state = listState,
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            items(apps.size, key = { apps[it].pkg }) { i ->
-                val app = apps[i]
+            items(ordered.size, key = { ordered[it].pkg }) { i ->
+                val app = ordered[i]
+                val isTarget = focusTarget?.first == app.pkg
                 Row(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -714,8 +762,8 @@ private fun AppsScreen(
                         SettingsItem(
                             selected = false,
                             onClick = { onLaunch(app.pkg) },
-                            modifier = if (i == 0) Modifier.focusRequester(f) else Modifier,
-                            headlineContent = { Text(app.label) },
+                            modifier = if (i == 0 && focusTarget == null) Modifier.focusRequester(f) else Modifier,
+                            headlineContent = { Text("${i + 1}. ${app.label}") },
                             supportingContent = {
                                 val names = AppRepository.sectionsOf(app, config)
                                     .mapNotNull { catNames[it] }
@@ -725,6 +773,20 @@ private fun AppsScreen(
                             leadingContent = { AppThumb(app) },
                         )
                     }
+                    // Move up / down: the app takes the new place and the others shift, no gap to clear first.
+                    // Hold to jump straight to the top / bottom.
+                    SmallIconButton(
+                        AppIcons.Up,
+                        stringResource(R.string.cd_move_up),
+                        modifier = if (isTarget) Modifier.focusRequester(upFocus) else Modifier,
+                        onLongClick = { moveApp(app.pkg, 0, true) },
+                    ) { moveApp(app.pkg, i - 1, true) }
+                    SmallIconButton(
+                        AppIcons.Down,
+                        stringResource(R.string.cd_move_down),
+                        modifier = if (isTarget) Modifier.focusRequester(downFocus) else Modifier,
+                        onLongClick = { moveApp(app.pkg, ordered.size - 1, false) },
+                    ) { moveApp(app.pkg, i + 1, false) }
                     val isHidden = app.pkg in config.hidden
                     SmallIconButton(
                         if (isHidden) AppIcons.Hide else AppIcons.Show,
@@ -1625,10 +1687,14 @@ internal fun SettingsItem(
 private fun SmallIconButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
+    modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
     onClick: () -> Unit,
 ) {
     Surface(
         onClick = onClick,
+        onLongClick = onLongClick,
+        modifier = modifier,
         shape = ClickableSurfaceDefaults.shape(CircleShape),
         colors = ClickableSurfaceDefaults.colors(
             containerColor = Wish.SurfaceHigh,

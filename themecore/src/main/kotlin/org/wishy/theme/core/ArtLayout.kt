@@ -7,6 +7,7 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.sin
+import kotlin.random.Random
 
 /** The banner canvas. Everything is drawn 16:9 at 1280 x 720; smaller bitmaps are made from it for display. */
 object ArtCanvas {
@@ -160,6 +161,10 @@ data class BackgroundSpec(
     val image: String? = null,
 )
 
+/** A faint pattern drawn between the background and the logo. */
+@Serializable
+enum class DecorKind { NONE, CIRCLES, RINGS, STRIPES, DOTS, GLOW }
+
 /** Everything needed to draw one banner again. Stored next to the picture so a banner can be edited later. */
 @Serializable
 data class BannerSpec(
@@ -170,6 +175,9 @@ data class BannerSpec(
     val dy: Float = 0f,
     /** "#RRGGBB" to recolour a single-colour logo, or null to draw it as it is. */
     val tint: String? = null,
+    /** A faint pattern behind the logo. [decorSeed] fixes where its pieces go so the banner redraws the same way. */
+    val decor: DecorKind = DecorKind.NONE,
+    val decorSeed: Int = 0,
 )
 
 data class DesignPreset(val id: String, val name: String, val background: BackgroundSpec, val tint: String?)
@@ -236,5 +244,141 @@ object AutoDesign {
         }
         val p = presetFor(seed)
         return BannerSpec(background = p.background)
+    }
+}
+
+/**
+ * "Surprise me": a random banner made by mixing backgrounds, colours, logo layouts and decorations that already exist
+ * in the editor. Pure maths (no Android classes) so it is unit tested. Every call with a different [Random] gives a
+ * different banner, and every result keeps the logo readable:
+ *  - a single-colour logo gets the black or white that reads best on the background;
+ *  - a coloured logo gets a background pushed away from the logo's own colour until the contrast is at least
+ *    [MIN_CONTRAST] (or a plain dark or light fallback);
+ *  - the logo is at least [MIN_SCALE_PICK] of its automatic size and always stays on the canvas (BannerLayout clamps it),
+ *    and decorations are drawn faint, behind the logo.
+ */
+object SurpriseDesign {
+    const val MIN_CONTRAST = 2.2f
+    const val MIN_SCALE_PICK = 0.72f
+    private val ANGLES = intArrayOf(0, 45, 90, 135, 180, 225, 315)
+
+    private fun contrast(a: Int, b: Int): Float {
+        val la = ArtColor.luminance(a); val lb = ArtColor.luminance(b)
+        return (max(la, lb) + 0.05f) / (min(la, lb) + 0.05f)
+    }
+
+    /** HSV (hue in degrees, s and v 0..1) to an opaque ARGB int. */
+    fun hsv(h: Float, s: Float, v: Float): Int {
+        val hh = (((h % 360f) + 360f) % 360f) / 60f
+        val c = v * s
+        val x = c * (1f - abs(hh % 2f - 1f))
+        val (r, g, b) = when (hh.toInt()) {
+            0 -> Triple(c, x, 0f)
+            1 -> Triple(x, c, 0f)
+            2 -> Triple(0f, c, x)
+            3 -> Triple(0f, x, c)
+            4 -> Triple(x, 0f, c)
+            else -> Triple(c, 0f, x)
+        }
+        val m = v - c
+        fun ch(f: Float) = ((f + m) * 255f + 0.5f).toInt().coerceIn(0, 255)
+        return (0xFF shl 24) or (ch(r) shl 16) or (ch(g) shl 8) or ch(b)
+    }
+
+    private fun randomPair(rnd: Random, brand: Int?, dominant: Int?): Pair<Int, Int> {
+        // Source of colours: presets, solid swatches, random hues, and (when known) the brand or the logo's own colour.
+        val sources = buildList {
+            add(0); add(1); add(2); add(2)
+            if (brand != null) { add(3); add(3) }
+            if (dominant != null) add(4)
+        }
+        return when (sources[rnd.nextInt(sources.size)]) {
+            0 -> {
+                val p = ArtPresets.all[rnd.nextInt(ArtPresets.all.size)].background
+                (ArtColor.parseHex(p.a) ?: 0xFF1F2937.toInt()) to (ArtColor.parseHex(p.b) ?: 0xFF111827.toInt())
+            }
+            1 -> {
+                val c = ArtColor.parseHex(ArtPresets.solidColors[rnd.nextInt(ArtPresets.solidColors.size)]) ?: 0xFF374151.toInt()
+                c to ArtColor.darken(c, 0.25f)
+            }
+            2 -> {
+                val h = rnd.nextFloat() * 360f
+                val shift = 20f + rnd.nextFloat() * 50f
+                val s = 0.5f + rnd.nextFloat() * 0.4f
+                hsv(h, s, 0.55f + rnd.nextFloat() * 0.4f) to hsv(h + shift, s, 0.25f + rnd.nextFloat() * 0.4f)
+            }
+            3 -> brand!!.let { ArtColor.lighten(it, 0.05f + rnd.nextFloat() * 0.1f) to ArtColor.darken(it, 0.2f + rnd.nextFloat() * 0.25f) }
+            else -> dominant!!.let { ArtColor.darken(it, 0.45f + rnd.nextFloat() * 0.3f) to ArtColor.darken(it, 0.7f + rnd.nextFloat() * 0.2f) }
+        }
+    }
+
+    /** Pushes [a]/[b] away from the logo colour until they read against it. Never returns a pair with less than [MIN_CONTRAST]. */
+    private fun readableAgainst(logoColor: Int, a: Int, b: Int): Pair<Int, Int> {
+        fun ok(x: Int, y: Int) = contrast(logoColor, x) >= MIN_CONTRAST && contrast(logoColor, y) >= MIN_CONTRAST
+        if (ok(a, b)) return a to b
+        val darkSide = ArtColor.luminance(logoColor) > 0.3f
+        var x = a; var y = b
+        for (step in 1..4) {
+            x = if (darkSide) ArtColor.darken(x, 0.35f) else ArtColor.lighten(x, 0.4f)
+            y = if (darkSide) ArtColor.darken(y, 0.35f) else ArtColor.lighten(y, 0.4f)
+            if (ok(x, y)) return x to y
+        }
+        return if (darkSide) 0xFF111827.toInt() to 0xFF0F172A.toInt() else 0xFFF8FAFC.toInt() to 0xFFCBD5E1.toInt()
+    }
+
+    /**
+     * @param mono the logo is one colour and can be recoloured
+     * @param brandHex the brand colour when a source gave one
+     * @param dominantArgb the main colour of a coloured logo, if known
+     * @param aspect width / height of the logo (wide logos are kept from growing past the canvas by BannerLayout)
+     */
+    fun generate(rnd: Random, mono: Boolean, brandHex: String?, dominantArgb: Int?, aspect: Float = 1f): BannerSpec {
+        val brand = ArtColor.parseHex(brandHex)
+        var (a, b) = randomPair(rnd, brand, dominantArgb)
+        // A coloured logo with a known colour must read against the background.
+        if (!mono && dominantArgb != null) { val r = readableAgainst(dominantArgb, a, b); a = r.first; b = r.second }
+
+        val solid = rnd.nextInt(5) == 0
+        val bg = if (solid) BackgroundSpec(BgKind.SOLID, ArtColor.toHex(a), ArtColor.toHex(a), 90)
+        else BackgroundSpec(BgKind.GRADIENT, ArtColor.toHex(a), ArtColor.toHex(b), ANGLES[rnd.nextInt(ANGLES.size)])
+
+        val tint = if (mono) {
+            // A single-colour logo: whichever of white or near-black reads best on both ends of the gradient.
+            val white = 0xFFFFFFFF.toInt(); val ink = 0xFF111827.toInt()
+            val wMin = min(contrast(white, a), contrast(white, if (solid) a else b))
+            val iMin = min(contrast(ink, a), contrast(ink, if (solid) a else b))
+            ArtColor.toHex(if (wMin >= iMin) white else ink)
+        } else null
+
+        // Layout: a little smaller than the automatic size at most, nudged a little off centre. Wide logos stay centred.
+        val wide = aspect > 2.6f
+        val scale = MIN_SCALE_PICK + rnd.nextFloat() * (1f - MIN_SCALE_PICK)
+        val dx = if (wide) 0f else (rnd.nextFloat() - 0.5f) * 0.12f
+        val dy = (rnd.nextFloat() - 0.5f) * 0.10f
+
+        val decor = DecorKind.values()[rnd.nextInt(DecorKind.values().size)]
+        return BannerSpec(
+            background = bg,
+            mode = FitMode.FIT,
+            scale = scale,
+            dx = dx,
+            dy = dy,
+            tint = tint,
+            decor = decor,
+            decorSeed = rnd.nextInt(1_000_000),
+        )
+    }
+
+    /** [count] different banners (different colours, angle, layout or decoration), for the person to pick from. */
+    fun variations(count: Int, rnd: Random, mono: Boolean, brandHex: String?, dominantArgb: Int?, aspect: Float = 1f): List<BannerSpec> {
+        val out = ArrayList<BannerSpec>(count)
+        var tries = 0
+        while (out.size < count && tries < count * 20) {
+            tries++
+            val s = generate(rnd, mono, brandHex, dominantArgb, aspect)
+            if (out.none { it.background == s.background && it.decor == s.decor }) out += s
+        }
+        while (out.size < count) out += generate(rnd, mono, brandHex, dominantArgb, aspect)
+        return out
     }
 }

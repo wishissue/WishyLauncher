@@ -238,11 +238,16 @@ internal fun BannerEditorDialog(
     var saving by remember { mutableStateOf(false) }
     var showHex by remember { mutableStateOf(false) }
     var showSearch by remember { mutableStateOf(false) }
+    var showSurprise by remember { mutableStateOf(false) }
     var showDiscard by remember { mutableStateOf(false) }
     var yours by remember { mutableStateOf<EditorLogo?>(null) }
     val found = remember { mutableStateListOf<EditorLogo>() }
     val fromApp = remember { mutableStateListOf<EditorLogo>() }
     val searchRes = remember { mutableStateListOf<EditorLogo>() }
+    // The running search, so "Fetch more" continues it instead of starting over.
+    var searchSession by remember { mutableStateOf<ArtDiscovery.SearchSession?>(null) }
+    var searchMore by remember { mutableStateOf(false) }
+    var fetching by remember { mutableStateOf(false) }
     val generics = remember { mutableStateListOf<EditorLogo>() }
     val catalogCache = remember { arrayOfNulls<ArtDiscovery.Catalogs>(1) }
 
@@ -374,11 +379,8 @@ internal fun BannerEditorDialog(
                 ButtonRow {
                     val doneFocus = initialFocus()
                     WishButton(stringResource(R.string.ed_done), modifier = Modifier.focusRequester(doneFocus)) { save() }
-                    WishButton(stringResource(R.string.ed_auto), filled = false) {
-                        logo?.let { l ->
-                            bgTouched = false; dirty = true
-                            spec = AutoDesign.forLogo(pkg, l.image.mono, l.brandHex, l.dominant)
-                        }
+                    WishButton(stringResource(R.string.ed_surprise), filled = false) {
+                        if (logo != null) showSurprise = true else status = ctx.getString(R.string.ed_need_logo)
                     }
                 }
             }
@@ -402,6 +404,24 @@ internal fun BannerEditorDialog(
                                     logoPicker.launch(arrayOf("image/svg+xml", "image/png", "image/jpeg", "image/webp", "text/xml"))
                                 }
                                 WishButton(stringResource(R.string.ed_search), compact = true, filled = false) { showSearch = true }
+                                if (searchMore && searchSession != null) {
+                                    WishButton(stringResource(if (fetching) R.string.ed_fetching else R.string.ed_fetch_more), compact = true, filled = false) {
+                                        val ses = searchSession
+                                        if (ses != null && !fetching) {
+                                            fetching = true
+                                            scope.launch {
+                                                val res = withContext(Dispatchers.IO) {
+                                                    ses.next(netOk).mapNotNull { cl -> discovery.fetchLogo(cl, netOk)?.let { runCatching { editorLogoFrom(it) }.getOrNull() } }
+                                                }
+                                                val have = searchRes.map { it.key }.toSet()
+                                                searchRes.addAll(res.filter { it.key !in have })
+                                                searchMore = ses.hasMore
+                                                fetching = false
+                                                if (res.isEmpty()) status = ctx.getString(R.string.ed_no_more)
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                         val sections = listOf(
@@ -507,6 +527,14 @@ internal fun BannerEditorDialog(
             onDismiss = { showHex = false },
         )
     }
+    val surpriseLogo = logo
+    if (showSurprise && surpriseLogo != null) {
+        SurpriseDialog(
+            logo = surpriseLogo,
+            onUse = { chosen -> spec = chosen; bgTouched = true; dirty = true; showSurprise = false },
+            onDismiss = { showSurprise = false },
+        )
+    }
     if (showSearch) {
         TextEntryDialog(
             title = stringResource(R.string.ed_search_title), hint = stringResource(R.string.ed_search_hint), initial = "",
@@ -515,11 +543,15 @@ internal fun BannerEditorDialog(
                 if (q.isBlank()) return@TextEntryDialog
                 status = ctx.getString(R.string.ed_searching)
                 scope.launch {
-                    val res = withContext(Dispatchers.IO) {
+                    val ses = withContext(Dispatchers.IO) {
                         val cats = catalogCache[0] ?: discovery.loadCatalogs(netOk).also { catalogCache[0] = it }
-                        discovery.search(q, cats, netOk).mapNotNull { cl -> discovery.fetchLogo(cl, netOk)?.let { runCatching { editorLogoFrom(it) }.getOrNull() } }
+                        discovery.startSearch(q, cats)
                     }
-                    searchRes.clear(); searchRes.addAll(res)
+                    val res = withContext(Dispatchers.IO) {
+                        ses.next(netOk).mapNotNull { cl -> discovery.fetchLogo(cl, netOk)?.let { runCatching { editorLogoFrom(it) }.getOrNull() } }
+                    }
+                    searchSession = ses; searchMore = ses.hasMore
+                    searchRes.clear(); searchRes.addAll(res.distinctBy { it.key })
                     status = if (res.isEmpty()) ctx.getString(R.string.ed_no_results) else ""
                     tab = 0
                 }

@@ -153,9 +153,7 @@ class HomeUi {
     var date by mutableStateOf("")
     var selected by mutableIntStateOf(0)
     var focusedPkg by mutableStateOf<String?>(null)
-    var movePkg by mutableStateOf<String?>(null)
     var flat by mutableStateOf(true)
-    var moveFocus: FocusRequester = FocusRequester()
     var onLaunch: (AppEntry) -> Unit = {}
     var onMenu: (AppEntry) -> Unit = {}
     var onGridColumns: (Int) -> Unit = {}
@@ -224,8 +222,6 @@ fun ThemedHome(
     config: LauncherConfig,
     time: String,
     date: String,
-    movePkg: String?,
-    moveFocus: FocusRequester,
     onLaunch: (AppEntry) -> Unit,
     onMenu: (AppEntry) -> Unit,
     onGridColumns: (Int) -> Unit,
@@ -244,9 +240,7 @@ fun ThemedHome(
     ui.config = config
     ui.time = time
     ui.date = date
-    ui.movePkg = movePkg
     ui.flat = flat
-    ui.moveFocus = moveFocus
     ui.onLaunch = onLaunch
     ui.onMenu = onMenu
     ui.onGridColumns = onGridColumns
@@ -260,7 +254,7 @@ fun ThemedHome(
             .fillMaxSize()
             .onPreviewKeyEvent { e ->
                 // Channel and page keys switch sections, whether or not the theme draws a section switcher.
-                if (e.type != KeyEventType.KeyDown || ui.movePkg != null || flat || ui.sections.size < 2) return@onPreviewKeyEvent false
+                if (e.type != KeyEventType.KeyDown || flat || ui.sections.size < 2) return@onPreviewKeyEvent false
                 when (e.key) {
                     Key.PageDown, Key.ChannelDown -> { ui.selected = (ui.selectedIndex + 1).coerceAtMost(ui.sections.lastIndex); true }
                     Key.PageUp, Key.ChannelUp -> { ui.selected = (ui.selectedIndex - 1).coerceAtLeast(0); true }
@@ -729,7 +723,7 @@ private fun AppsView(n: AppsNode, env: ThemeEnv, ui: HomeUi, modifier: Modifier)
     val firstFocus = remember(focusRequesters) { focusRequesters.firstOrNull() ?: FocusRequester() }
     var focusedOnce by remember { mutableStateOf(false) }
     LaunchedEffect(apps.isNotEmpty()) {
-        if (!focusedOnce && apps.isNotEmpty() && ui.movePkg == null) {
+        if (!focusedOnce && apps.isNotEmpty()) {
             focusedOnce = true
             delay(60)
             runCatching { firstFocus.requestFocus() }
@@ -762,31 +756,25 @@ private fun AppsView(n: AppsNode, env: ThemeEnv, ui: HomeUi, modifier: Modifier)
             ?: env.dims.dp(300f)
         val cardW: Dp = cardW0 * env.tweaks.size
 
-        // How far the selected (or moving) card reaches beyond its slot: the extra size from scaling plus the focus
+        // How far the selected card reaches beyond its slot: the extra size from scaling plus the focus
         // ring and its gap. The list keeps this much room around the selected card so it is never cut off.
-        val maxScale = maxOf(style.focused.scale, style.moving.scale, 1f)
-        val ringReach = maxOf(
-            style.focused.indicator?.let { it.width + it.gap } ?: 8f,
-            style.moving.indicator?.let { it.width + it.gap } ?: 0f,
-        )
+        val maxScale = maxOf(style.focused.scale, 1f)
+        val ringReach = style.focused.indicator?.let { it.width + it.gap } ?: 8f
         val overhang: Dp = cardW * ((maxScale - 1f) / 2f) + env.dims.dp(ringReach) + 4.dp
         val headroom: Dp = maxOf(baseHeadroom, overhang)
         val spec = rememberScrollSpec(env, scrollMode, with(density) { overhang.toPx() })
 
         val card: @Composable (AppEntry, Int, Dp?, CardStyle) -> Unit = { app, index, w, cardStyle ->
-            val moving = app.pkg == ui.movePkg
             val itemFocus = focusRequesters.getOrElse(index) { firstFocus }
             ThemedAppCard(
                 app = app,
                 style = cardStyle,
                 env = env,
                 width = w,
-                isMoving = moving,
                 isHidden = app.pkg in ui.config.hidden,
-                modifier = (if (moving) Modifier.focusRequester(ui.moveFocus)
-                           else Modifier.focusRequester(itemFocus))
+                modifier = Modifier.focusRequester(itemFocus)
                     .onPreviewKeyEvent { e ->
-                        if (ui.movePkg != null || !wrapEnabled || apps.size <= 1) return@onPreviewKeyEvent false
+                        if (!wrapEnabled || apps.size <= 1) return@onPreviewKeyEvent false
                         if (e.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                         when (e.key) {
                             Key.DirectionRight -> {
@@ -808,8 +796,8 @@ private fun AppsView(n: AppsNode, env: ThemeEnv, ui: HomeUi, modifier: Modifier)
                     if (f) ui.focusedPkg = app.pkg
                     else if (ui.focusedPkg == app.pkg) ui.focusedPkg = null
                 },
-                onLaunch = { if (ui.movePkg == null) ui.onLaunch(app) },
-                onLongPress = { if (ui.movePkg == null) ui.onMenu(app) },
+                onLaunch = { ui.onLaunch(app) },
+                onLongPress = { ui.onMenu(app) },
             )
         }
 
@@ -953,20 +941,10 @@ private fun WheelView(n: AppsNode, style: CardStyle, env: ThemeEnv, ui: HomeUi, 
             else pos.animateTo(target, tween(if (fast[0]) minOf(env.scrollMs, 50) else minOf(env.scrollMs, 110), easing = env.easing))
         }
         LaunchedEffect(size > 0) {
-            if (!focusedOnce && size > 0 && ui.movePkg == null) {
+            if (!focusedOnce && size > 0) {
                 focusedOnce = true
                 delay(60)
                 runCatching { wheelFocus.requestFocus() }
-            }
-        }
-        // While an app is being moved, the ring follows it, taking the short way round.
-        val movingIdx = if (ui.movePkg == null) -1 else apps.indexOfFirst { it.pkg == ui.movePkg }
-        LaunchedEffect(movingIdx) {
-            if (movingIdx >= 0 && size > 0) {
-                var d = movingIdx - floorMod(sel, size)
-                if (d > size / 2) d -= size
-                if (d < -size / 2) d += size
-                if (d != 0) sel += d
             }
         }
         LaunchedEffect(hasFocus, current?.pkg) { ui.focusedPkg = if (hasFocus) current?.pkg else null }
@@ -974,10 +952,10 @@ private fun WheelView(n: AppsNode, style: CardStyle, env: ThemeEnv, ui: HomeUi, 
 
         BoxWithConstraints(
             modifier
-                .focusRequester(if (ui.movePkg != null) ui.moveFocus else wheelFocus)
+                .focusRequester(wheelFocus)
                 .onFocusChanged { hasFocus = it.isFocused }
                 .onPreviewKeyEvent { e ->
-                    if (ui.movePkg != null || size == 0) return@onPreviewKeyEvent false
+                    if (size == 0) return@onPreviewKeyEvent false
                     val select = e.key == Key.DirectionCenter || e.key == Key.Enter || e.key == Key.NumPadEnter
                     when {
                         e.key == Key.DirectionUp -> { if (e.type == KeyEventType.KeyDown) step(-1); true }
@@ -1083,7 +1061,6 @@ private fun WheelView(n: AppsNode, style: CardStyle, env: ThemeEnv, ui: HomeUi, 
                             style = style,
                             env = env,
                             width = cardW,
-                            isMoving = app.pkg == ui.movePkg,
                             isHidden = app.pkg in ui.config.hidden,
                             passive = true,
                             passiveFocused = v == sel,

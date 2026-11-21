@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
-import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
@@ -102,7 +101,8 @@ fun SetupWizard(
     var gtvPage by remember { mutableIntStateOf(0) } // carousel page on the Google-TV step
     var look by remember { mutableStateOf(LOOKS.firstOrNull { it.id == currentThemeId } ?: LOOKS[0]) }
     var defaultHome by remember { mutableStateOf(defaultHomePackage(context)) }
-    val isDefault = defaultHome == context.packageName
+    // The role (Android 10+) is the truth when there is one; the resolved HOME package covers older systems.
+    val isDefault = defaultHome == context.packageName || org.wishy.launcher.HomeLauncher.isDefault(context)
     val isGoogleTv = remember {
         // "Amati" feature = certified Google TV experience (home app locked by Google)
         context.packageManager.hasSystemFeature("com.google.android.feature.AMATI_EXPERIENCE")
@@ -112,6 +112,16 @@ fun SetupWizard(
     val roleLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { defaultHome = defaultHomePackage(context) }
+
+    // Coming back from Android's Home app page: read the state again.
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+        val obs = androidx.lifecycle.LifecycleEventObserver { _, e ->
+            if (e == androidx.lifecycle.Lifecycle.Event.ON_RESUME) defaultHome = defaultHomePackage(context)
+        }
+        lifecycleOwner.lifecycle.addObserver(obs)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(obs) }
+    }
 
     fun requestDefault() {
         if (Build.VERSION.SDK_INT >= 29) {
@@ -125,8 +135,9 @@ fun SetupWizard(
                 if (ok) return
             }
         }
-        runCatching { context.startActivity(Intent(Settings.ACTION_HOME_SETTINGS)) }
-            .onFailure { Actions.toast(context, context.getString(R.string.wizard_no_chooser)) }
+        if (org.wishy.launcher.HomeLauncher.openHomeSettings(context) == org.wishy.launcher.HomeLauncher.Opened.NONE) {
+            Actions.toast(context, context.getString(R.string.wizard_no_chooser))
+        }
     }
 
     Box(Modifier.fillMaxSize().background(Wish.Bg)) {

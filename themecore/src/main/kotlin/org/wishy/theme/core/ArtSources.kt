@@ -32,6 +32,13 @@ object ArtProviders {
     const val SVGL = "svgl"
     const val ARCTICONS = "arcticons"
     const val ICONIFY = "iconify"
+    const val MATERIAL_SYMBOLS = "material-symbols"
+
+    /**
+     * Iconify icon sets searched for a typed word, in the order their results are shown: brand logos first, then
+     * general purpose UI icons. All are served from api.iconify.design as plain SVG.
+     */
+    val ICONIFY_PREFIXES: List<String> = listOf("logos", "simple-icons", "material-symbols", "mdi", "tabler", "lucide")
 
     class Info(val id: String, val name: String, val license: String, val homepage: String, val catalogUrl: String?, val maxCatalogBytes: Int)
 
@@ -42,7 +49,8 @@ object ArtProviders {
             "https://api.svgl.app", 2 * 1024 * 1024),
         Info(ARCTICONS, "Arcticons", "CC BY-SA 4.0", "https://github.com/Arcticons-Team/Arcticons",
             "https://raw.githubusercontent.com/Arcticons-Team/Arcticons/main/app/assets/appfilter.xml", 6 * 1024 * 1024),
-        Info(ICONIFY, "Iconify (logos set)", "Per icon set, see iconify.design", "https://iconify.design", null, 512 * 1024),
+        Info(ICONIFY, "Iconify (many icon sets)", "Per icon set, see iconify.design", "https://iconify.design", null, 512 * 1024),
+        Info(MATERIAL_SYMBOLS, "Material Symbols", "Apache-2.0", "https://fonts.google.com/icons", null, 512 * 1024),
     )
 
     fun info(id: String): Info? = all.firstOrNull { it.id == id }
@@ -132,7 +140,12 @@ object ArtCatalogs {
         out
     }.getOrDefault(emptyList())
 
-    /** Iconify search answer: {"icons": ["logos:netflix", ...]}. Only used when the user types a search. */
+    /**
+     * Iconify search answer: {"icons": ["logos:netflix", ...], "total": 120}. Only used when the user types a search.
+     * Simple Icons results are filed under Simple Icons and Material Symbols under their own name, so the same logo
+     * from the catalog and from the search is recognised as one. Icons that are not brand logos are single-colour
+     * line icons, drawn tinted.
+     */
     fun parseIconifySearch(text: String): List<CatalogLogo> = runCatching {
         val root = lenient.parseToJsonElement(text) as? JsonObject ?: return@runCatching emptyList()
         val icons = root["icons"] as? JsonArray ?: return@runCatching emptyList()
@@ -141,12 +154,30 @@ object ArtCatalogs {
             val id = (el as? JsonPrimitive)?.contentOrNull ?: continue
             val m = Regex("^([a-z0-9-]{1,40}):([a-z0-9-]{1,80})$").matchEntire(id) ?: continue
             val (prefix, name) = m.destructured
-            out += CatalogLogo(ArtProviders.ICONIFY, name.replace('-', ' '), key(name), "https://api.iconify.design/$prefix/$name.svg", true,
-                null, "See the \"$prefix\" icon set on iconify.design", "Iconify: $prefix", "https://icon-sets.iconify.design/$prefix/$name/")
-            if (out.size >= 24) break
+            val url = "https://api.iconify.design/$prefix/$name.svg"
+            val page = "https://icon-sets.iconify.design/$prefix/$name/"
+            out += when (prefix) {
+                "simple-icons" -> CatalogLogo(ArtProviders.SIMPLE_ICONS, name.replace('-', ' '), key(name), url, true, null,
+                    "CC0-1.0", "Simple Icons contributors", page, monochrome = true)
+                "material-symbols" -> CatalogLogo(ArtProviders.MATERIAL_SYMBOLS, name.replace('-', ' '), key(name), url, true, null,
+                    "Apache-2.0", "Material Symbols (Google)", page, monochrome = true)
+                else -> CatalogLogo(ArtProviders.ICONIFY, name.replace('-', ' '), key(name), url, true, null,
+                    "See the \"$prefix\" icon set on iconify.design", "Iconify: $prefix", page, monochrome = prefix != "logos")
+            }
+            if (out.size >= MAX_SEARCH_PAGE) break
         }
         out
     }.getOrDefault(emptyList())
+
+    /** The "total" Iconify reports for a search, or 0. Used to know whether a further page exists. */
+    fun parseIconifyTotal(text: String): Int = runCatching {
+        ((lenient.parseToJsonElement(text) as? JsonObject)?.get("total") as? JsonPrimitive)?.contentOrNull?.toIntOrNull() ?: 0
+    }.getOrDefault(0)
+
+    const val MAX_SEARCH_PAGE = 48
+
+    /** One logo stands for itself only once: same provider and same name (so a catalog hit and a search hit merge). */
+    fun dedupeKey(l: CatalogLogo): String = l.provider + ":" + l.key + (if (l.provider == ArtProviders.ICONIFY) ":" + l.url else "")
 
     private fun JsonObject.str(k: String): String? = (this[k] as? JsonPrimitive)?.takeIf { it.isString }?.contentOrNull
 }
@@ -302,4 +333,59 @@ object GenericIcons {
     }
 
     fun byId(id: String): Icon? = all.firstOrNull { it.id == id }
+}
+
+/**
+ * Words people type that mean the same thing as an icon's name. A search for "movies" also looks for "film" and
+ * "cinema", "settings" for "gear" and "cog", and so on. Plain data and a plain function so it is unit tested.
+ */
+object ArtSynonyms {
+    private val groups: List<List<String>> = listOf(
+        listOf("movie", "movies", "film", "cinema", "video", "theater"),
+        listOf("tv", "television", "screen", "monitor", "broadcast"),
+        listOf("music", "audio", "song", "note", "sound", "melody"),
+        listOf("game", "games", "gaming", "controller", "gamepad", "joystick"),
+        listOf("setting", "settings", "gear", "cog", "preferences", "options", "tune"),
+        listOf("file", "files", "folder", "document", "storage"),
+        listOf("browser", "web", "internet", "globe", "world", "www"),
+        listOf("photo", "photos", "image", "picture", "gallery", "camera"),
+        listOf("news", "newspaper", "article", "press"),
+        listOf("weather", "cloud", "sun", "rain", "forecast"),
+        listOf("sport", "sports", "ball", "football", "soccer", "basketball"),
+        listOf("kid", "kids", "child", "children", "family", "toy"),
+        listOf("home", "house", "start", "main"),
+        listOf("search", "find", "magnifier", "lookup"),
+        listOf("play", "start", "resume", "run"),
+        listOf("shop", "shopping", "store", "cart", "market", "buy"),
+        listOf("book", "books", "read", "library", "ebook"),
+        listOf("chat", "message", "messages", "talk", "comment"),
+        listOf("mail", "email", "inbox", "letter"),
+        listOf("call", "phone", "telephone", "dial"),
+        listOf("map", "maps", "navigation", "location", "pin", "gps"),
+        listOf("clock", "time", "watch", "timer", "alarm"),
+        listOf("cast", "stream", "streaming", "wireless"),
+        listOf("download", "downloads", "save", "get"),
+        listOf("power", "off", "shutdown"),
+        listOf("heart", "favorite", "favourite", "like", "love"),
+        listOf("star", "rating", "bookmark"),
+        listOf("live", "radio", "podcast", "broadcast"),
+    )
+
+    private val index: Map<String, List<String>> = HashMap<String, MutableSet<String>>().also { m ->
+        for (g in groups) for (w in g) m.getOrPut(w) { LinkedHashSet() }.addAll(g)
+    }.mapValues { it.value.toList() }
+
+    /** The typed [query] first, then words that mean the same, at most [max] terms in all. Never empty for real input. */
+    fun expand(query: String, max: Int = 4): List<String> {
+        val q = query.trim().lowercase().replace(Regex("\\s+"), " ")
+        if (q.isEmpty()) return emptyList()
+        val out = LinkedHashSet<String>()
+        out += q
+        val k = ArtCatalogs.key(q)
+        index[q]?.let { out += it }
+        if (k != q) index[k]?.let { out += it }
+        // A multi word search ("video player") is also tried word by word.
+        if (' ' in q) q.split(' ').filter { it.length >= 3 }.forEach { w -> out += w; index[w]?.let { out += it } }
+        return out.filter { it.length >= 2 }.take(max.coerceAtLeast(1))
+    }
 }

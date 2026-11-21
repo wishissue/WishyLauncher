@@ -31,7 +31,6 @@
 
     <!-- 长按菜单 -->
     <string name="menu_open">打开</string>
-    <string name="menu_move">移动</string>
     <string name="menu_hide">从启动器隐藏</string>
     <string name="menu_unhide">取消隐藏</string>
     <string name="menu_close">关闭</string>

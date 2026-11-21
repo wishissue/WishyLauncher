@@ -31,7 +31,6 @@
 
     <!-- Menu appui long -->
     <string name="menu_open">Ouvrir</string>
-    <string name="menu_move">Déplacer</string>
     <string name="menu_hide">Masquer du launcher</string>
     <string name="menu_unhide">Réafficher</string>
     <string name="menu_close">Fermer</string>

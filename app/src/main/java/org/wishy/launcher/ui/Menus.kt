@@ -39,14 +39,13 @@ data class MenuEntry(
     val action: () -> Unit,
 )
 
-/** Long-press menu: open, move, hide, app info, close, uninstall. */
+/** Long-press menu: open, hide, app info, close, uninstall. */
 @Composable
 fun AppContextMenu(
     app: AppEntry,
     isHidden: Boolean,
     onDismiss: () -> Unit,
     onOpen: () -> Unit,
-    onMove: () -> Unit,
     onToggleHide: () -> Unit,
     onAppInfo: () -> Unit,
     onClose: () -> Unit,
@@ -54,7 +53,6 @@ fun AppContextMenu(
 ) {
     val entries = listOf(
         MenuEntry(stringResource(R.string.menu_open), AppIcons.Play, onOpen),
-        MenuEntry(stringResource(R.string.menu_move), AppIcons.Move, onMove),
         MenuEntry(if (isHidden) stringResource(R.string.menu_unhide) else stringResource(R.string.menu_hide), AppIcons.Hide, onToggleHide),
         MenuEntry(stringResource(R.string.menu_app_info), AppIcons.Info, onAppInfo),
         MenuEntry(stringResource(R.string.menu_close), AppIcons.Stop, onClose),
